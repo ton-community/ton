@@ -4064,6 +4064,13 @@ toidentifier@1.0.0:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
   integrity sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==
 
+ton-crypto@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.1.0.tgz#c42592b9a2591442aefbccc4643924c2748532d9"
+  integrity sha512-6eRENtupVcGs8v2lAH55PR/ZJz/rxlsXMj7u+dWwgPMLIWLYPJBCWrbOftVmCCNmY1PEaL8605a11VZAvoqMSQ==
+  dependencies:
+    tweetnacl "^1.0.3"
+
 tonweb@^0.0.18:
   version "0.0.18"
   resolved "https://registry.yarnpkg.com/tonweb/-/tonweb-0.0.18.tgz#f2cf142dbe329894ccbc439f746aa401b2fcf3ee"

@@ -30,6 +30,7 @@
     "webpack": "^5.51.2"
   },
   "dependencies": {
+    "ton-crypto": "^1.1.0",
     "tonweb": "^0.0.18"
   }
 }

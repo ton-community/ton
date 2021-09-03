@@ -1,5 +1,5 @@
 import { TonWallet } from "./TonWallet";
-
+import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -37,5 +37,20 @@ export class TonClient {
         });
         const address = (await walletContract.getAddress()).toString(true, true, true) as string;
         return new TonWallet(this, address, walletContract);
+    }
+
+    /**
+     * Securely creates new wallet
+     * @param password optional password
+     */
+    async createWallet(password?: string | null | undefined) {
+        let mnemonic = await mnemonicNew(24, password);
+        let key = await mnemonicToWalletKey(mnemonic, password);
+        let wallet = await this.openWallet(key.publicKey);
+        return {
+            mnemonic,
+            key,
+            wallet
+        };
     }
 }
