@@ -1,5 +1,6 @@
 import { TonWallet } from "./TonWallet";
 import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
+import { Address } from "../address/Address";
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -14,7 +15,7 @@ export class TonClient {
 
     constructor(parameters: TonClientParameters) {
         this.parameters = parameters;
-        this.#client = new TonWeb(parameters.endpoint);
+        this.#client = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint));
     }
 
     /**
@@ -22,8 +23,12 @@ export class TonClient {
      * @param address address for balance check
      * @returns balance
      */
-    getBalance(address: string) {
-        return this.#client.getBalance(address) as Promise<number>;
+    getBalance(address: string | Address) {
+        if (typeof address === 'string') {
+            return this.#client.getBalance(address) as Promise<number>;
+        } else {
+            return this.#client.getBalance(address.toString()) as Promise<number>;
+        }
     }
 
     /**

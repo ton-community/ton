@@ -68,44 +68,39 @@ function parseFriendlyAddress(src: string) {
 
 export class Address {
 
-    readonly workChain: number;
-    readonly hash: Buffer;
-    readonly isTestOnly: boolean | null;
-    readonly isBounceable: boolean | null;
-
-    constructor(source: string | Address) {
-        if (typeof source === 'string') {
-
-            // Raw Format
-            if (source.indexOf(':') >= 0) {
-                this.workChain = parseInt(source.split(":")[0]);
-                this.hash = Buffer.from(source.split(":")[1], 'hex');
-                this.isTestOnly = null;
-                this.isBounceable = null;
-            } else {
-                let addr = source.replace(/\-/g, '+').replace(/_/g, '\/'); // Convert from url-friendly to true base64
-                let r = parseFriendlyAddress(addr);
-                this.workChain = r.workchain;
-                this.isTestOnly = r.isTestOnly;
-                this.isBounceable = r.isBounceable;
-                this.hash = r.hashPart;
-            }
-        } else {
-            this.workChain = source.workChain;
-            this.hash = source.hash;
-            this.isBounceable = source.isBounceable;
-            this.isTestOnly = source.isTestOnly;
-        }
+    static parseRaw(source: string) {
+        let workChain = parseInt(source.split(":")[0]);
+        let hash = Buffer.from(source.split(":")[1], 'hex');
+        return new Address(workChain, hash);
     }
 
-    toString() {
+    static parseFriendly(source: string) {
+        let addr = source.replace(/\-/g, '+').replace(/_/g, '\/'); // Convert from url-friendly to true base64
+        let r = parseFriendlyAddress(addr);
+        return {
+            isBounceable: r.isBounceable,
+            isTestOnly: r.isTestOnly,
+            address: new Address(r.workchain, r.hashPart)
+        };
+    }
+
+    readonly workChain: number;
+    readonly hash: Buffer;
+
+    constructor(workChain: number, hash: Buffer) {
+        this.workChain = workChain;
+        this.hash = hash;
+        Object.freeze(this);
+    }
+
+    toString = () => {
         return this.workChain + ':' + this.hash.toString('hex');
     }
 
-    toFriendlyString(args?: { urlSafe?: boolean, bounceable?: boolean, testOnly?: boolean }) {
-        let urlSafe = !!(args && args.urlSafe);
-        let testOnly = !!(args && args.testOnly);
-        let bounceable = !!(args && args.bounceable);
+    toFriendly = (args?: { urlSafe?: boolean, bounceable?: boolean, testOnly?: boolean }) => {
+        let urlSafe = (args && args.urlSafe !== undefined) ? args.urlSafe : true;
+        let testOnly = (args && args.testOnly !== undefined) ? args.testOnly : false;
+        let bounceable = (args && args.bounceable !== undefined) ? args.bounceable : true;
 
         let tag = bounceable ? bounceable_tag : non_bounceable_tag;
         if (testOnly) {

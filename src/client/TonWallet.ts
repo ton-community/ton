@@ -29,6 +29,13 @@ export class TonWallet {
     }
 
     /**
+     * Deploy Wallet Contract
+     */
+    async deploy() {
+        await this.#contract.methods.deploy().send();
+    }
+
+    /**
      * Transfer TON Coins
      */
     transfer = async (args: { to: string, amount: number, seqno: number, secretKey: Buffer }) => {
