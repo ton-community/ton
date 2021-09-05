@@ -114,6 +114,10 @@ export class Address {
         const addressWithChecksum = Buffer.alloc(36);
         addressWithChecksum.set(addr);
         addressWithChecksum.set(crc16(addr), 34);
-        return addressWithChecksum.toString(urlSafe ? 'base64url' : 'base64');
+        if (urlSafe) {
+            return addressWithChecksum.toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+        } else {
+            return addressWithChecksum.toString('base64');
+        }
     }
 }
