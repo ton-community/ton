@@ -1,4 +1,5 @@
 import BN from 'bn.js';
+import { Address } from '../address/Address';
 
 export class BitString implements Iterable<boolean> {
 
@@ -151,6 +152,17 @@ export class BitString implements Iterable<boolean> {
             const l = Math.ceil((amount.toString(16).length) / 2);
             this.writeUint(l, 4);
             this.writeUint(amount, l * 8);
+        }
+    }
+
+    writeAddress(address: Address | null) {
+        if (address === null) {
+            this.writeUint(0, 2);
+        } else {
+            this.writeUint(2, 2);
+            this.writeUint(0, 1);
+            this.writeInt(address.workChain, 8);
+            this.writeBuffer(address.hash);
         }
     }
 
