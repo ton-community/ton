@@ -26,7 +26,7 @@ export class TonWallet {
      * @returns seqno to use in transactions
      */
     async getSeqNo() {
-        return await this.#contract.methods.seqno().call() as number;
+        return (await this.#contract.methods.seqno().call()) as number;
     }
 
     /**
@@ -43,8 +43,8 @@ export class TonWallet {
 
         // Create Transfer
         const transfer = this.#contract.methods.transfer({
-            secretKey: args.secretKey,
-            toAddress: args.to.toString(),
+            secretKey: new Uint8Array(args.secretKey),
+            toAddress: args.to.toFriendly(),
             amount: TonWeb.utils.toNano(args.amount),
             seqno: args.seqno,
             sendMode: 3 /* Some magic number */

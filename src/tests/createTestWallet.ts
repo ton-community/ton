@@ -19,13 +19,15 @@ export async function createTestWallet(client: TonClient, amount: number) {
     const key = await mnemonicToWalletKey(testWalletMnemonics);
     const testWallet = await client.openWallet(key.publicKey);
     const wallet = await client.createWallet();
-    const seqno = await wallet.wallet.getSeqNo();
+    const seqno = await testWallet.getSeqNo();
+    console.warn(seqno);
     await testWallet.transfer({
         to: wallet.wallet.address,
         seqno: seqno,
         amount: amount,
         secretKey: wallet.key.secretKey
     });
+    console.warn(wallet.wallet.address.toFriendly());
     while (true) {
         await delay(1000);
         if (await wallet.wallet.getBalance() > 0) {
