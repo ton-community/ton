@@ -36,4 +36,14 @@ describe('TonClient', () => {
         let wallet = await client.createWallet();
         expect(wallet.wallet.address.workChain).toBe(0);
     });
+
+    it('should resolve contract info', async () => {
+        const client = await createTestClient();
+        let state = await client.getContractState(Address.parseFriendly('0QCyt4ltzak71h6XkyK4ePfZCzJQDSVUNuvZ3VE7hP_Q-GTE').address);
+        expect(state.balance).toBe(0);
+        expect(state.state).toBe('uninitialized');
+        state = await client.getContractState(Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address);
+        expect(state.balance).toBeGreaterThan(0);
+        expect(state.state).toBe('active');
+    });
 });

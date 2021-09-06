@@ -62,6 +62,20 @@ export class TonClient {
     }
 
     /**
+     * Resolves contract state
+     * @param address contract address
+     */
+    async getContractState(address: Address) {
+        let info = await this.#client.provider.getAddressInfo(address.toString());
+        let balance = fromNano(info.balance);
+        let state = info.state as 'frozen' | 'active' | 'uninitialized';
+        return {
+            balance,
+            state
+        };
+    }
+
+    /**
      * Open Wallet
      * @param publicKey wallet public key
      */
