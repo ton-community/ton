@@ -1,36 +1,23 @@
-import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient } from "..";
 import { delay } from "../utils/time";
-
-// If tests are failing, please full this wallet with more coins
-const testWallet = 'EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH';
-const testWalletMnemonics = [
-    'circle', 'task', 'moral',
-    'disagree', 'echo', 'kingdom',
-    'agent', 'kite', 'love',
-    'indoor', 'manage', 'orphan',
-    'royal', 'business', 'whisper',
-    'saddle', 'sun', 'dog',
-    'street', 'cart', 'flash',
-    'cheese', 'swift', 'turkey'
-];
+import { openTestTreasure } from "./openTestTreasure";
 
 export async function createTestWallet(client: TonClient, amount: number) {
-    const key = await mnemonicToWalletKey(testWalletMnemonics);
-    const testWallet = await client.openWallet(key.publicKey);
+    let treasure = await openTestTreasure(client);
     const wallet = await client.createWallet();
-    const seqno = await testWallet.getSeqNo();
-    console.warn(seqno);
-    await testWallet.transfer({
+    const seqno = await treasure.wallet.getSeqNo();
+    await treasure.wallet.transfer({
         to: wallet.wallet.address,
         seqno: seqno,
         amount: amount,
-        secretKey: wallet.key.secretKey
+        secretKey: treasure.secretKey,
+        bounceable: false
     });
-    console.warn(wallet.wallet.address.toFriendly());
     while (true) {
         await delay(1000);
-        if (await wallet.wallet.getBalance() > 0) {
+        let balance = await wallet.wallet.getBalance();
+        console.warn(balance);
+        if (balance > 0) {
             break;
         }
     }

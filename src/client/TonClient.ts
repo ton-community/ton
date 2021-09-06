@@ -3,6 +3,8 @@ import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
 import { Cell } from "../boc/Cell";
+import { fromNano } from "../utils/convert";
+import { BN } from "bn.js";
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -25,12 +27,14 @@ export class TonClient {
      * @param address address for balance check
      * @returns balance
      */
-    getBalance(address: string | Address) {
+    async getBalance(address: string | Address) {
+        let balance: string;
         if (typeof address === 'string') {
-            return this.#client.getBalance(address) as Promise<number>;
+            balance = await (this.#client.getBalance(address) as Promise<string>);
         } else {
-            return this.#client.getBalance(address.toString()) as Promise<number>;
+            balance = await (this.#client.getBalance(address.toString()) as Promise<string>);
         }
+        return fromNano(balance);
     }
 
     /**

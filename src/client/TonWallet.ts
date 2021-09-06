@@ -1,6 +1,6 @@
 import { Address } from "..";
+import { toNano } from "../utils/convert";
 import { TonClient } from "./TonClient";
-const TonWeb = require('tonweb');
 
 export class TonWallet {
     readonly address: Address;
@@ -39,13 +39,13 @@ export class TonWallet {
     /**
      * Transfer TON Coins
      */
-    transfer = async (args: { to: Address, amount: number, seqno: number, secretKey: Buffer }) => {
+    transfer = async (args: { to: Address, amount: number, seqno: number, secretKey: Buffer, bounceable: boolean }) => {
 
         // Create Transfer
         const transfer = this.#contract.methods.transfer({
             secretKey: new Uint8Array(args.secretKey),
-            toAddress: args.to.toFriendly(),
-            amount: TonWeb.utils.toNano(args.amount),
+            toAddress: args.to.toFriendly({ bounceable: args.bounceable }),
+            amount: toNano(args.amount),
             seqno: args.seqno,
             sendMode: 3 /* Some magic number */
         });
