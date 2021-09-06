@@ -56,9 +56,11 @@ export class TonClient {
      * Send message to a network
      * @param src source message
      */
-    sendMessage(src: Message) {
+    async sendMessage(src: Message) {
         const cell = new Cell();
         src.writeTo(cell);
+        let base64Boc = (await cell.toBoc({ idx: false })).toString('base64');
+        await this.#client.provider.sendBoc(base64Boc);
     }
 
     /**

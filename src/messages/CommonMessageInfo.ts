@@ -42,7 +42,6 @@ export class CommonMessageInfo implements Message {
 
         // Write body
         if (this.body) {
-            cell.bits.writeBit(1);
             const bodyCell = new Cell();
             this.body.writeTo(bodyCell);
             if (cell.bits.available >= bodyCell.bits.cursor) {

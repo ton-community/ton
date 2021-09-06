@@ -58,41 +58,36 @@ export class TonWallet {
     /**
      * Transfer TON Coins
      */
-    transfer = async (args: { to: Address, amount: number, seqno: number, secretKey: Buffer, bounceable?: Maybe<boolean> }) => {
+    transfer = async (args: { to: Address, value: number, seqno: number, secretKey: Buffer, bounceable?: Maybe<boolean> }) => {
 
-        // Resolve bounceable
-        let bounceable: boolean;
-        if (args.bounceable !== null && args.bounceable !== undefined) {
-            bounceable = args.bounceable;
-        } else {
-            let state = await this.#client.getContractState(args.to);
-            if (state.state === 'uninitialized') {
-                bounceable = false;
-            } else {
-                bounceable = true;
-            }
-        }
-
-        // Create Transfer
-        const transfer = this.#contract.methods.transfer({
-            secretKey: new Uint8Array(args.secretKey),
-            toAddress: args.to.toFriendly({ bounceable: bounceable }),
-            amount: toNano(args.amount),
+        // Prepare transaction
+        let prepare = await this.prepareTransfer({
+            to: args.to,
+            value: args.value,
             seqno: args.seqno,
-            sendMode: 3 /* Some magic number */
+            bounceable: args.bounceable
         });
 
-        await transfer.send();
+        // Sign transfer
+        let signed = await this.signTransfer(prepare, args.secretKey);
+
+        // Send transfer
+        await this.sendTransfer(signed);
     }
 
     /**
      * Prepares transfer
      * @param args 
      */
-    prepareTransfer = async (args: { to: Address, value: number, bounceable?: Maybe<boolean> }): Promise<TransferPackage> => {
+    prepareTransfer = async (args: { to: Address, value: number, seqno?: Maybe<number>, bounceable?: Maybe<boolean> }): Promise<TransferPackage> => {
 
         // Resolve bounceable
-        let seqno = await this.getSeqNo();
+        let seqno: number;
+        if (args.seqno !== null && args.seqno !== undefined) {
+            seqno = args.seqno;
+        } else {
+            seqno = await this.getSeqNo();
+        }
 
         // Resolve bounceable
         let bounceable: boolean;
@@ -127,14 +122,14 @@ export class TonWallet {
                 to: src.to,
                 value: src.value,
                 bounce: src.bounceable,
-                body: new CommonMessageInfo()
+                body: new CommonMessageInfo({ body: new EmptyMessage() })
             })
         });
 
         // Resolve signature
         const cell = new Cell();
         signingMessage.writeTo(cell);
-        let signature = tweetnacl.sign.detached(await cell.hash(), secretKey);
+        let signature = Buffer.from(tweetnacl.sign.detached(new Uint8Array(await cell.hash()), new Uint8Array(secretKey)));
 
         // Resolve body
         const body = new Cell();
@@ -151,6 +146,6 @@ export class TonWallet {
                 body: new RawMessage(signed)
             })
         });
-        this.#client.sendMessage(message);
+        await this.#client.sendMessage(message);
     }
 }

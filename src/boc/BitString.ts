@@ -176,6 +176,18 @@ export class BitString implements Iterable<boolean> {
         return new BitString(this.#buffer.slice(0), this.#length, this.#cursor);
     }
 
+    toString() {
+        let res = '';
+        for (let v of this) {
+            if (v) {
+                res = res + '1';
+            } else {
+                res = res + '0';
+            }
+        }
+        return res;
+    }
+
     //
     // Helpers
     //

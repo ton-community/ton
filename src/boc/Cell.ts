@@ -1,3 +1,4 @@
+import { Maybe } from '../types';
 import { BitString } from './BitString';
 const TonWeb = require('tonweb');
 
@@ -48,6 +49,14 @@ export class Cell {
 
     async hash() {
         return Buffer.from(await Cell.toNative(this).hash());
+    }
+
+    async toBoc(opts?: { idx?: Maybe<boolean>, crc32?: Maybe<boolean>, cacheBits?: Maybe<boolean>, flags?: Maybe<number> }) {
+        let idx = (opts && opts.idx !== null && opts.idx !== undefined) ? opts.idx : true;
+        let crc32 = (opts && opts.crc32 !== null && opts.crc32 !== undefined) ? opts.crc32 : true;
+        let cacheBits = (opts && opts.cacheBits !== null && opts.cacheBits !== undefined) ? opts.cacheBits : false;
+        let flags = (opts && opts.flags !== null && opts.flags !== undefined) ? opts.flags : 0;
+        return Buffer.from(await Cell.toNative(this).toBoc(idx, crc32, cacheBits, flags));
     }
 
     toHex(): string {

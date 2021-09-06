@@ -1,4 +1,4 @@
-jest.setTimeout(15000);
+jest.setTimeout(20000);
 import { createTestClient } from "./createTestClient";
 import { createTestWallet } from "./createTestWallet";
 
