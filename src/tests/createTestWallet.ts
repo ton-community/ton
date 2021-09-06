@@ -10,8 +10,7 @@ export async function createTestWallet(client: TonClient, amount: number) {
         to: wallet.wallet.address,
         seqno: seqno,
         amount: amount,
-        secretKey: treasure.secretKey,
-        bounceable: false
+        secretKey: treasure.secretKey
     });
     while (true) {
         await delay(1000);
