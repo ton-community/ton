@@ -1,6 +1,8 @@
 import { TonWallet } from "./TonWallet";
 import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 import { Address } from "../address/Address";
+import { Message } from "../messages/Message";
+import { Cell } from "../boc/Cell";
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -32,6 +34,15 @@ export class TonClient {
     }
 
     /**
+     * Send message to a network
+     * @param src source message
+     */
+    sendMessage(src: Message) {
+        const cell = new Cell();
+        src.writeTo(cell);
+    }
+
+    /**
      * Open Wallet
      * @param publicKey wallet public key
      */
@@ -40,7 +51,7 @@ export class TonClient {
             publicKey: publicKey,
             wc: 0
         });
-        const address = (await walletContract.getAddress()).toString(true, true, true) as string;
+        const address = Address.parseRaw((await walletContract.getAddress()).toString(false) as string);
         return new TonWallet(this, address, walletContract);
     }
 

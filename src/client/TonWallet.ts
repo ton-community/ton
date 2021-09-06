@@ -1,12 +1,13 @@
+import { Address } from "..";
 import { TonClient } from "./TonClient";
 const TonWeb = require('tonweb');
 
 export class TonWallet {
-    readonly address: string;
+    readonly address: Address;
     #client: TonClient;
     #contract: any;
 
-    constructor(client: TonClient, address: string, contract: any) {
+    constructor(client: TonClient, address: Address, contract: any) {
         this.#client = client;
         this.address = address;
         this.#contract = contract;
@@ -17,7 +18,7 @@ export class TonWallet {
      * @returns number of TON Coins in the wallet
      */
     getBalance() {
-        return this.#client.getBalance(this.address);
+        return this.#client.getBalance(this.address.toString());
     }
 
     /**
@@ -38,12 +39,12 @@ export class TonWallet {
     /**
      * Transfer TON Coins
      */
-    transfer = async (args: { to: string, amount: number, seqno: number, secretKey: Buffer }) => {
+    transfer = async (args: { to: Address, amount: number, seqno: number, secretKey: Buffer }) => {
 
         // Create Transfer
         const transfer = this.#contract.methods.transfer({
             secretKey: args.secretKey,
-            toAddress: args.to,
+            toAddress: args.to.toString(),
             amount: TonWeb.utils.toNano(args.amount),
             seqno: args.seqno,
             sendMode: 3 /* Some magic number */
