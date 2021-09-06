@@ -18,7 +18,7 @@ export class TonWallet {
      * @returns number of TON Coins in the wallet
      */
     getBalance() {
-        return this.#client.getBalance(this.address.toString());
+        return this.#client.getBalance(this.address);
     }
 
     /**
@@ -26,7 +26,8 @@ export class TonWallet {
      * @returns seqno to use in transactions
      */
     async getSeqNo() {
-        return (await this.#contract.methods.seqno().call()) as number;
+        let res = await this.#client.callGetMethod(this.address, 'seqno');
+        return parseInt(res.stack[0][1], 16);
     }
 
     /**

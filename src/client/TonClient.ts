@@ -27,7 +27,7 @@ export class TonClient {
      * @param address address for balance check
      * @returns balance
      */
-    async getBalance(address: string | Address) {
+    async getBalance(address: Address) {
         let balance: string;
         if (typeof address === 'string') {
             balance = await (this.#client.getBalance(address) as Promise<string>);
@@ -35,6 +35,21 @@ export class TonClient {
             balance = await (this.#client.getBalance(address.toString()) as Promise<string>);
         }
         return fromNano(balance);
+    }
+
+    /**
+     * Invoke get method
+     * @param address contract address
+     * @param name name of method
+     * @param params optional parameters
+     * @returns stack and gas_used field
+     */
+    async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[] }> {
+        let res = await this.#client.provider.call(address.toString(), name, params);
+        if (res.exit_code !== 0) {
+            throw Error('Unable to execute get method')
+        }
+        return { gas_used: res.gas_used, stack: res.stack };
     }
 
     /**
