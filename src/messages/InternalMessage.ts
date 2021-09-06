@@ -43,7 +43,7 @@ export class InternalMessage implements Message {
         if (opts.ihrDisabled !== null && opts.ihrDisabled !== undefined) {
             this.ihrDisabled = opts.ihrDisabled;
         } else {
-            this.ihrDisabled = false;
+            this.ihrDisabled = true;
         }
         if (opts.bounced !== null && opts.bounced !== undefined) {
             this.bounced = opts.bounced;
