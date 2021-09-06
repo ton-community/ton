@@ -16,7 +16,6 @@ export async function createTestWallet(client: TonClient, amount: number) {
     while (true) {
         await delay(1000);
         let balance = await wallet.wallet.getBalance();
-        console.warn(balance);
         if (balance > 0) {
             break;
         }
