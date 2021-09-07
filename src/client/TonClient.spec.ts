@@ -2,6 +2,7 @@ import { mnemonicToWalletKey } from "ton-crypto";
 import { Address } from "../address/Address";
 import { createTestClient } from "../tests/createTestClient";
 import { TonClient } from "./TonClient";
+// import { TonTransaction } from "./TonTransaction";
 
 describe('TonClient', () => {
     it('should read balance', async () => {
@@ -46,4 +47,26 @@ describe('TonClient', () => {
         expect(state.balance).toBeGreaterThan(0);
         expect(state.state).toBe('active');
     });
+
+    // it('should being able to read all transactions', async () => {
+    //     const client = await createTestClient();
+    //     const address = Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address;
+    //     const limit = 10;
+    //     let offset: { lt: string, hash: string } | null = null;
+    //     let txs: TonTransaction[] = [];
+    //     while (true) {
+    //         let tx2 = await client.getTransactions({ address, limit, before: offset });
+    //         for (let t of tx2) {
+    //             txs.push(t);
+    //         }
+
+    //         if (tx2.length === 0) {
+    //             break;
+    //         }
+
+    //         offset = tx2[tx2.length - 1].id as any;
+    //         console.log(offset);
+    //     }
+    //     console.warn(txs);
+    // });
 });

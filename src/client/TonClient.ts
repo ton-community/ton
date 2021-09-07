@@ -4,7 +4,10 @@ import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
 import { Cell } from "../boc/Cell";
 import { fromNano } from "../utils/convert";
-import { BN } from "bn.js";
+// import { BN } from "bn.js";
+// import { TonMessage, TonTransaction } from "./TonTransaction";
+// import { Maybe } from "../types";
+import { HttpApi } from "./api/HttpApi";
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -15,11 +18,13 @@ export class TonClient {
 
     readonly parameters: TonClientParameters;
 
+    #api: HttpApi;
     #client: any;
 
     constructor(parameters: TonClientParameters) {
         this.parameters = parameters;
-        this.#client = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint));
+        this.#client = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint + '/jsonRPC'));
+        this.#api = new HttpApi(parameters.endpoint);
     }
 
     /**
@@ -28,14 +33,55 @@ export class TonClient {
      * @returns balance
      */
     async getBalance(address: Address) {
-        let balance: string;
-        if (typeof address === 'string') {
-            balance = await (this.#client.getBalance(address) as Promise<string>);
-        } else {
-            balance = await (this.#client.getBalance(address.toString()) as Promise<string>);
-        }
+        let balance: string = await (this.#client.getBalance(address.toString()) as Promise<string>);
         return fromNano(balance);
     }
+
+    // async getTransactions(opts: { address: Address, limit?: Maybe<number>, before?: Maybe<{ lt: string, hash: string }> }): Promise<TonTransaction[]> {
+    //     let limit = 100;
+    //     if (opts.limit !== null && opts.limit !== undefined) {
+    //         limit = opts.limit;
+    //     }
+    //     let result: TonTransaction[] = [];
+    //     let res = await this.#client.provider.send('getTransactions', opts.before ? {
+    //         address: opts.address.toString(),
+    //         limit,
+    //         hash: opts.before.hash,
+    //         lt: opts.before.lt
+    //     } : {
+    //         address: opts.address.toString(),
+    //         limit,
+    //     });
+
+    //     function parseMessage(src: any): TonMessage {
+    //         return {
+    //             source: !!src.source ? src.source : null,
+    //             destination: !!src.destination ? src.destination : null,
+    //             value: new BN(src.value),
+    //             ihrFee: new BN(src.ihr_fee),
+    //             forwardFee: new BN(src.fwd_fee),
+    //             createdLt: src.created_lt,
+    //             message: !!src.message ? src.message : null
+    //         };
+    //     }
+
+    //     for (let r of res) {
+    //         let trans: TonTransaction = {
+    //             id: {
+    //                 lt: r.transaction_id.lt,
+    //                 hash: r.transaction_id.hash
+    //             },
+    //             data: r.data,
+    //             fee: new BN(r.fee),
+    //             storageFee: new BN(r.storage_fee),
+    //             otherFee: new BN(r.other_fee),
+    //             inMessage: parseMessage(r.in_msg),
+    //             outMessages: r.out_msgs.map(parseMessage)
+    //         };
+    //         result.push(trans);
+    //     }
+    //     return result;
+    // }
 
     /**
      * Invoke get method
