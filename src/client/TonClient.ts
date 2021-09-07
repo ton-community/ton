@@ -127,13 +127,17 @@ export class TonClient {
      * Open Wallet
      * @param publicKey wallet public key
      */
-    async openWallet(publicKey: Buffer) {
-        let walletContract = this.#client.wallet.create({
-            publicKey: publicKey,
-            wc: 0
-        });
-        const address = Address.parseRaw((await walletContract.getAddress()).toString(false) as string);
-        return new TonWallet(this, address, walletContract);
+    async openWallet(source: Buffer | Address) {
+        if (Buffer.isBuffer(source)) {
+            let walletContract = this.#client.wallet.create({
+                publicKey: source,
+                wc: 0
+            });
+            const address = Address.parseRaw((await walletContract.getAddress()).toString(false) as string);
+            return new TonWallet(this, address);
+        } else {
+            return new TonWallet(this, source);
+        }
     }
 
     /**

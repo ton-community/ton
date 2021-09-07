@@ -23,12 +23,10 @@ type TransferPackage = {
 export class TonWallet {
     readonly address: Address;
     #client: TonClient;
-    #contract: any;
 
-    constructor(client: TonClient, address: Address, contract: any) {
+    constructor(client: TonClient, address: Address) {
         this.#client = client;
         this.address = address;
-        this.#contract = contract;
     }
 
     /**
@@ -46,13 +44,6 @@ export class TonWallet {
     async getSeqNo() {
         let res = await this.#client.callGetMethod(this.address, 'seqno');
         return parseInt(res.stack[0][1], 16);
-    }
-
-    /**
-     * Deploy Wallet Contract
-     */
-    async deploy() {
-        await this.#contract.methods.deploy().send();
     }
 
     /**
