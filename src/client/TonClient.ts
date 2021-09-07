@@ -23,7 +23,7 @@ export class TonClient {
 
     constructor(parameters: TonClientParameters) {
         this.parameters = parameters;
-        this.#client = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint + '/jsonRPC'));
+        this.#client = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint));
         this.#api = new HttpApi(parameters.endpoint);
     }
 
