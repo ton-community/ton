@@ -16,8 +16,9 @@ export class Cell {
         return res;
     }
 
-    static fromBoc(src: Buffer): Cell[] {
-        let r = TonWeb.boc.Cell.fromBoc(src.toString('hex'));
+    static fromBoc(src: Buffer | string): Cell[] {
+        let s = typeof src === 'string' ? Buffer.from(src, 'hex') : src;
+        let r = TonWeb.boc.Cell.fromBoc(s.toString('hex'));
         let res: Cell[] = [];
         for (let rr of r) {
             res.push(Cell.fromNative(rr));
