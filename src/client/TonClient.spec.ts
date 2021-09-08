@@ -15,7 +15,7 @@ describe('TonClient', () => {
     });
 
     it('should use workchain 0 when load from mnemonics', async () => {
-        const client = await createTestClient();
+        const client = createTestClient();
         const mnemonics = [
             'circle', 'task', 'moral',
             'disagree', 'echo', 'kingdom',
@@ -33,13 +33,13 @@ describe('TonClient', () => {
     });
 
     it('should use workchain 0 when creating new wallet', async () => {
-        const client = await createTestClient();
+        const client = createTestClient();
         let wallet = await client.createWallet();
         expect(wallet.wallet.address.workChain).toBe(0);
     });
 
     it('should resolve contract info', async () => {
-        const client = await createTestClient();
+        const client = createTestClient();
         let state = await client.getContractState(Address.parseFriendly('0QCyt4ltzak71h6XkyK4ePfZCzJQDSVUNuvZ3VE7hP_Q-GTE').address);
         expect(state.balance).toBe(0);
         expect(state.state).toBe('uninitialized');

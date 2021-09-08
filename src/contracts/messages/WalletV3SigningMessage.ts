@@ -1,6 +1,6 @@
 import { Cell } from "../../boc/Cell";
 import { Maybe } from "../../types";
-import { Message } from "../Message";
+import { Message } from "../../messages/Message";
 
 export class WalletV3SigningMessage implements Message {
 

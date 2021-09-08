@@ -2,15 +2,13 @@ import { BN } from "bn.js";
 import { Address } from "../..";
 import { Cell } from "../../boc/Cell";
 import { toNano } from "../../utils/convert";
-import { delay } from "../../utils/time";
-import { CommonMessageInfo } from "../CommonMessageInfo";
-import { EmptyMessage } from "../EmptyMessage";
-import { InternalMessage } from "../InternalMessage";
+import { CommonMessageInfo } from "../../messages/CommonMessageInfo";
+import { EmptyMessage } from "../../messages/EmptyMessage";
+import { InternalMessage } from "../../messages/InternalMessage";
 import { WalletV3SigningMessage } from "./WalletV3SigningMessage";
 
 const NativeContract = require('tonweb').Contract;
 const NativeAddress = require('tonweb').Address;
-const NativeWallets = require('tonweb').Wallets;
 const NativeCell = require('tonweb').boc.Cell;
 
 describe('WalletV3SigningMessage', () => {

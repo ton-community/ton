@@ -4,10 +4,12 @@ import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
 import { Cell } from "../boc/Cell";
 import { fromNano } from "../utils/convert";
-// import { BN } from "bn.js";
-// import { TonMessage, TonTransaction } from "./TonTransaction";
-// import { Maybe } from "../types";
 import { HttpApi } from "./api/HttpApi";
+import { ExternalMessage } from "../messages/ExternalMessage";
+import { CommonMessageInfo } from "../messages/CommonMessageInfo";
+import { StateInit } from "../messages/StateInit";
+import { Contract } from "../contracts/Contract";
+import { RawMessage } from "../messages/RawMessage";
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -15,15 +17,14 @@ export type TonClientParameters = {
 }
 
 export class TonClient {
-
     readonly parameters: TonClientParameters;
 
     #api: HttpApi;
-    #client: any;
+    rawClient: any;
 
     constructor(parameters: TonClientParameters) {
         this.parameters = parameters;
-        this.#client = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint));
+        this.rawClient = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint));
         this.#api = new HttpApi(parameters.endpoint);
     }
 
@@ -33,7 +34,7 @@ export class TonClient {
      * @returns balance
      */
     async getBalance(address: Address) {
-        let balance: string = await (this.#client.getBalance(address.toString()) as Promise<string>);
+        let balance: string = await (this.rawClient.getBalance(address.toString()) as Promise<string>);
         return fromNano(balance);
     }
 
@@ -91,7 +92,7 @@ export class TonClient {
      * @returns stack and gas_used field
      */
     async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[] }> {
-        let res = await this.#client.provider.call(address.toString(), name, params);
+        let res = await this.rawClient.provider.call(address.toString(), name, params);
         if (res.exit_code !== 0) {
             throw Error('Unable to execute get method')
         }
@@ -106,7 +107,42 @@ export class TonClient {
         const cell = new Cell();
         src.writeTo(cell);
         let base64Boc = (await cell.toBoc({ idx: false })).toString('base64');
-        await this.#client.provider.sendBoc(base64Boc);
+        await this.rawClient.provider.sendBoc(base64Boc);
+    }
+
+    /**
+     * Send external message to contract
+     * @param contract contract to send message
+     * @param src message body
+     */
+    async sendExternalMessage(contract: Contract, src: Cell) {
+        if (await this.isContractDeployed(contract.address)) {
+            const message = new ExternalMessage({
+                to: contract.address,
+                body: new CommonMessageInfo({
+                    body: new RawMessage(src)
+                })
+            });
+            await this.sendMessage(message);
+        } else {
+            const message = new ExternalMessage({
+                to: contract.address,
+                body: new CommonMessageInfo({
+                    stateInit: new StateInit({ code: contract.source.initialCode, data: contract.source.initialData }),
+                    body: new RawMessage(src)
+                })
+            });
+            await this.sendMessage(message);
+        }
+    }
+
+    /**
+     * Check if contract is deployed
+     * @param address addres to check
+     * @returns true if contract is in active state
+     */
+    async isContractDeployed(address: Address) {
+        return (await this.getContractState(address)).state === 'active';
     }
 
     /**
@@ -114,7 +150,7 @@ export class TonClient {
      * @param address contract address
      */
     async getContractState(address: Address) {
-        let info = await this.#client.provider.getAddressInfo(address.toString());
+        let info = await this.rawClient.provider.getAddressInfo(address.toString());
         let balance = fromNano(info.balance);
         let state = info.state as 'frozen' | 'active' | 'uninitialized';
         return {
@@ -129,7 +165,7 @@ export class TonClient {
      */
     async openWallet(source: Buffer | Address) {
         if (Buffer.isBuffer(source)) {
-            let walletContract = this.#client.wallet.create({
+            let walletContract = this.rawClient.wallet.create({
                 publicKey: source,
                 wc: 0
             });

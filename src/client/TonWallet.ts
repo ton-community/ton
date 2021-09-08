@@ -4,7 +4,7 @@ import { Cell } from "../boc/Cell";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { EmptyMessage } from "../messages/EmptyMessage";
 import { InternalMessage } from "../messages/InternalMessage";
-import { WalletV3SigningMessage } from "../messages/wallet/WalletV3SigningMessage";
+import { WalletV3SigningMessage } from "../contracts/messages/WalletV3SigningMessage";
 import { Maybe } from "../types";
 import { toNano } from "../utils/convert";
 import { TonClient } from "./TonClient";

@@ -1,10 +1,9 @@
-import { Address, Cell } from "..";
+import { Cell } from "../..";
 import { ContractSource } from "./ContractSource";
-import { calculateAdress } from "./utils/calculateAdress";
 
-export class WalletV3R2Source implements ContractSource {
+export class WalletV1R2Source implements ContractSource {
 
-    static async create(opts: { publicKey: Buffer, workchain: number }) {
+    static create(opts: { publicKey: Buffer, workchain: number }) {
         // Resolve parameters
         let publicKey = opts.publicKey;
         let workchain = opts.workchain;
@@ -15,24 +14,21 @@ export class WalletV3R2Source implements ContractSource {
         initialData.bits.writeUint(0, 32); // SeqNo
         initialData.bits.writeBuffer(publicKey); // Public key
 
-        // Calculate address
-        let address = await calculateAdress(workchain, initialCode, initialData);
 
-        return new WalletV3R2Source({ publicKey, workchain, initialCode, initialData, address });
+        return new WalletV1R2Source({ publicKey, initialCode, initialData, workchain });
     }
 
     readonly publicKey: Buffer;
-    readonly workchain: number;
     readonly initialCode: Cell;
     readonly initialData: Cell;
-    readonly address: Address;
+    readonly workchain: number;
     readonly type = 'default:simple-wallet-2';
 
-    constructor(opts: { publicKey: Buffer, workchain: number, initialCode: Cell, initialData: Cell, address: Address }) {
+    private constructor(opts: { publicKey: Buffer, initialCode: Cell, initialData: Cell, workchain: number }) {
         this.publicKey = opts.publicKey;
-        this.workchain = opts.workchain;
         this.initialCode = opts.initialCode;
         this.initialData = opts.initialData;
-        this.address = opts.address;
+        this.workchain = opts.workchain;
+        Object.freeze(this);
     }
 }

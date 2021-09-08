@@ -97,6 +97,13 @@ export class Address {
         return this.workChain + ':' + this.hash.toString('hex');
     }
 
+    equals(src: Address) {
+        if (src.workChain !== this.workChain) {
+            return false;
+        }
+        return src.hash.equals(src.hash);
+    }
+
     toFriendly = (args?: { urlSafe?: boolean, bounceable?: boolean, testOnly?: boolean }) => {
         let urlSafe = (args && args.urlSafe !== undefined) ? args.urlSafe : true;
         let testOnly = (args && args.testOnly !== undefined) ? args.testOnly : false;
