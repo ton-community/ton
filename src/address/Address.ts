@@ -68,6 +68,10 @@ function parseFriendlyAddress(src: string) {
 
 export class Address {
 
+    isFriendly(source: String) {
+        return source.indexOf(':') >= 0;
+    }
+
     static parseRaw(source: string) {
         let workChain = parseInt(source.split(":")[0]);
         let hash = Buffer.from(source.split(":")[1], 'hex');
