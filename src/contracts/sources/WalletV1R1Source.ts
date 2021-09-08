@@ -20,7 +20,7 @@ export class WalletV1R1Source implements ContractSource {
     readonly initialCode: Cell;
     readonly initialData: Cell;
     readonly workchain: number;
-    readonly type = 'default:simple-wallet';
+    readonly type = 'org.ton.wallets.simple';
 
     private constructor(opts: { publicKey: Buffer, initialCode: Cell, initialData: Cell, workchain: number }) {
         this.publicKey = opts.publicKey;

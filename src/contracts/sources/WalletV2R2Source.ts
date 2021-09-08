@@ -21,7 +21,7 @@ export class WalletV2R2Source implements ContractSource {
     readonly initialCode: Cell;
     readonly initialData: Cell;
     readonly workchain: number;
-    readonly type = 'default:wallet-v2-2';
+    readonly type = 'org.ton.wallets.v2.r2';
 
     private constructor(opts: { publicKey: Buffer, initialCode: Cell, initialData: Cell, workchain: number }) {
         this.publicKey = opts.publicKey;

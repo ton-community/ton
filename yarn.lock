@@ -1079,15 +1079,15 @@ bn.js@4.11.6:
   resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-4.11.6.tgz#53344adb14617a13f6e8dd2ce28905d1c0ba3215"
   integrity sha1-UzRK2xRhehP26N0s4okF0cC6MhU=
 
+bn.js@5.2.0, bn.js@^5.0.0, bn.js@^5.1.1:
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-5.2.0.tgz#358860674396c6997771a9d051fcc1b57d4ae002"
+  integrity sha512-D7iWRBvnZE8ecXiLj/9wbxH7Tk79fAh8IHaTNq1RWRixsS02W+5qS+iE9yq6RYl0asXx5tw0bLhmT5pIfbSquw==
+
 bn.js@^4.0.0, bn.js@^4.1.0, bn.js@^4.11.9:
   version "4.12.0"
   resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-4.12.0.tgz#775b3f278efbb9718eec7361f483fb36fbbfea88"
   integrity sha512-c98Bf3tPniI+scsdk237ku1Dc3ujXQTSgyiPUDEOe7tRkhrqridvh8klBv0HCEso1OLOYcHuCv/cS6DNxKH+ZA==
-
-bn.js@^5.0.0, bn.js@^5.1.1, bn.js@^5.2.0:
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-5.2.0.tgz#358860674396c6997771a9d051fcc1b57d4ae002"
-  integrity sha512-D7iWRBvnZE8ecXiLj/9wbxH7Tk79fAh8IHaTNq1RWRixsS02W+5qS+iE9yq6RYl0asXx5tw0bLhmT5pIfbSquw==
 
 body-parser@^1.19.0:
   version "1.19.0"
@@ -2457,7 +2457,7 @@ isexe@^2.0.0:
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-2.0.0.tgz#e8fbf374dc556ff8947a10dcb0572d633f2cfa10"
   integrity sha1-6PvzdNxVb/iUehDcsFctYz8s+hA=
 
-isomorphic-unfetch@^3.1.0:
+isomorphic-unfetch@3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/isomorphic-unfetch/-/isomorphic-unfetch-3.1.0.tgz#87341d5f4f7b63843d468438128cb087b7c3e98f"
   integrity sha512-geDJjpoZ8N0kWexiwkX8F9NkTsXhetLPVbZFQ+JTW239QNOwvB0gniuR1Wc6f0AMTn7/mFGyXvHTifrCp/GH8Q==
@@ -4084,14 +4084,14 @@ toidentifier@1.0.0:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
   integrity sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==
 
-ton-crypto@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.1.0.tgz#c42592b9a2591442aefbccc4643924c2748532d9"
-  integrity sha512-6eRENtupVcGs8v2lAH55PR/ZJz/rxlsXMj7u+dWwgPMLIWLYPJBCWrbOftVmCCNmY1PEaL8605a11VZAvoqMSQ==
+ton-crypto@1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.2.0.tgz#36b561b4f8e72cf55079aac4c2ca46618fe19e99"
+  integrity sha512-LmvhZJ2NAC6i3AuMjXmteMFbXdPQkLbem4yCaHt0q9zSLyUYAc6sz8papZnMxFkrqlD32r8cMere4EdTIqu5yw==
   dependencies:
     tweetnacl "^1.0.3"
 
-tonweb@^0.0.18:
+tonweb@0.0.18:
   version "0.0.18"
   resolved "https://registry.yarnpkg.com/tonweb/-/tonweb-0.0.18.tgz#f2cf142dbe329894ccbc439f746aa401b2fcf3ee"
   integrity sha512-8adBN+edYbjsh6AKzaw69ne4l4Ohc0EnoJM8D/sPe4PRfzQr+W773mL7LgmLUAGNJJB9TCBHjdbH+7wjXrLT+A==

@@ -32,9 +32,9 @@
     "webpack": "^5.51.2"
   },
   "dependencies": {
-    "bn.js": "^5.2.0",
-    "isomorphic-unfetch": "^3.1.0",
-    "ton-crypto": "^1.1.0",
-    "tonweb": "^0.0.18"
+    "bn.js": "5.2.0",
+    "isomorphic-unfetch": "3.1.0",
+    "ton-crypto": "1.2.0",
+    "tonweb": "0.0.18"
   }
 }

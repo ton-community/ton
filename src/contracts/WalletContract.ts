@@ -24,7 +24,6 @@ export type WalletContractSource =
     | WalletV3R1Source
     | WalletV3R2Source
     ;
-
 export class WalletContract implements Contract {
 
     static async create(client: TonClient, source: WalletContractSource) {
@@ -42,10 +41,6 @@ export class WalletContract implements Contract {
         this.source = source;
     }
 
-    async getBalance() {
-        return await this.client.getBalance(this.address);
-    }
-
     async getSeqNo() {
         if (await this.client.isContractDeployed(this.address)) {
             let res = await this.client.callGetMethod(this.address, 'seqno');
@@ -60,25 +55,25 @@ export class WalletContract implements Contract {
         // Prepare message
         let signingMessage: Message;
         switch (this.source.type) {
-            case 'default:simple-wallet':
-            case 'default:simple-wallet-2':
-            case 'default:simple-wallet-3':
+            case 'org.ton.wallets.simple':
+            case 'org.ton.wallets.simple.r2':
+            case 'org.ton.wallets.simple.r3':
                 signingMessage = new WalletV1SigningMessage({
                     seqno: args.seqno,
                     sendMode: args.sendMode,
                     order: args.order
                 });
                 break;
-            case 'default:wallet-v2':
-            case 'default:wallet-v2-2':
+            case 'org.ton.wallets.v2':
+            case 'org.ton.wallets.v2.r2':
                 signingMessage = new WalletV2SigningMessage({
                     seqno: args.seqno,
                     sendMode: args.sendMode,
                     order: args.order
                 });
                 break;
-            case 'default:wallet-v3':
-            case 'default:wallet-v3-2':
+            case 'org.ton.wallets.v3':
+            case 'org.ton.wallets.v3.r2':
                 signingMessage = new WalletV3SigningMessage({
                     seqno: args.seqno,
                     sendMode: args.sendMode,
