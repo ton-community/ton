@@ -10,6 +10,8 @@ import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { StateInit } from "../messages/StateInit";
 import { Contract } from "../contracts/Contract";
 import { RawMessage } from "../messages/RawMessage";
+import { Wallet } from "./Wallet";
+import { ElectorContract } from "../contracts/ElectorContract";
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -21,6 +23,10 @@ export class TonClient {
 
     #api: HttpApi;
     rawClient: any;
+
+    services = {
+        elector: new ElectorContract(this)
+    };
 
     constructor(parameters: TonClientParameters) {
         this.parameters = parameters;
@@ -183,7 +189,7 @@ export class TonClient {
     async createWallet(password?: string | null | undefined) {
         let mnemonic = await mnemonicNew(24, password);
         let key = await mnemonicToWalletKey(mnemonic, password);
-        let wallet = await this.openWallet(key.publicKey);
+        let wallet = await Wallet.findBestBySecretKey(this, 0, key.secretKey);
         return {
             mnemonic,
             key,

@@ -120,7 +120,7 @@ export class Wallet {
         this.address = address;
     }
 
-    async getSeqno() {
+    async getSeqNo() {
         if (await this.#client.isContractDeployed(this.address)) {
             let res = await this.#client.callGetMethod(this.address, 'seqno');
             return parseInt(res.stack[0][1], 16);
@@ -173,7 +173,7 @@ export class Wallet {
      */
     async transferPrepare(to: Address) {
         let bounce = this.#client.isContractDeployed(to);
-        let seqno = this.getSeqno();
+        let seqno = this.getSeqNo();
         return {
             bounce: await bounce,
             seqno: await seqno
