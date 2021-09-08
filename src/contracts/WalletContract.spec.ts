@@ -6,6 +6,7 @@ import { awaitBalance } from "../tests/awaitBalance";
 import { awaitCondition } from "../tests/awaitCondition";
 import { createTestClient } from "../tests/createTestClient";
 import { openTestTreasure } from "../tests/openTestTreasure";
+import { toNano } from "../utils/convert";
 // import { delay } from "../utils/time";
 // import { WalletV1R1Source } from "./sources/WalletV1R1Source";
 import { WalletV1R2Source } from "./sources/WalletV1R2Source";
@@ -36,7 +37,7 @@ async function testSource(secretKey: Buffer, source: WalletContractSource) {
         secretKey,
         order: new InternalMessage({
             to: treasure.wallet.address,
-            value: 0.01,
+            value: toNano(0.01),
             bounce: true,
             body: new CommonMessageInfo({ body: new EmptyMessage() })
         })
