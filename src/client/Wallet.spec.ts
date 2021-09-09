@@ -48,7 +48,6 @@ describe('Wallet', () => {
             to: dest,
             bounce: false,
             value: toNano(0.001),
-            type: 'org.ton.wallets.v3',
             seqno,
             secretKey: treasure.secretKey
         });
