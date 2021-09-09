@@ -23,7 +23,7 @@ async function testSource(secretKey: Buffer, source: WalletContractSource) {
     const contract = await WalletContract.create(client, source);
     console.log('testing contract: ' + source.type + ' at ' + contract.address.toFriendly());
     let treasureSeqno = await treasure.wallet.getSeqNo();
-    await treasure.wallet.transfer({ to: contract.address, seqno: treasureSeqno, value: 0.05, secretKey: treasure.secretKey, bounceable: false });
+    await treasure.wallet.transfer({ to: contract.address, seqno: treasureSeqno, value: toNano(0.05), secretKey: treasure.secretKey, bounce: false });
     console.log('awaiting transfer');
     await awaitBalance(client, contract.address, 0);
 

@@ -56,6 +56,14 @@ export class Wallet {
         return new Wallet(client, address);
     }
 
+    static async openDefault(client: TonClient, workchain: number, secretKey: Buffer): Promise<Wallet> {
+        const publicKey = keyPairFromSecretKey(secretKey).publicKey;
+        let c = await createContract(client, 'org.ton.wallets.v3', publicKey, workchain);
+        let w = new Wallet(client, c.address);
+        await w.prepare(workchain, publicKey, 'org.ton.wallets.v3');
+        return w;
+    }
+
     static async findActiveBySecretKey(client: TonClient, workchain: number, secretKey: Buffer): Promise<{ address: Address, type: WalletContractType, deployed: boolean, balance: number }[]> {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
         let types: { address: Address, type: WalletContractType, deployed: boolean, balance: number }[] = [];
@@ -76,10 +84,7 @@ export class Wallet {
 
         // Create default one if no wallet exists
         if (allActive.length === 0) {
-            let c = await createContract(client, 'org.ton.wallets.v3', publicKey, workchain);
-            let w = new Wallet(client, c.address);
-            await w.prepare(workchain, publicKey, 'org.ton.wallets.v3');
-            return w;
+            return this.openDefault(client, workchain, secretKey);
         }
 
         // Try to match with biggest balance

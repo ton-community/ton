@@ -1,4 +1,3 @@
-import { TonWallet } from "./TonWallet";
 import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
@@ -12,6 +11,7 @@ import { Contract } from "../contracts/Contract";
 import { RawMessage } from "../messages/RawMessage";
 import { Wallet } from "./Wallet";
 import { ElectorContract } from "../contracts/ElectorContract";
+import { Maybe } from '../types';
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -100,6 +100,7 @@ export class TonClient {
     async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[] }> {
         let res = await this.rawClient.provider.call(address.toString(), name, params);
         if (res.exit_code !== 0) {
+            console.warn(res);
             throw Error('Unable to execute get method. Got exit_code: ' + res.exit_code);
         }
         return { gas_used: res.gas_used, stack: res.stack };
@@ -166,30 +167,32 @@ export class TonClient {
     }
 
     /**
-     * Open Wallet
-     * @param publicKey wallet public key
+     * Open Wallet from address
+     * @param source wallet address
+     * @returns wallet with specified address
      */
-    async openWallet(source: Buffer | Address) {
-        if (Buffer.isBuffer(source)) {
-            let walletContract = this.rawClient.wallet.create({
-                publicKey: source,
-                wc: 0
-            });
-            const address = Address.parseRaw((await walletContract.getAddress()).toString(false) as string);
-            return new TonWallet(this, address);
-        } else {
-            return new TonWallet(this, source);
-        }
+    openWalletFromAddress(args: { source: Address }) {
+        return Wallet.open(this, args.source);
+    }
+
+    /**
+     * Open Wallet from secret key. Searches for best wallet contract.
+     * @param workchain wallet workchain
+     * @param secretKey wallet secret key
+     * @returns best matched wallet
+     */
+    openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
+        return Wallet.findBestBySecretKey(this, args.workchain, args.secretKey);
     }
 
     /**
      * Securely creates new wallet
      * @param password optional password
      */
-    async createWallet(password?: string | null | undefined) {
-        let mnemonic = await mnemonicNew(24, password);
-        let key = await mnemonicToWalletKey(mnemonic, password);
-        let wallet = await Wallet.findBestBySecretKey(this, 0, key.secretKey);
+    async createNewWallet(args: { workchain: number, password?: Maybe<string> }) {
+        let mnemonic = await mnemonicNew(24, args.password);
+        let key = await mnemonicToWalletKey(mnemonic, args.password);
+        let wallet = await Wallet.openDefault(this, args.workchain, key.secretKey);
         return {
             mnemonic,
             key,

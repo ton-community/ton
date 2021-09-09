@@ -1,15 +1,17 @@
 import { TonClient } from "..";
+import { toNano } from "../utils/convert";
 import { awaitBalance } from "./awaitBalance";
 import { openTestTreasure } from "./openTestTreasure";
 
 export async function createTestWallet(client: TonClient, value: number) {
     let treasure = await openTestTreasure(client);
-    const wallet = await client.createWallet();
+    const wallet = await client.createNewWallet({ workchain: 0 });
     const seqno = await treasure.wallet.getSeqNo();
     await treasure.wallet.transfer({
         to: wallet.wallet.address,
         seqno: seqno,
-        value: value,
+        bounce: false,
+        value: toNano(value),
         secretKey: treasure.secretKey
     });
 
