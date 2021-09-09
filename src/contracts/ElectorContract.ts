@@ -31,7 +31,7 @@ export class ElectorContract implements Contract {
             let addrraw = new BN(e.tuple.elements[1].tuple.elements[2].number.number).toString('hex');
 
             let address = new Address(-1, Buffer.from(addrraw, 'hex'));
-            console.warn(Buffer.from(addrraw, 'hex').length);
+            // console.warn(Buffer.from(addrraw, 'hex').length);
             entities.push({ pubkey, stake: fromNano(stake), address });
         }
         return entities;
