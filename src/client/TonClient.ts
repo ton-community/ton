@@ -171,7 +171,7 @@ export class TonClient {
      * @param source wallet address
      * @returns wallet with specified address
      */
-    openWalletFromAddress(args: { source: Address }) {
+    async openWalletFromAddress(args: { source: Address }) {
         return Wallet.open(this, args.source);
     }
 
@@ -181,8 +181,17 @@ export class TonClient {
      * @param secretKey wallet secret key
      * @returns best matched wallet
      */
-    openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
+    async openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
         return Wallet.findBestBySecretKey(this, args.workchain, args.secretKey);
+    }
+
+    /**
+     * Open wallet with default contract
+     * @param args workchain and secret key
+     * @returns wallet
+     */
+    async openWalletDefaultFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
+        return Wallet.openDefault(this, args.workchain, args.secretKey);
     }
 
     /**
