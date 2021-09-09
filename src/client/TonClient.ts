@@ -100,7 +100,7 @@ export class TonClient {
     async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[] }> {
         let res = await this.rawClient.provider.call(address.toString(), name, params);
         if (res.exit_code !== 0) {
-            throw Error('Unable to execute get method')
+            throw Error('Unable to execute get method. Got exit_code: ' + res.exit_code);
         }
         return { gas_used: res.gas_used, stack: res.stack };
     }

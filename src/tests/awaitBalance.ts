@@ -1,7 +1,7 @@
 import { Address, TonClient } from "..";
 import { delay } from "../utils/time";
 
-const TIMEOUT = 20000;
+const TIMEOUT = 25000;
 
 export async function awaitBalance(client: TonClient, address: Address, value: number) {
     let start = Date.now();

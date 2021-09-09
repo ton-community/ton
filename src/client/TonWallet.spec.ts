@@ -12,10 +12,10 @@ import { openTestTreasure } from "../tests/openTestTreasure";
 import { delay } from "../utils/time";
 const tonweb = require('tonweb');
 describe('TonWallet', () => {
-    it('should throw on when trying to get seqno of unintitialized contract', async () => {
+    it('should return zero when trying to get seqno of unintitialized contract', async () => {
         const client = createTestClient();
         const wallet = await client.createWallet();
-        await expect(wallet.wallet.getSeqNo()).rejects.toThrowError();
+        expect(await wallet.wallet.getSeqNo()).toBe(0);
     });
 
     it('should return valid seqno on initialized contract', async () => {

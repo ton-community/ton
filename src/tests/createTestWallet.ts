@@ -1,5 +1,5 @@
 import { TonClient } from "..";
-import { delay } from "../utils/time";
+import { awaitBalance } from "./awaitBalance";
 import { openTestTreasure } from "./openTestTreasure";
 
 export async function createTestWallet(client: TonClient, value: number) {
@@ -12,12 +12,8 @@ export async function createTestWallet(client: TonClient, value: number) {
         value: value,
         secretKey: treasure.secretKey
     });
-    while (true) {
-        await delay(1000);
-        let balance = await wallet.wallet.getBalance();
-        if (balance > 0) {
-            break;
-        }
-    }
+
+    await awaitBalance(client, wallet.wallet.address, 0);
+
     return wallet;
 }
