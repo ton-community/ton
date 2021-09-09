@@ -105,7 +105,7 @@ export class Address {
         if (src.workChain !== this.workChain) {
             return false;
         }
-        return src.hash.equals(src.hash);
+        return src.hash.equals(this.hash);
     }
 
     toFriendly = (args?: { urlSafe?: boolean, bounceable?: boolean, testOnly?: boolean }) => {

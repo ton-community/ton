@@ -34,4 +34,15 @@ describe('Address', () => {
         expect(address.toFriendly({ bounceable: false, urlSafe: false })).toMatch('UQAs9VlT6S776tq3unJcP5Ogsj+ELLunLXuOb1EKcOQi41+E');
         expect(address.toFriendly({ bounceable: false, urlSafe: false, testOnly: true })).toMatch('0QAs9VlT6S776tq3unJcP5Ogsj+ELLunLXuOb1EKcOQi4+QO');
     });
+    it('should implement equals', () => {
+        let address1 = Address.parseRaw('0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3');
+        let address2 = Address.parseRaw('0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3');
+        let address3 = Address.parseRaw('-1:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3');
+        let address4 = Address.parseRaw('0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e5');
+        expect(address1.equals(address2)).toBe(true);
+        expect(address2.equals(address1)).toBe(true);
+        expect(address2.equals(address4)).toBe(false);
+        expect(address2.equals(address3)).toBe(false);
+        expect(address4.equals(address3)).toBe(false);
+    });
 });
