@@ -140,14 +140,11 @@ export class Wallet {
     /**
      * Transfers value to specified address
      */
-    async transfer(args: { seqno: number, to: Address, value: BN, secretKey: Buffer }) {
+    async transfer(args: { seqno: number, to: Address, value: BN, secretKey: Buffer, bounce: boolean }) {
         const contract = this.#contract;
         if (!contract) {
             throw Error('Please, prepare wallet first');
         }
-
-        // Check if deployed
-        let deployed = await this.#client.isContractDeployed(args.to);
 
         // Check transfer
         const transfer = await contract.createTransfer({
@@ -157,27 +154,13 @@ export class Wallet {
             order: new InternalMessage({
                 to: args.to,
                 value: args.value,
-                bounce: deployed,
+                bounce: args.bounce,
                 body: new CommonMessageInfo()
             })
         });
 
         // Send
         await this.#client.sendExternalMessage(contract, transfer);
-    }
-
-    /**
-     * Fetching required information for transfer
-     * @param to address to transfer values to
-     * @returns required bounce and seqno values
-     */
-    async transferPrepare(to: Address) {
-        let bounce = this.#client.isContractDeployed(to);
-        let seqno = this.getSeqNo();
-        return {
-            bounce: await bounce,
-            seqno: await seqno
-        };
     }
 
     /**
