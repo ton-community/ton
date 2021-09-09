@@ -178,7 +178,6 @@ export class Wallet {
         bounce: boolean,
         seqno: number,
         value: BN,
-        type: WalletContractType,
         secretKey: Buffer
     }) {
         const contract = this.#contract;
