@@ -118,13 +118,9 @@ export class Address {
     }
 
     toBuffer = () => {
-        const addr = Buffer.alloc(34);
-        addr[0] = 0;
-        addr[1] = this.workChain;
-        addr.set(this.hash, 2);
         const addressWithChecksum = Buffer.alloc(36);
-        addressWithChecksum.set(addr);
-        addressWithChecksum.set(crc16(addr), 34);
+        addressWithChecksum.set(this.hash);
+        addressWithChecksum.set([this.workChain, this.workChain, this.workChain, this.workChain], 32);
         return addressWithChecksum;
     }
 
