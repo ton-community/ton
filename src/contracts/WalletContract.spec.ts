@@ -61,35 +61,41 @@ describe('WalletContract', () => {
         let mnemonic = await mnemonicNew(24);
         let key = await mnemonicToWalletKey(mnemonic);
         await testSource(key.secretKey, WalletV1R2Source.create({ publicKey: key.publicKey, workchain: 0 }));
+        await testSource(key.secretKey, WalletV1R2Source.create({ publicKey: key.publicKey, workchain: -1 }));
     }, 60000);
 
     it('should work for v1r3 contract', async () => {
         let mnemonic = await mnemonicNew(24);
         let key = await mnemonicToWalletKey(mnemonic);
         await testSource(key.secretKey, WalletV1R3Source.create({ publicKey: key.publicKey, workchain: 0 }));
+        await testSource(key.secretKey, WalletV1R3Source.create({ publicKey: key.publicKey, workchain: -1 }));
     }, 60000);
 
     it('should work for v2r1 contract', async () => {
         let mnemonic = await mnemonicNew(24);
         let key = await mnemonicToWalletKey(mnemonic);
         await testSource(key.secretKey, WalletV2R1Source.create({ publicKey: key.publicKey, workchain: 0 }));
+        await testSource(key.secretKey, WalletV2R1Source.create({ publicKey: key.publicKey, workchain: -1 }));
     }, 60000);
 
     it('should work for v2r2 contract', async () => {
         let mnemonic = await mnemonicNew(24);
         let key = await mnemonicToWalletKey(mnemonic);
         await testSource(key.secretKey, WalletV2R2Source.create({ publicKey: key.publicKey, workchain: 0 }));
+        await testSource(key.secretKey, WalletV2R2Source.create({ publicKey: key.publicKey, workchain: -1 }));
     }, 60000);
 
     it('should work for v3r1 contract', async () => {
         let mnemonic = await mnemonicNew(24);
         let key = await mnemonicToWalletKey(mnemonic);
         await testSource(key.secretKey, WalletV3R1Source.create({ publicKey: key.publicKey, workchain: 0 }));
+        await testSource(key.secretKey, WalletV3R1Source.create({ publicKey: key.publicKey, workchain: -1 }));
     }, 60000);
 
     it('should work for v3r2 contract', async () => {
         let mnemonic = await mnemonicNew(24);
         let key = await mnemonicToWalletKey(mnemonic);
         await testSource(key.secretKey, WalletV3R2Source.create({ publicKey: key.publicKey, workchain: 0 }));
+        await testSource(key.secretKey, WalletV3R2Source.create({ publicKey: key.publicKey, workchain: -1 }));
     }, 60000);
 });

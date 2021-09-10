@@ -75,6 +75,7 @@ export class WalletContract implements Contract {
             case 'org.ton.wallets.v3':
             case 'org.ton.wallets.v3.r2':
                 signingMessage = new WalletV3SigningMessage({
+                    walletId: this.source.walletId,
                     seqno: args.seqno,
                     sendMode: args.sendMode,
                     order: args.order
