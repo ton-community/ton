@@ -24,8 +24,8 @@ function crc16(data: Buffer) {
     return Buffer.from([Math.floor(reg / 256), reg % 256]);
 }
 
-function parseFriendlyAddress(src: string) {
-    const data = Buffer.from(src, 'base64');
+function parseFriendlyAddress(src: string | Buffer) {
+    const data = Buffer.isBuffer(src) ? src : Buffer.from(src, 'base64');
 
     // 1byte tag + 1byte workchain + 32 bytes hash + 2 byte crc
     if (data.length !== 36) {
@@ -78,14 +78,23 @@ export class Address {
         return new Address(workChain, hash);
     }
 
-    static parseFriendly(source: string) {
-        let addr = source.replace(/\-/g, '+').replace(/_/g, '\/'); // Convert from url-friendly to true base64
-        let r = parseFriendlyAddress(addr);
-        return {
-            isBounceable: r.isBounceable,
-            isTestOnly: r.isTestOnly,
-            address: new Address(r.workchain, r.hashPart)
-        };
+    static parseFriendly(source: string | Buffer) {
+        if (Buffer.isBuffer(source)) {
+            let r = parseFriendlyAddress(source);
+            return {
+                isBounceable: r.isBounceable,
+                isTestOnly: r.isTestOnly,
+                address: new Address(r.workchain, r.hashPart)
+            };
+        } else {
+            let addr = source.replace(/\-/g, '+').replace(/_/g, '\/'); // Convert from url-friendly to true base64
+            let r = parseFriendlyAddress(addr);
+            return {
+                isBounceable: r.isBounceable,
+                isTestOnly: r.isTestOnly,
+                address: new Address(r.workchain, r.hashPart)
+            };
+        }
     }
 
     readonly workChain: number;
@@ -108,8 +117,7 @@ export class Address {
         return src.hash.equals(this.hash);
     }
 
-    toFriendly = (args?: { urlSafe?: boolean, bounceable?: boolean, testOnly?: boolean }) => {
-        let urlSafe = (args && args.urlSafe !== undefined) ? args.urlSafe : true;
+    toFriendlyBuffer = (args?: { bounceable?: boolean, testOnly?: boolean }) => {
         let testOnly = (args && args.testOnly !== undefined) ? args.testOnly : false;
         let bounceable = (args && args.bounceable !== undefined) ? args.bounceable : true;
 
@@ -125,10 +133,16 @@ export class Address {
         const addressWithChecksum = Buffer.alloc(36);
         addressWithChecksum.set(addr);
         addressWithChecksum.set(crc16(addr), 34);
+        return addressWithChecksum;
+    }
+
+    toFriendly = (args?: { urlSafe?: boolean, bounceable?: boolean, testOnly?: boolean }) => {
+        let urlSafe = (args && args.urlSafe !== undefined) ? args.urlSafe : true;
+        let buffer = this.toFriendlyBuffer(args);
         if (urlSafe) {
-            return addressWithChecksum.toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+            return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
         } else {
-            return addressWithChecksum.toString('base64');
+            return buffer.toString('base64');
         }
     }
 }

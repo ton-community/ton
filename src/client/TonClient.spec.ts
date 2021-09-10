@@ -38,6 +38,12 @@ describe('TonClient', () => {
         expect(wallet.wallet.address.workChain).toBe(0);
     });
 
+    it('should use workchain -1 when creating new wallet', async () => {
+        const client = createTestClient();
+        let wallet = await client.createNewWallet({ workchain: -1 });
+        expect(wallet.wallet.address.workChain).toBe(-1);
+    });
+
     it('should resolve contract info', async () => {
         const client = createTestClient();
         let state = await client.getContractState(Address.parseFriendly('0QCyt4ltzak71h6XkyK4ePfZCzJQDSVUNuvZ3VE7hP_Q-GTE').address);
