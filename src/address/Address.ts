@@ -117,6 +117,17 @@ export class Address {
         return src.hash.equals(this.hash);
     }
 
+    toBuffer = () => {
+        const addr = Buffer.alloc(34);
+        addr[0] = 0;
+        addr[1] = this.workChain;
+        addr.set(this.hash, 2);
+        const addressWithChecksum = Buffer.alloc(36);
+        addressWithChecksum.set(addr);
+        addressWithChecksum.set(crc16(addr), 34);
+        return addressWithChecksum;
+    }
+
     toFriendlyBuffer = (args?: { bounceable?: boolean, testOnly?: boolean }) => {
         let testOnly = (args && args.testOnly !== undefined) ? args.testOnly : false;
         let bounceable = (args && args.bounceable !== undefined) ? args.bounceable : true;
