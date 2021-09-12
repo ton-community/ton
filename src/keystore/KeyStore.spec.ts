@@ -1,9 +1,10 @@
+jest.setTimeout(60000);
 import { Address } from "..";
 import { KeyStore } from "./KeyStore";
 
 describe('KeyStore', () => {
     it('should create new storre', async () => {
-        let keystore = await KeyStore.createNew();
+        let keystore = await KeyStore.createNew('password');
         expect(keystore.allKeys.length).toBe(0);
         let saved = await keystore.save();
         let keystore2 = await KeyStore.load(saved);
@@ -11,7 +12,7 @@ describe('KeyStore', () => {
     });
 
     it('should add new keys', async () => {
-        let keystore = await KeyStore.createNew();
+        let keystore = await KeyStore.createNew('password');
         await keystore.addKey({
             name: 'key-1',
             kind: 'test-key',

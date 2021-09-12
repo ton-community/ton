@@ -5,6 +5,7 @@ import { Address } from '..';
 
 const codec = t.type({
     version: t.number,
+    salt: t.string,
     records: t.array(t.type({
         name: t.string,
         address: t.string,
@@ -39,8 +40,12 @@ export type KeyRecord = {
 
 export class KeyStore {
 
-    static async createNew() {
-        return new KeyStore({ version: 1, records: [] });
+    static async createNew(password: string) {
+        let encryptionSalt = await pbkdf2_sha512(password, 'TON Encrypted Storage Salt', 1000000, 32);
+        let encryptionNonce = await pbkdf2_sha512(password, 'TON Encrypted Storage Nonce', 1000000, 24);
+        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage Key', 1000000, 32);
+        let sealed = sealBox(encryptionSalt, encryptionNonce, encryptionKey).toString('hex');
+        return new KeyStore({ version: 1, salt: sealed, records: [] });
     }
 
     static async load(source: Buffer) {
@@ -64,12 +69,14 @@ export class KeyStore {
         return new KeyStore(decoded.right);
     }
 
+    #salt: string;
     #records = new Map<string, KeyRecordStorage>();
 
     private constructor(src: RawType) {
         if (src.version !== 1) {
             throw Error('Unsupported keystore');
         }
+        this.#salt = src.salt;
         for (let r of src.records) {
             if (this.#records.has(r.name)) {
                 throw Error('Broken keystore');
@@ -112,7 +119,7 @@ export class KeyStore {
         let src = Buffer.from(record.secretKey, 'hex');
         let nonce = src.slice(0, 24);
         let data = src.slice(24);
-        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage: ' + record.name, 10000, 32);
+        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage: ' + record.name, 1000000, 32);
         let res = openBox(data, nonce, encryptionKey);
         if (!res) {
             throw Error('Invalid password');
@@ -124,13 +131,21 @@ export class KeyStore {
         if (this.#records.has(record.name)) {
             throw Error('Key with name ' + record.name + ' already exists');
         }
-        Object.freeze(record);
+
+        // Check password
+        let encryptionSalt = await pbkdf2_sha512(password, 'TON Encrypted Storage Salt', 1000000, 32);
+        let encryptionNonce = await pbkdf2_sha512(password, 'TON Encrypted Storage Nonce', 1000000, 24);
+        let encryptionKey2 = await pbkdf2_sha512(password, 'TON Encrypted Storage Key', 1000000, 32);
+        let sealed = sealBox(encryptionSalt, encryptionNonce, encryptionKey2);
+        if (!sealed.equals(Buffer.from(this.#salt, 'hex'))) {
+            throw Error('Invalid password');
+        }
 
         // Create key
-        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage: ' + record.name, 10000, 32);
+        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage: ' + record.name, 1000000, 32);
         let nonce = await getSecureRandomBytes(24);
         let encryptedSecretKey = sealBox(key, nonce, encryptionKey);
-        this.#records.set(record.name, {
+        let rec = {
             name: record.name,
             address: record.address,
             kind: record.kind,
@@ -138,7 +153,9 @@ export class KeyStore {
             comment: record.comment,
             publicKey: record.publicKey.toString('hex'),
             secretKey: Buffer.concat([nonce, encryptedSecretKey]).toString('hex')
-        });
+        };
+        Object.freeze(rec);
+        this.#records.set(record.name, rec);
     }
 
     removeKey = (name: string) => {
@@ -151,6 +168,7 @@ export class KeyStore {
     async save() {
         let store: RawType = {
             version: 1,
+            salt: this.#salt,
             records: Array.from(this.#records.entries()).map((v) => ({
                 name: v[1].name,
                 address: v[1].address.toString(),
