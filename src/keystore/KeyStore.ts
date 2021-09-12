@@ -28,7 +28,7 @@ type KeyRecordStorage = {
     secretKey: string;
 };
 
-export type KeyRecordPublic = {
+export type KeyRecord = {
     name: string;
     address: Address;
     kind: string;
@@ -89,7 +89,7 @@ export class KeyStore {
     }
 
     get allKeys() {
-        let res: KeyRecordPublic[] = [];
+        let res: KeyRecord[] = [];
         for (let k of this.#records.keys()) {
             let r = this.#records.get(k)!;
             res.push({
@@ -120,7 +120,7 @@ export class KeyStore {
         return res;
     }
 
-    addKey = async (record: KeyRecordPublic, password: string, key: Buffer) => {
+    addKey = async (record: KeyRecord, password: string, key: Buffer) => {
         if (this.#records.has(record.name)) {
             throw Error('Key with name ' + record.name + ' already exists');
         }
