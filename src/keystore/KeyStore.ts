@@ -111,6 +111,18 @@ export class KeyStore {
         return res;
     }
 
+    checkPassword = async (password: string) => {
+        // Check password
+        let encryptionSalt = await pbkdf2_sha512(password, 'TON Encrypted Storage Salt', 1000000, 32);
+        let encryptionNonce = await pbkdf2_sha512(password, 'TON Encrypted Storage Nonce', 1000000, 24);
+        let encryptionKey2 = await pbkdf2_sha512(password, 'TON Encrypted Storage Key', 1000000, 32);
+        let sealed = sealBox(encryptionSalt, encryptionNonce, encryptionKey2);
+        if (!sealed.equals(Buffer.from(this.#salt, 'hex'))) {
+            return false;
+        }
+        return true;
+    }
+
     getSecretKey = async (name: string, password: string) => {
         if (!this.#records.has(name)) {
             throw Error('Key with name ' + name + ' does not exist');
@@ -133,11 +145,7 @@ export class KeyStore {
         }
 
         // Check password
-        let encryptionSalt = await pbkdf2_sha512(password, 'TON Encrypted Storage Salt', 1000000, 32);
-        let encryptionNonce = await pbkdf2_sha512(password, 'TON Encrypted Storage Nonce', 1000000, 24);
-        let encryptionKey2 = await pbkdf2_sha512(password, 'TON Encrypted Storage Key', 1000000, 32);
-        let sealed = sealBox(encryptionSalt, encryptionNonce, encryptionKey2);
-        if (!sealed.equals(Buffer.from(this.#salt, 'hex'))) {
+        if (!(await this.checkPassword(password))) {
             throw Error('Invalid password');
         }
 
