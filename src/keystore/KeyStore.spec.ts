@@ -20,18 +20,18 @@ describe('KeyStore', () => {
             config: '',
             comment: '',
             publicKey: Buffer.from([4, 5, 6])
-        }, 'password', Buffer.from([1, 2, 3]));
+        }, Buffer.from([1, 2, 3]));
         expect(keystore.allKeys.length).toBe(1);
         let saved = await keystore.save();
         let keystore2 = await KeyStore.load(saved);
         expect(keystore2.allKeys.length).toBe(1);
 
-        let secret = await keystore.getSecretKey('key-1', 'password');
+        let secret = await keystore.getSecret('key-1', 'password');
         expect(secret).toEqual(Buffer.from([1, 2, 3]));
-        secret = await keystore2.getSecretKey('key-1', 'password');
+        secret = await keystore2.getSecret('key-1', 'password');
         expect(secret).toEqual(Buffer.from([1, 2, 3]));
 
-        await expect(keystore.getSecretKey('key-1', 'wrong password')).rejects.toThrowError();
-        await expect(keystore2.getSecretKey('key-1', 'wrong password')).rejects.toThrowError();
+        await expect(keystore.getSecret('key-1', 'wrong password')).rejects.toThrowError();
+        await expect(keystore2.getSecret('key-1', 'wrong password')).rejects.toThrowError();
     });
 });

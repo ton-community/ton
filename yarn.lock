@@ -4094,10 +4094,10 @@ toidentifier@1.0.0:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
   integrity sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==
 
-ton-crypto@1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.3.0.tgz#608a6af640cae634ca1bcb60b46413f87101b0aa"
-  integrity sha512-43Z7NCjNlALpfVVE1tKFgWagVU8MaAKIAwlFQeCe1r1rAT0G06q7yDQJDIo3hw79sbVbAd92RBCq3CNTFy4a/g==
+ton-crypto@1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.3.2.tgz#34f18979d6c8f083c7ea8d4741b14ad79a352515"
+  integrity sha512-2v8WgCnJzOSfRWdmxac/mkphCRQF32r7HXAJFDSeUtzBK71Rnud10MgEo3YkwD1sG4hB8UYffRH+49Wl7X+i9A==
   dependencies:
     tweetnacl "1.0.3"
 

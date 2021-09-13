@@ -1,11 +1,13 @@
-import { getSecureRandomBytes, openBox, pbkdf2_sha512, sealBox, sha256 } from 'ton-crypto';
+import { getSecureRandomBytes, pbkdf2_sha512, sha256 } from 'ton-crypto';
 import * as t from 'io-ts';
 import { isLeft } from 'fp-ts/lib/Either';
 import { Address } from '..';
+import nacl from 'tweetnacl';
 
 const codec = t.type({
     version: t.number,
     salt: t.string,
+    publicKey: t.string,
     records: t.array(t.type({
         name: t.string,
         address: t.string,
@@ -38,14 +40,21 @@ export type KeyRecord = {
     publicKey: Buffer;
 }
 
+export async function createKeyStoreKey(password: string, salt: Buffer) {
+    let secretKey = await pbkdf2_sha512(password, salt, 400000, 32);
+    let r = nacl.box.keyPair.fromSecretKey(secretKey);
+    return {
+        secretKey: Buffer.from(r.secretKey),
+        publicKey: Buffer.from(r.publicKey)
+    }
+}
+
 export class KeyStore {
 
     static async createNew(password: string) {
-        let encryptionSalt = await pbkdf2_sha512(password, 'TON Encrypted Storage Salt', 1000000, 32);
-        let encryptionNonce = await pbkdf2_sha512(password, 'TON Encrypted Storage Nonce', 1000000, 24);
-        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage Key', 1000000, 32);
-        let sealed = sealBox(encryptionSalt, encryptionNonce, encryptionKey).toString('hex');
-        return new KeyStore({ version: 1, salt: sealed, records: [] });
+        let salt = await getSecureRandomBytes(32);
+        let key = await createKeyStoreKey(password, salt);
+        return new KeyStore({ version: 1, salt: salt.toString('hex'), publicKey: key.publicKey.toString('hex'), records: [] });
     }
 
     static async load(source: Buffer) {
@@ -70,6 +79,7 @@ export class KeyStore {
     }
 
     #salt: string;
+    #publicKey: string;
     #records = new Map<string, KeyRecordStorage>();
 
     private constructor(src: RawType) {
@@ -77,6 +87,7 @@ export class KeyStore {
             throw Error('Unsupported keystore');
         }
         this.#salt = src.salt;
+        this.#publicKey = src.publicKey;
         for (let r of src.records) {
             if (this.#records.has(r.name)) {
                 throw Error('Broken keystore');
@@ -112,47 +123,71 @@ export class KeyStore {
     }
 
     checkPassword = async (password: string) => {
-        // Check password
-        let encryptionSalt = await pbkdf2_sha512(password, 'TON Encrypted Storage Salt', 1000000, 32);
-        let encryptionNonce = await pbkdf2_sha512(password, 'TON Encrypted Storage Nonce', 1000000, 24);
-        let encryptionKey2 = await pbkdf2_sha512(password, 'TON Encrypted Storage Key', 1000000, 32);
-        let sealed = sealBox(encryptionSalt, encryptionNonce, encryptionKey2);
-        if (!sealed.equals(Buffer.from(this.#salt, 'hex'))) {
+        let key = await createKeyStoreKey(password, Buffer.from(this.#salt, 'hex'));
+        if (!key.publicKey.equals(Buffer.from(this.#publicKey, 'hex'))) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
-    getSecretKey = async (name: string, password: string) => {
+    hasKey = (name: string) => {
+        return this.#records.has(name);
+    }
+
+    getKey = (name: string): KeyRecord | null => {
+        let ex = this.#records.get(name);
+        if (ex) {
+            return {
+                name: ex.name,
+                address: ex.address,
+                kind: ex.kind,
+                config: ex.config,
+                comment: ex.comment,
+                publicKey: Buffer.from(ex.publicKey, 'hex')
+            };
+        }
+        return null;
+    }
+
+    getSecret = async (name: string, password: string) => {
         if (!this.#records.has(name)) {
             throw Error('Key with name ' + name + ' does not exist');
         }
         let record = this.#records.get(name)!;
         let src = Buffer.from(record.secretKey, 'hex');
         let nonce = src.slice(0, 24);
-        let data = src.slice(24);
-        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage: ' + record.name, 1000000, 32);
-        let res = openBox(data, nonce, encryptionKey);
-        if (!res) {
+        let publicKey = src.slice(24, 24 + 32);
+        let data = src.slice(24 + 32);
+
+        // Derive key
+        let key = await createKeyStoreKey(password, Buffer.from(this.#salt, 'hex'));
+        if (!key.publicKey.equals(Buffer.from(this.#publicKey, 'hex'))) {
             throw Error('Invalid password');
         }
-        return res;
+
+        // Decode
+        let decoded = nacl.box.open(data, nonce, publicKey, key.secretKey);
+        if (!decoded) {
+            throw Error('Invalid password');
+        }
+
+        return Buffer.from(decoded);
     }
 
-    addKey = async (record: KeyRecord, password: string, key: Buffer) => {
+    addKey = async (record: KeyRecord, key: Buffer) => {
         if (this.#records.has(record.name)) {
             throw Error('Key with name ' + record.name + ' already exists');
         }
 
-        // Check password
-        if (!(await this.checkPassword(password))) {
-            throw Error('Invalid password');
-        }
-
         // Create key
-        let encryptionKey = await pbkdf2_sha512(password, 'TON Encrypted Storage: ' + record.name, 1000000, 32);
+        let ephemeralKeySecret = await getSecureRandomBytes(32);
+        let ephemeralKeyPublic = Buffer.from((nacl.box.keyPair.fromSecretKey(ephemeralKeySecret)).publicKey);
         let nonce = await getSecureRandomBytes(24);
-        let encryptedSecretKey = sealBox(key, nonce, encryptionKey);
+        let encrypted = nacl.box(key, nonce, Buffer.from(this.#publicKey, 'hex'), ephemeralKeySecret);
+        let data = Buffer.concat([nonce, ephemeralKeyPublic, encrypted]);
+
+        // Create record
         let rec = {
             name: record.name,
             address: record.address,
@@ -160,7 +195,7 @@ export class KeyStore {
             config: record.config,
             comment: record.comment,
             publicKey: record.publicKey.toString('hex'),
-            secretKey: Buffer.concat([nonce, encryptedSecretKey]).toString('hex')
+            secretKey: data.toString('hex')
         };
         Object.freeze(rec);
         this.#records.set(record.name, rec);
@@ -177,6 +212,7 @@ export class KeyStore {
         let store: RawType = {
             version: 1,
             salt: this.#salt,
+            publicKey: this.#publicKey,
             records: Array.from(this.#records.entries()).map((v) => ({
                 name: v[1].name,
                 address: v[1].address.toString(),
