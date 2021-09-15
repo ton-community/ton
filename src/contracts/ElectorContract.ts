@@ -1,6 +1,5 @@
 import BN from "bn.js";
 import { Address, TonClient } from "..";
-import { fromNano } from "../utils/convert";
 import { Contract } from "./Contract";
 import { ContractSource } from "./sources/ContractSource";
 import { UnknownContractSource } from "./sources/UnknownContractSource";
@@ -23,7 +22,7 @@ export class ElectorContract implements Contract {
         // let allStakes = parseInt(res.stack[3][1], 16);
         let electionEntries = res.stack[4][1].elements;
 
-        let entities: { pubkey: Buffer, stake: number, address: Address }[] = [];
+        let entities: { pubkey: Buffer, stake: BN, address: Address }[] = [];
         for (let e of electionEntries) {
             let pubkey = Buffer.from(e.tuple.elements[0].number.number, 'hex');
             let stake = new BN(e.tuple.elements[1].tuple.elements[0].number.number);
@@ -32,7 +31,7 @@ export class ElectorContract implements Contract {
 
             let address = new Address(-1, Buffer.from(addrraw, 'hex'));
             // console.warn(Buffer.from(addrraw, 'hex').length);
-            entities.push({ pubkey, stake: fromNano(stake), address });
+            entities.push({ pubkey, stake: stake, address });
         }
         return entities;
     }

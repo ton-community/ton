@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "bn.js": "5.2.0",
+    "ethjs-unit": "^0.1.6",
     "fp-ts": "^2.11.1",
     "io-ts": "^2.2.16",
     "isomorphic-unfetch": "3.1.0",

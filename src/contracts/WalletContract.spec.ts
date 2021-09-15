@@ -1,3 +1,4 @@
+import { BN } from "bn.js";
 import { mnemonicNew, mnemonicToWalletKey } from "ton-crypto";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { EmptyMessage } from "../messages/EmptyMessage";
@@ -23,9 +24,9 @@ async function testSource(secretKey: Buffer, source: WalletContractSource) {
     const contract = await WalletContract.create(client, source);
     console.log('testing contract: ' + source.type + ' at ' + contract.address.toFriendly());
     let treasureSeqno = await treasure.wallet.getSeqNo();
-    await treasure.wallet.transfer({ to: contract.address, seqno: treasureSeqno, value: toNano(0.05), secretKey: treasure.secretKey, bounce: false });
+    await treasure.wallet.transfer({ to: contract.address, seqno: treasureSeqno, value: toNano(0.1), secretKey: treasure.secretKey, bounce: false });
     console.log('awaiting transfer');
-    await awaitBalance(client, contract.address, 0);
+    await awaitBalance(client, contract.address, new BN(0));
 
     // Update seqno
     console.log('sending transaction');
@@ -37,7 +38,7 @@ async function testSource(secretKey: Buffer, source: WalletContractSource) {
         secretKey,
         order: new InternalMessage({
             to: treasure.wallet.address,
-            value: toNano(0.01),
+            value: toNano(0.05),
             bounce: true,
             body: new CommonMessageInfo({ body: new EmptyMessage() })
         })

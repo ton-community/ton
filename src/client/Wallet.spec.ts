@@ -26,7 +26,7 @@ describe('Wallet', () => {
         let seqno = await treasure.wallet.getSeqNo();
         await treasure.wallet.transfer({
             to: dest,
-            value: toNano(0.001),
+            value: toNano(0.05),
             bounce: false,
             seqno,
             secretKey: treasure.secretKey
@@ -47,7 +47,7 @@ describe('Wallet', () => {
         let signed = await treasure.wallet.transferSign({
             to: dest,
             bounce: false,
-            value: toNano(0.001),
+            value: toNano(0.05),
             seqno,
             secretKey: treasure.secretKey
         });

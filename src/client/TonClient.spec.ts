@@ -1,3 +1,4 @@
+import { BN } from "bn.js";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { Address } from "../address/Address";
 import { createTestClient } from "../tests/createTestClient";
@@ -9,9 +10,9 @@ describe('TonClient', () => {
         const client = new TonClient({ endpoint: 'https://toncenter.com/api/v2/jsonRPC' });
         const address = Address.parseFriendly('0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO');
         let balance = (await client.getBalance(address.address));
-        expect(balance).toBe(0);
+        expect(balance.eq(new BN(0))).toBe(true);
         balance = (await client.getBalance(Address.parseFriendly('0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO').address));
-        expect(balance).toBe(0);
+        expect(balance.eq(new BN(0))).toBe(true);
     });
 
     it('should use workchain 0 when load from mnemonics', async () => {
@@ -47,10 +48,10 @@ describe('TonClient', () => {
     it('should resolve contract info', async () => {
         const client = createTestClient();
         let state = await client.getContractState(Address.parseFriendly('0QCyt4ltzak71h6XkyK4ePfZCzJQDSVUNuvZ3VE7hP_Q-GTE').address);
-        expect(state.balance).toBe(0);
+        expect(state.balance.eq(new BN(0))).toBe(true);
         expect(state.state).toBe('uninitialized');
         state = await client.getContractState(Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address);
-        expect(state.balance).toBeGreaterThan(0);
+        expect(state.balance.gte(new BN(0))).toBe(true);
         expect(state.state).toBe('active');
     });
 

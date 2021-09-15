@@ -1,3 +1,4 @@
+import { BN } from "bn.js";
 import { TonClient } from "..";
 import { toNano } from "../utils/convert";
 import { awaitBalance } from "./awaitBalance";
@@ -15,7 +16,7 @@ export async function createTestWallet(client: TonClient, value: number) {
         secretKey: treasure.secretKey
     });
 
-    await awaitBalance(client, wallet.wallet.address, 0);
+    await awaitBalance(client, wallet.wallet.address, new BN(0));
 
     return wallet;
 }

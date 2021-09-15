@@ -64,14 +64,14 @@ export class Wallet {
         return w;
     }
 
-    static async findActiveBySecretKey(client: TonClient, workchain: number, secretKey: Buffer): Promise<{ address: Address, type: WalletContractType, deployed: boolean, balance: number }[]> {
+    static async findActiveBySecretKey(client: TonClient, workchain: number, secretKey: Buffer): Promise<{ address: Address, type: WalletContractType, deployed: boolean, balance: BN }[]> {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
-        let types: { address: Address, type: WalletContractType, deployed: boolean, balance: number }[] = [];
+        let types: { address: Address, type: WalletContractType, deployed: boolean, balance: BN }[] = [];
         for (let type of allTypes) {
             let contra = await createContract(client, type, publicKey, workchain);
             let deployed = await client.isContractDeployed(contra.address);
             let balance = await client.getBalance(contra.address);
-            if (deployed || balance > 0) {
+            if (deployed || balance.gt(new BN(0))) {
                 types.push({ address: contra.address, type, balance, deployed });
             }
         }
@@ -93,12 +93,12 @@ export class Wallet {
         for (let i = 1; i < allActive.length; i++) {
             let ac = allActive[i];
             // Contracts are sorted by priority
-            if (ac.balance >= maxBalance) {
+            if (ac.balance.gte(maxBalance)) {
                 maxBalance = ac.balance;
                 bestContract = ac.type;
             }
         }
-        if (maxBalance > 0) {
+        if (maxBalance.gt(new BN(0))) {
             let c = await createContract(client, bestContract, publicKey, workchain);;
             let w = new Wallet(client, c.address);
             await w.prepare(workchain, publicKey, bestContract);

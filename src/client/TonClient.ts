@@ -2,7 +2,6 @@ import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
 import { Cell } from "../boc/Cell";
-import { fromNano } from "../utils/convert";
 import { HttpApi } from "./api/HttpApi";
 import { ExternalMessage } from "../messages/ExternalMessage";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
@@ -12,6 +11,7 @@ import { RawMessage } from "../messages/RawMessage";
 import { Wallet } from "./Wallet";
 import { ElectorContract } from "../contracts/ElectorContract";
 import { Maybe } from '../types';
+import { BN } from 'bn.js';
 const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
@@ -41,7 +41,7 @@ export class TonClient {
      */
     async getBalance(address: Address) {
         let balance: string = await (this.rawClient.getBalance(address.toString()) as Promise<string>);
-        return fromNano(balance);
+        return new BN(balance);
     }
 
     // async getTransactions(opts: { address: Address, limit?: Maybe<number>, before?: Maybe<{ lt: string, hash: string }> }): Promise<TonTransaction[]> {
@@ -158,7 +158,7 @@ export class TonClient {
      */
     async getContractState(address: Address) {
         let info = await this.rawClient.provider.getAddressInfo(address.toString());
-        let balance = fromNano(info.balance);
+        let balance = new BN(info.balance);
         let state = info.state as 'frozen' | 'active' | 'uninitialized';
         return {
             balance,

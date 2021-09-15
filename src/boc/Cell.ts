@@ -1,6 +1,6 @@
 import { Maybe } from '../types';
 import { BitString } from './BitString';
-const TonWeb = require('tonweb');
+const NativeCell = require('tonweb/src/boc/Cell').Cell;
 
 
 export class Cell {
@@ -18,7 +18,7 @@ export class Cell {
 
     static fromBoc(src: Buffer | string): Cell[] {
         let s = typeof src === 'string' ? Buffer.from(src, 'hex') : src;
-        let r = TonWeb.boc.Cell.fromBoc(s.toString('hex'));
+        let r = NativeCell.fromBoc(s.toString('hex'));
         let res: Cell[] = [];
         for (let rr of r) {
             res.push(Cell.fromNative(rr));
@@ -27,7 +27,7 @@ export class Cell {
     }
 
     static toNative(src: Cell) {
-        let res = new TonWeb.boc.Cell();
+        let res = new NativeCell();
         for (let v of src.bits) {
             res.bits.writeBit(v);
         }
