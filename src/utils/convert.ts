@@ -1,10 +1,10 @@
 import BN from "bn.js";
-const TonWeb = require('tonweb');
+const ethUnit = require('ethjs-unit');
 
 export function toNano(src: number | string | BN) {
-    return TonWeb.utils.toNano(src) as BN;
+    return ethUnit.toWei(src, 'gwei') as BN;
 }
 
 export function fromNano(src: BN | number | string) {
-    return TonWeb.utils.fromNano(src) as string;
+    return ethUnit.fromWei(src, 'gwei') as string;
 }
