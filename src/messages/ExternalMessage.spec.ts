@@ -16,6 +16,6 @@ describe('ExternalMessage', () => {
         }).writeTo(cell);
 
         let res = NativeContract.createExternalMessageHeader('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH');
-        expect(cell.toHex()).toEqual(res.print());
+        expect(cell.toString()).toEqual(res.print());
     });
 });

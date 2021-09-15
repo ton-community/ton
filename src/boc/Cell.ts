@@ -1,45 +1,20 @@
 import { Maybe } from '../types';
 import { BitString } from './BitString';
-const NativeCell = require('tonweb/src/boc/Cell').Cell;
-
+import { deserializeBoc, hashCell, serializeToBoc } from './boc';
 
 export class Cell {
 
-    static fromNative(src: any) {
-        let res = new Cell();
-        src.bits.forEach((v: boolean) => {
-            res.bits.writeBit(v);
-        });
-        for (let ref of src.refs) {
-            res.refs.push(Cell.fromNative(ref));
-        }
-        return res;
-    }
-
     static fromBoc(src: Buffer | string): Cell[] {
-        let s = typeof src === 'string' ? Buffer.from(src, 'hex') : src;
-        let r = NativeCell.fromBoc(s.toString('hex'));
-        let res: Cell[] = [];
-        for (let rr of r) {
-            res.push(Cell.fromNative(rr));
-        }
-        return res;
-    }
-
-    static toNative(src: Cell) {
-        let res = new NativeCell();
-        for (let v of src.bits) {
-            res.bits.writeBit(v);
-        }
-        for (let ref of src.refs) {
-            res.refs.push(Cell.toNative(ref));
-        }
-        return res;
+        return deserializeBoc(typeof src === 'string' ? Buffer.from(src, 'hex') : src);
     }
 
     readonly bits = BitString.alloc(1023);
     readonly refs: Cell[] = [];
-    readonly isExotic: boolean = false;
+    readonly isExotic: boolean;
+
+    constructor(isExotic: boolean = false) {
+        this.isExotic = isExotic;
+    }
 
     writeCell(anotherCell: Cell) {
         this.bits.writeBitString(anotherCell.bits);
@@ -48,19 +23,25 @@ export class Cell {
         }
     }
 
-    async hash() {
-        return Buffer.from(await Cell.toNative(this).hash());
+    hash() {
+        return hashCell(this);
     }
 
-    async toBoc(opts?: { idx?: Maybe<boolean>, crc32?: Maybe<boolean>, cacheBits?: Maybe<boolean>, flags?: Maybe<number> }) {
+    toBoc(opts?: { idx?: Maybe<boolean>, crc32?: Maybe<boolean>, cacheBits?: Maybe<boolean>, flags?: Maybe<number> }) {
         let idx = (opts && opts.idx !== null && opts.idx !== undefined) ? opts.idx : true;
         let crc32 = (opts && opts.crc32 !== null && opts.crc32 !== undefined) ? opts.crc32 : true;
         let cacheBits = (opts && opts.cacheBits !== null && opts.cacheBits !== undefined) ? opts.cacheBits : false;
         let flags = (opts && opts.flags !== null && opts.flags !== undefined) ? opts.flags : 0;
-        return Buffer.from(await Cell.toNative(this).toBoc(idx, crc32, cacheBits, flags));
+        return serializeToBoc(this, idx, crc32, cacheBits, flags);
     }
 
-    toHex(): string {
-        return Cell.toNative(this).print();
+    toString(indent?: string): string {
+        let id = indent || '';
+        let s = id + 'x{' + this.bits.toFiftHex() + '}\n';
+        for (let k in this.refs) {
+            const i = this.refs[k];
+            s += i.toString(id + ' ');
+        }
+        return s;
     }
 }

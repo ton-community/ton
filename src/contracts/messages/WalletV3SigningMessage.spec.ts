@@ -54,6 +54,6 @@ describe('WalletV3SigningMessage', () => {
         });
         const signCell = new Cell();
         signingMessage2.writeTo(signCell);
-        expect(signCell.toHex()).toEqual(signingMessage.print());
+        expect(signCell.toString()).toEqual(signingMessage.print());
     });
 });

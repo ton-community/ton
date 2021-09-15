@@ -11,14 +11,14 @@ describe('CommonMessageInfo', () => {
             let cell = new Cell();
             new CommonMessageInfo().writeTo(cell);
             let res = NativeContract.createCommonMsgInfo(new NativeCell());
-            expect(cell.toHex()).toEqual(res.print());
+            expect(cell.toString()).toEqual(res.print());
         }
 
         {
             let cell = new Cell();
             new CommonMessageInfo({ body: new EmptyMessage() }).writeTo(cell);
             let res = NativeContract.createCommonMsgInfo(new NativeCell(), null, new NativeCell());
-            expect(cell.toHex()).toEqual(res.print());
+            expect(cell.toString()).toEqual(res.print());
         }
     });
 });

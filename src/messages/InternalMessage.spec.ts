@@ -26,6 +26,6 @@ describe('InternalMessage', () => {
         });
         const cell = new Cell();
         orderOwn.writeTo(cell);
-        expect(cell.toHex()).toEqual(order.print());
+        expect(cell.toString()).toEqual(order.print());
     });
 });

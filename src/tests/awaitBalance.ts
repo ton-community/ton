@@ -2,7 +2,7 @@ import BN from "bn.js";
 import { Address, TonClient } from "..";
 import { delay } from "../utils/time";
 
-const TIMEOUT = 25000;
+const TIMEOUT = 30000;
 
 export async function awaitBalance(client: TonClient, address: Address, value: BN) {
     let start = Date.now();

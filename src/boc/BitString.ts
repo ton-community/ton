@@ -188,6 +188,64 @@ export class BitString implements Iterable<boolean> {
         return res;
     }
 
+    toFiftHex(): string {
+        if (this.cursor % 4 === 0) {
+            const s = this.#buffer.slice(0, Math.ceil(this.cursor / 8)).toString('hex').toUpperCase();
+            if (this.cursor % 8 === 0) {
+                return s;
+            } else {
+                return s.substr(0, s.length - 1);
+            }
+        } else {
+            const temp = this.clone();
+            temp.writeBit(1);
+            while (temp.cursor % 4 !== 0) {
+                temp.writeBit(0);
+            }
+            const hex = temp.toFiftHex().toUpperCase();
+            return hex + '_';
+        }
+    }
+
+    setTopUppedArray(array: Buffer, fullfilledBytes = true) {
+        this.#length = array.length * 8;
+        this.#buffer = array;
+        this.#cursor = this.length;
+        if (fullfilledBytes || !this.length) {
+            return;
+        } else {
+            let foundEndBit = false;
+            for (let c = 0; c < 7; c++) {
+                this.#cursor -= 1;
+                if (this.get(this.cursor)) {
+                    foundEndBit = true;
+                    this.off(this.cursor);
+                    break;
+                }
+            }
+            if (!foundEndBit) {
+                console.log(array, fullfilledBytes);
+                throw new Error("Incorrect TopUppedArray");
+            }
+        }
+    }
+
+    getTopUppedArray() {
+        const ret = this.clone();
+
+        let tu = Math.ceil(ret.cursor / 8) * 8 - ret.cursor;
+        if (tu > 0) {
+            tu = tu - 1;
+            ret.writeBit(true);
+            while (tu > 0) {
+                tu = tu - 1;
+                ret.writeBit(false);
+            }
+        }
+        ret.#buffer = ret.#buffer.slice(0, Math.ceil(ret.cursor / 8));
+        return ret.#buffer;
+    }
+
     //
     // Helpers
     //
