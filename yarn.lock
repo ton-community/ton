@@ -3012,6 +3012,11 @@ jsonfile@^4.0.0:
   optionalDependencies:
     graceful-fs "^4.1.6"
 
+jssha@3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/jssha/-/jssha-3.2.0.tgz#88ec50b866dd1411deaddbe6b3e3692e4c710f16"
+  integrity sha512-QuruyBENDWdN4tZwJbQq7/eAK85FqrI4oDbXjy5IBhYD+2pTJyBUWZe8ctWaCkrV0gy6AaelgOZZBMeswEa/6Q==
+
 karma-chrome-launcher@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/karma-chrome-launcher/-/karma-chrome-launcher-3.1.0.tgz#805a586799a4d05f4e54f72a204979f3f3066738"
@@ -4094,11 +4099,12 @@ toidentifier@1.0.0:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
   integrity sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==
 
-ton-crypto@1.3.2:
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.3.2.tgz#34f18979d6c8f083c7ea8d4741b14ad79a352515"
-  integrity sha512-2v8WgCnJzOSfRWdmxac/mkphCRQF32r7HXAJFDSeUtzBK71Rnud10MgEo3YkwD1sG4hB8UYffRH+49Wl7X+i9A==
+ton-crypto@1.4.7:
+  version "1.4.7"
+  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.4.7.tgz#5a0c639641adde16dcdf9be2b8848eed9601daf1"
+  integrity sha512-gYOk5SYHbzfmcfUvzjbIjx6fOXJB+GXOepzdC8dQfkIGbVu1BM9VamUg0NPyX5KzOQ4gufI2O7T2N//PaSxdmQ==
   dependencies:
+    jssha "3.2.0"
     tweetnacl "1.0.3"
 
 tonweb@0.0.18:
