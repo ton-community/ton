@@ -1,7 +1,27 @@
 import fetch from 'isomorphic-unfetch';
 import { Address } from '../..';
-import { Maybe } from '../../types';
+import * as t from 'io-ts';
+import { isRight } from 'fp-ts/lib/Either';
+import { string } from 'fp-ts';
+
 const version = require('../../../package.json').version as string;
+
+const addressInformation = t.type({
+    balance: t.union([t.number, t.string]),
+    state: t.union([t.literal('active'), t.literal('uninitialized'), t.literal('frozen')]),
+    data: t.string,
+    code: t.string
+});
+
+const bocResponse = t.type({
+    '@type': t.literal('ok')
+});
+
+const callGetMethod = t.type({
+    gas_used: t.number,
+    exit_code: t.number,
+    stack: t.array(t.unknown)
+});
 
 export class HttpApi {
     readonly endpoint: string;
@@ -10,14 +30,18 @@ export class HttpApi {
     }
 
     getAddressInformation(address: Address) {
-        return this.doCall<{}>('getAddressInformation', { address: address.toString() });
+        return this.doCall('getAddressInformation', { address: address.toString() }, addressInformation);
     }
 
-    getTransactions(opts: { address: Address, limit?: Maybe<number> }) {
-        return this.doCall<{}>('getTransactions', { address: opts.address.toString(), limit: opts.limit });
+    async callGetMethod(address: Address, method: string, params: any[]) {
+        return await this.doCall('runGetMethod', { address: address.toString(), method, stack: params }, callGetMethod);
     }
 
-    private async doCall<T>(method: string, body: any) {
+    async sendBoc(body: Buffer) {
+        await this.doCall('sendBoc', { boc: body.toString('base64') }, bocResponse);
+    }
+
+    private async doCall<T>(method: string, body: any, codec: t.Type<T>) {
         let res = await fetch(this.endpoint, {
             method: 'POST',
             headers: {
@@ -34,6 +58,12 @@ export class HttpApi {
         if (!res.ok) {
             throw Error('Received error: ' + await res.text());
         }
-        return await res.json() as T;
+        let r = await res.json();
+        let decoded = codec.decode(r.result);
+        if (isRight(decoded)) {
+            return decoded.right;
+        } else {
+            throw Error('Mailformed response: ' + r);
+        }
     }
 }

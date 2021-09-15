@@ -12,7 +12,6 @@ import { Wallet } from "./Wallet";
 import { ElectorContract } from "../contracts/ElectorContract";
 import { Maybe } from '../types';
 import { BN } from 'bn.js';
-const TonWeb = require('tonweb');
 
 export type TonClientParameters = {
     endpoint: string
@@ -22,7 +21,6 @@ export class TonClient {
     readonly parameters: TonClientParameters;
 
     #api: HttpApi;
-    rawClient: any;
 
     services = {
         elector: new ElectorContract(this)
@@ -30,7 +28,6 @@ export class TonClient {
 
     constructor(parameters: TonClientParameters) {
         this.parameters = parameters;
-        this.rawClient = new TonWeb(new TonWeb.HttpProvider(parameters.endpoint));
         this.#api = new HttpApi(parameters.endpoint);
     }
 
@@ -40,55 +37,8 @@ export class TonClient {
      * @returns balance
      */
     async getBalance(address: Address) {
-        let balance: string = await (this.rawClient.getBalance(address.toString()) as Promise<string>);
-        return new BN(balance);
+        return (await this.getContractState(address)).balance;
     }
-
-    // async getTransactions(opts: { address: Address, limit?: Maybe<number>, before?: Maybe<{ lt: string, hash: string }> }): Promise<TonTransaction[]> {
-    //     let limit = 100;
-    //     if (opts.limit !== null && opts.limit !== undefined) {
-    //         limit = opts.limit;
-    //     }
-    //     let result: TonTransaction[] = [];
-    //     let res = await this.#client.provider.send('getTransactions', opts.before ? {
-    //         address: opts.address.toString(),
-    //         limit,
-    //         hash: opts.before.hash,
-    //         lt: opts.before.lt
-    //     } : {
-    //         address: opts.address.toString(),
-    //         limit,
-    //     });
-
-    //     function parseMessage(src: any): TonMessage {
-    //         return {
-    //             source: !!src.source ? src.source : null,
-    //             destination: !!src.destination ? src.destination : null,
-    //             value: new BN(src.value),
-    //             ihrFee: new BN(src.ihr_fee),
-    //             forwardFee: new BN(src.fwd_fee),
-    //             createdLt: src.created_lt,
-    //             message: !!src.message ? src.message : null
-    //         };
-    //     }
-
-    //     for (let r of res) {
-    //         let trans: TonTransaction = {
-    //             id: {
-    //                 lt: r.transaction_id.lt,
-    //                 hash: r.transaction_id.hash
-    //             },
-    //             data: r.data,
-    //             fee: new BN(r.fee),
-    //             storageFee: new BN(r.storage_fee),
-    //             otherFee: new BN(r.other_fee),
-    //             inMessage: parseMessage(r.in_msg),
-    //             outMessages: r.out_msgs.map(parseMessage)
-    //         };
-    //         result.push(trans);
-    //     }
-    //     return result;
-    // }
 
     /**
      * Invoke get method
@@ -98,9 +48,8 @@ export class TonClient {
      * @returns stack and gas_used field
      */
     async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[] }> {
-        let res = await this.rawClient.provider.call(address.toString(), name, params);
+        let res = await this.#api.callGetMethod(address, name, params);
         if (res.exit_code !== 0) {
-            console.warn(res);
             throw Error('Unable to execute get method. Got exit_code: ' + res.exit_code);
         }
         return { gas_used: res.gas_used, stack: res.stack };
@@ -113,8 +62,8 @@ export class TonClient {
     async sendMessage(src: Message) {
         const cell = new Cell();
         src.writeTo(cell);
-        let base64Boc = (await cell.toBoc({ idx: false })).toString('base64');
-        await this.rawClient.provider.sendBoc(base64Boc);
+        const boc = await cell.toBoc({ idx: false });
+        await this.#api.sendBoc(boc);
     }
 
     /**
@@ -157,7 +106,7 @@ export class TonClient {
      * @param address contract address
      */
     async getContractState(address: Address) {
-        let info = await this.rawClient.provider.getAddressInfo(address.toString());
+        let info = await this.#api.getAddressInformation(address);
         let balance = new BN(info.balance);
         let state = info.state as 'frozen' | 'active' | 'uninitialized';
         return {
