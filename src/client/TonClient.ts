@@ -12,6 +12,7 @@ import { Wallet } from "./Wallet";
 import { ElectorContract } from "../contracts/ElectorContract";
 import { Maybe } from '../types';
 import { BN } from 'bn.js';
+import { WalletContractType } from '..';
 
 export type TonClientParameters = {
     endpoint: string
@@ -130,7 +131,7 @@ export class TonClient {
      * @param secretKey wallet secret key
      * @returns best matched wallet
      */
-    async openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
+    async findWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
         return Wallet.findBestBySecretKey(this, args.workchain, args.secretKey);
     }
 
@@ -141,6 +142,15 @@ export class TonClient {
      */
     async openWalletDefaultFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
         return Wallet.openDefault(this, args.workchain, args.secretKey);
+    }
+
+    /**
+     * Open wallet with default contract
+     * @param args workchain and secret key
+     * @returns wallet
+     */
+    async openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer, type: WalletContractType }) {
+        return Wallet.openByType(this, args.workchain, args.secretKey, args.type);
     }
 
     /**

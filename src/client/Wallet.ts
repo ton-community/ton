@@ -78,6 +78,14 @@ export class Wallet {
         return w;
     }
 
+    static async openByType(client: TonClient, workchain: number, secretKey: Buffer, type: WalletContractType): Promise<Wallet> {
+        const publicKey = keyPairFromSecretKey(secretKey).publicKey;
+        let c = await createContract(client, type, publicKey, workchain);
+        let w = new Wallet(client, c.address);
+        await w.prepare(workchain, publicKey, type);
+        return w;
+    }
+
     static async findActiveBySecretKey(client: TonClient, workchain: number, secretKey: Buffer): Promise<{ address: Address, type: WalletContractType, deployed: boolean, balance: BN }[]> {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
         let types: { address: Address, type: WalletContractType, deployed: boolean, balance: BN }[] = [];

@@ -28,7 +28,7 @@ describe('TonClient', () => {
             'cheese', 'swift', 'turkey'
         ];
         const key = await mnemonicToWalletKey(mnemonics);
-        let wallet = await client.openWalletFromSecretKey({ workchain: 0, secretKey: key.secretKey });
+        let wallet = await client.findWalletFromSecretKey({ workchain: 0, secretKey: key.secretKey });
         expect(wallet.address.workChain).toBe(0);
         expect(wallet.address.hash).toEqual(Buffer.from('d1e27790cea91f133d2847785705c26987ae1de4d75d3fc1fcc1f374b6140802', 'hex'));
     });
