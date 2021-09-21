@@ -30,6 +30,20 @@ const allTypes: WalletContractType[] = [
     'org.ton.wallets.v3'
 ];
 
+export function validateWalletType(src: string): WalletContractType | null {
+    if (src === 'org.ton.wallets.simple'
+        || src === 'org.ton.wallets.simple.r2'
+        || src === 'org.ton.wallets.simple.r3'
+        || src === 'org.ton.wallets.v2'
+        || src === 'org.ton.wallets.v2.r2'
+        || src === 'org.ton.wallets.v3'
+        || src === 'org.ton.wallets.v3.r2') {
+        return src;
+    }
+
+    return null;
+}
+
 async function createContract(client: TonClient, type: WalletContractType, publicKey: Buffer, workchain: number) {
     if (type === 'org.ton.wallets.simple') {
         throw Error('Unsupported wallet');
