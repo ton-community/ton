@@ -157,10 +157,11 @@ export class TonClient {
      * Securely creates new wallet
      * @param password optional password
      */
-    async createNewWallet(args: { workchain: number, password?: Maybe<string> }) {
+    async createNewWallet(args: { workchain: number, password?: Maybe<string>, type?: Maybe<WalletContractType> }) {
         let mnemonic = await mnemonicNew(24, args.password);
         let key = await mnemonicToWalletKey(mnemonic, args.password);
-        let wallet = await Wallet.openDefault(this, args.workchain, key.secretKey);
+        let kind = args.type || 'org.ton.wallets.v3';
+        let wallet = await Wallet.openByType(this, args.workchain, key.secretKey, kind);
         return {
             mnemonic,
             key,
