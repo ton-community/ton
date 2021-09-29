@@ -1,4 +1,5 @@
 import BN from "bn.js";
+import { state } from "fp-ts";
 import { Address, TonClient } from "..";
 import { Contract } from "./Contract";
 import { ContractSource } from "./sources/ContractSource";
@@ -11,6 +12,21 @@ export class ElectorContract implements Contract {
 
     constructor(client: TonClient) {
         this.client = client;
+    }
+
+    async getReturnedStake(addres: Address) {
+        if (addres.workChain !== -1) {
+            throw Error('Only masterchain addresses could have stake');
+        }
+        let res = await this.client.callGetMethod(this.address, 'compute_returned_stake', [["num", "0x" + addres.hash.toString('hex')]]);
+        if (res.stack[0][0] !== 'num') {
+            throw Error('Invalid response');
+        }
+        let stake = res.stack[0][1] as string;
+        if (!stake.startsWith('0x')) {
+            throw Error('Invalid response');
+        }
+        return new BN(stake.slice(2));
     }
 
     async getElectionEntities() {
