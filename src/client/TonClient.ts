@@ -13,6 +13,7 @@ import { ElectorContract } from "../contracts/ElectorContract";
 import { Maybe } from '../types';
 import { BN } from 'bn.js';
 import { WalletContractType } from '..';
+import { TonTransaction, TonMessage } from './TonTransaction';
 
 export type TonClientParameters = {
     endpoint: string
@@ -54,6 +55,46 @@ export class TonClient {
             throw Error('Unable to execute get method. Got exit_code: ' + res.exit_code);
         }
         return { gas_used: res.gas_used, stack: res.stack };
+    }
+
+    /**
+     * Get transactions
+     * @param address address
+     */
+    async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string }) {
+        // Fetch transactions
+        let tx = await this.#api.getTransactions(address, opts);
+        let res: TonTransaction[] = [];
+        function convertMessage(t: {
+            source: string,
+            destination: string,
+            value: string,
+            fwd_fee: string,
+            ihr_fee: string,
+            created_lt: string,
+            body_hash: string
+        }): TonMessage {
+            return {
+                source: t.source !== '' ? Address.parseFriendly(t.source).address : null,
+                destination: t.destination !== '' ? Address.parseFriendly(t.destination).address : null,
+                forwardFee: new BN(t.fwd_fee),
+                ihrFee: new BN(t.ihr_fee),
+                value: new BN(t.value),
+                createdLt: t.created_lt
+            };
+        }
+
+        for (let r of tx) {
+            res.push({
+                id: { lt: r.transaction_id.lt, hash: r.transaction_id.hash },
+                data: r.data,
+                storageFee: new BN(r.storage_fee),
+                otherFee: new BN(r.other_fee),
+                fee: new BN(r.fee),
+                inMessage: convertMessage(r.in_msg),
+                outMessages: r.out_msgs.map(convertMessage)
+            })
+        }
     }
 
     /**

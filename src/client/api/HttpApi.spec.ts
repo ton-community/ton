@@ -11,7 +11,7 @@ describe('HttpApi', () => {
         expect(new BN(res.balance).gte(new BN(0))).toBe(true);
     });
 
-    it('should get latest transactions', async () => {
+    it('should send external messages', async () => {
         const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
         const message = new ExternalMessage({
             to: Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address,
@@ -26,5 +26,10 @@ describe('HttpApi', () => {
         const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
         let res = await api.callGetMethod(Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address, 'seqno', []);
         expect(res.exit_code).toBe(0);
+    });
+
+    it('should get transactions', async () => {
+        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC');
+        await api.getTransactions(Address.parseFriendly('kf91o4NNTryJ-Cw3sDGt9OTiafmETdVFUMvylQdFPoOxIsLm').address, { limit: 10 });
     });
 });

@@ -1,13 +1,13 @@
 import BN from "bn.js";
+import { Address } from "..";
 
 export type TonMessage = {
-    source: string | null;
-    destination: string | null;
+    source: Address | null;
+    destination: Address | null;
     value: BN;
     forwardFee: BN;
     ihrFee: BN;
     createdLt: string;
-    message: string | null;
 };
 
 export type TonTransaction = {

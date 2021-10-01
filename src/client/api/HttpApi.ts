@@ -2,7 +2,6 @@ import fetch from 'isomorphic-unfetch';
 import { Address } from '../..';
 import * as t from 'io-ts';
 import { isRight } from 'fp-ts/lib/Either';
-import { string } from 'fp-ts';
 
 const version = require('../../../package.json').version as string;
 
@@ -23,6 +22,35 @@ const callGetMethod = t.type({
     stack: t.array(t.unknown)
 });
 
+const getTransactions = t.array(t.type({
+    data: t.string,
+    transaction_id: t.type({
+        lt: t.string,
+        hash: t.string
+    }),
+    fee: t.string,
+    storage_fee: t.string,
+    other_fee: t.string,
+    in_msg: t.type({
+        source: t.string,
+        destination: t.string,
+        value: t.string,
+        fwd_fee: t.string,
+        ihr_fee: t.string,
+        created_lt: t.string,
+        body_hash: t.string
+    }),
+    out_msgs: t.array(t.type({
+        source: t.string,
+        destination: t.string,
+        value: t.string,
+        fwd_fee: t.string,
+        ihr_fee: t.string,
+        created_lt: t.string,
+        body_hash: t.string
+    }))
+}));
+
 export class HttpApi {
     readonly endpoint: string;
     constructor(endpoint: string) {
@@ -31,6 +59,10 @@ export class HttpApi {
 
     getAddressInformation(address: Address) {
         return this.doCall('getAddressInformation', { address: address.toString() }, addressInformation);
+    }
+
+    async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string }) {
+        return await this.doCall('getTransactions', { address: address.toString(), ...opts }, getTransactions);
     }
 
     async callGetMethod(address: Address, method: string, params: any[]) {

@@ -5,3 +5,4 @@ export { Wallet, validateWalletType, WalletContractType } from './client/Wallet'
 export { Address } from './address/Address';
 export { toNano, fromNano } from './utils/convert';
 export { KeyStore, KeyRecord } from './keystore/KeyStore';
+export { TonTransaction, TonMessage } from './client/TonTransaction';
