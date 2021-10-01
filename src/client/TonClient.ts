@@ -87,6 +87,7 @@ export class TonClient {
         for (let r of tx) {
             res.push({
                 id: { lt: r.transaction_id.lt, hash: r.transaction_id.hash },
+                time: r.utime,
                 data: r.data,
                 storageFee: new BN(r.storage_fee),
                 otherFee: new BN(r.other_fee),

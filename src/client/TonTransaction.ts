@@ -15,6 +15,7 @@ export type TonTransaction = {
         lt: string;
         hash: string;
     };
+    time: number;
     storageFee: BN;
     otherFee: BN;
     fee: BN;

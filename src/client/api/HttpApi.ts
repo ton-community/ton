@@ -24,6 +24,7 @@ const callGetMethod = t.type({
 
 const getTransactions = t.array(t.type({
     data: t.string,
+    utime: t.number,
     transaction_id: t.type({
         lt: t.string,
         hash: t.string
