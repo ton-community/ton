@@ -95,6 +95,7 @@ export class TonClient {
                 outMessages: r.out_msgs.map(convertMessage)
             })
         }
+        return res;
     }
 
     /**
