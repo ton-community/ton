@@ -1,9 +1,5 @@
-import { Address, Cell, TonClient } from "..";
+import { Address, TonClient } from "..";
 import { InternalMessage } from "../messages/InternalMessage";
-import { Message } from "../messages/Message";
-import { WalletV1SigningMessage } from "./messages/WalletV1SigningMessage";
-import { WalletV2SigningMessage } from "./messages/WalletV2SigningMessage";
-import { WalletV3SigningMessage } from "./messages/WalletV3SigningMessage";
 import { Contract } from "./Contract";
 import { contractAddress } from "./sources/ContractSource";
 import { WalletV1R1Source } from "./sources/WalletV1R1Source";
@@ -13,7 +9,7 @@ import { WalletV2R1Source } from "./sources/WalletV2R1Source";
 import { WalletV2R2Source } from "./sources/WalletV2R2Source";
 import { WalletV3R1Source } from "./sources/WalletV3R1Source";
 import { WalletV3R2Source } from "./sources/WalletV3R2Source";
-import tweetnacl from 'tweetnacl';
+import { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3 } from "./messages/createWalletTransfer";
 
 export type WalletContractSource =
     | WalletV1R1Source
@@ -50,51 +46,20 @@ export class WalletContract implements Contract {
         }
     }
 
-    async createTransfer(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer }) {
-
-        // Prepare message
-        let signingMessage: Message;
+    createTransfer(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer }) {
         switch (this.source.type) {
             case 'org.ton.wallets.simple':
             case 'org.ton.wallets.simple.r2':
             case 'org.ton.wallets.simple.r3':
-                signingMessage = new WalletV1SigningMessage({
-                    seqno: args.seqno,
-                    sendMode: args.sendMode,
-                    order: args.order
-                });
-                break;
+                return createWalletTransferV1({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
             case 'org.ton.wallets.v2':
             case 'org.ton.wallets.v2.r2':
-                signingMessage = new WalletV2SigningMessage({
-                    seqno: args.seqno,
-                    sendMode: args.sendMode,
-                    order: args.order
-                });
-                break;
+                return createWalletTransferV2({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
             case 'org.ton.wallets.v3':
             case 'org.ton.wallets.v3.r2':
-                signingMessage = new WalletV3SigningMessage({
-                    walletId: this.source.walletId,
-                    seqno: args.seqno,
-                    sendMode: args.sendMode,
-                    order: args.order
-                });
-                break;
+                return createWalletTransferV3({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId });
             default:
                 throw Error('Unknown contract type: ' + (this.source as any).type);
         }
-
-        // Sign message
-        const cell = new Cell();
-        signingMessage.writeTo(cell);
-        let signature = Buffer.from(tweetnacl.sign.detached(new Uint8Array(await cell.hash()), new Uint8Array(args.secretKey)));
-
-        // Body
-        const body = new Cell();
-        body.bits.writeBuffer(signature);
-        signingMessage.writeTo(body);
-
-        return body;
     }
 }
