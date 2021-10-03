@@ -1,7 +1,7 @@
 import { Address, Cell } from "../..";
 import { StateInit } from "../../messages/StateInit";
 
-export type ContractSource = {
+export interface ContractSource {
     initialCode: Cell;
     initialData: Cell;
     workchain: number;

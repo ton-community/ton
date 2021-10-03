@@ -1,6 +1,8 @@
 import BN from "bn.js";
 import { keyPairFromSecretKey } from "ton-crypto";
-import { Address, Cell, TonClient } from "..";
+import { Address, Cell, ContractSource, TonClient } from "..";
+import { contractAddress } from "../contracts/sources/ContractSource";
+import { WalletSource } from "../contracts/sources/WalletSource";
 import { WalletV1R2Source } from "../contracts/sources/WalletV1R2Source";
 import { WalletV1R3Source } from "../contracts/sources/WalletV1R3Source";
 import { WalletV2R1Source } from "../contracts/sources/WalletV2R1Source";
@@ -86,6 +88,13 @@ export class Wallet {
         return w;
     }
 
+    static async openFromSource(client: TonClient, source: WalletSource): Promise<Wallet> {
+        let address = await contractAddress(source);
+        let w = new Wallet(client, address);
+        await w.prepareFromSource(source);
+        return w;
+    }
+
     static async findActiveBySecretKey(client: TonClient, workchain: number, secretKey: Buffer): Promise<{ address: Address, type: WalletContractType, deployed: boolean, balance: BN }[]> {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
         let types: { address: Address, type: WalletContractType, deployed: boolean, balance: BN }[] = [];
@@ -158,6 +167,14 @@ export class Wallet {
 
     async prepare(workchain: number, publicKey: Buffer, type: WalletContractType = 'org.ton.wallets.v3') {
         let contra = await createContract(this.#client, type, publicKey, workchain);
+        if (!contra.address.equals(this.address)) {
+            throw Error('Contract have different address');
+        }
+        this.#contract = contra;
+    }
+
+    async prepareFromSource(source: WalletSource) {
+        let contra = await WalletContract.create(this.#client, source);
         if (!contra.address.equals(this.address)) {
             throw Error('Contract have different address');
         }

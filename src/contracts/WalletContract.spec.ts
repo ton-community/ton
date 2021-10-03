@@ -1,5 +1,6 @@
 import { BN } from "bn.js";
 import { mnemonicNew, mnemonicToWalletKey } from "ton-crypto";
+import { WalletSource } from "..";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { EmptyMessage } from "../messages/EmptyMessage";
 import { InternalMessage } from "../messages/InternalMessage";
@@ -16,9 +17,9 @@ import { WalletV2R1Source } from "./sources/WalletV2R1Source";
 import { WalletV2R2Source } from "./sources/WalletV2R2Source";
 import { WalletV3R1Source } from "./sources/WalletV3R1Source";
 import { WalletV3R2Source } from "./sources/WalletV3R2Source";
-import { WalletContract, WalletContractSource } from "./WalletContract";
+import { WalletContract } from "./WalletContract";
 
-async function testSource(secretKey: Buffer, source: WalletContractSource) {
+async function testSource(secretKey: Buffer, source: WalletSource) {
     const client = createTestClient();
     const treasure = await openTestTreasure(client);
     const contract = await WalletContract.create(client, source);

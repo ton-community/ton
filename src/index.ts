@@ -24,6 +24,7 @@ export { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3 
 
 // Sources
 export { ContractSource } from './contracts/sources/ContractSource';
+export { WalletSource } from './contracts/sources/WalletSource';
 export { UnknownContractSource } from './contracts/sources/UnknownContractSource';
 export { WalletV1R1Source } from './contracts/sources/WalletV1R1Source';
 export { WalletV1R2Source } from './contracts/sources/WalletV1R2Source';

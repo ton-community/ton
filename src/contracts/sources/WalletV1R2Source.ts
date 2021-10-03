@@ -1,6 +1,5 @@
 import { Cell } from "../..";
 import { ContractSource } from "./ContractSource";
-
 export class WalletV1R2Source implements ContractSource {
 
     static create(opts: { publicKey: Buffer, workchain: number }) {
@@ -14,7 +13,6 @@ export class WalletV1R2Source implements ContractSource {
         initialData.bits.writeUint(0, 32); // SeqNo
         initialData.bits.writeBuffer(publicKey); // Public key
 
-
         return new WalletV1R2Source({ publicKey, initialCode, initialData, workchain });
     }
 
@@ -23,6 +21,7 @@ export class WalletV1R2Source implements ContractSource {
     readonly initialData: Cell;
     readonly workchain: number;
     readonly type = 'org.ton.wallets.simple.r2';
+    readonly walletVersion = 'v1';
 
     private constructor(opts: { publicKey: Buffer, initialCode: Cell, initialData: Cell, workchain: number }) {
         this.publicKey = opts.publicKey;

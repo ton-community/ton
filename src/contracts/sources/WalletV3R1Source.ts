@@ -39,6 +39,7 @@ export class WalletV3R1Source implements ContractSource {
     readonly workchain: number;
     readonly walletId: number;
     readonly type = 'org.ton.wallets.v3';
+    readonly walletVersion = 'v3';
 
     private constructor(opts: {
         publicKey: Buffer,

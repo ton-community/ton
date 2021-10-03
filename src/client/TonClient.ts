@@ -12,7 +12,7 @@ import { Wallet } from "./Wallet";
 import { ElectorContract } from "../contracts/ElectorContract";
 import { Maybe } from '../types';
 import { BN } from 'bn.js';
-import { WalletContractType } from '..';
+import { WalletContract, WalletContractType, WalletSource } from '..';
 import { TonTransaction, TonMessage } from './TonTransaction';
 
 export type TonClientParameters = {
@@ -194,6 +194,10 @@ export class TonClient {
      */
     async openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer, type: WalletContractType }) {
         return Wallet.openByType(this, args.workchain, args.secretKey, args.type);
+    }
+
+    async openWalletFromCustomContract(src: WalletSource) {
+        return Wallet.openFromSource(this, src);
     }
 
     /**
