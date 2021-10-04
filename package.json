@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -fr build && tsc --declaration",
+    "build": "rm -fr dist && tsc --declaration",
     "test": "jest --verbose --runInBand",
     "release": "yarn build && yarn test && yarn publish"
   },
