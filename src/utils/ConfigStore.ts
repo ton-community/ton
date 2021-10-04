@@ -1,3 +1,4 @@
+import { Address } from "..";
 
 export class ConfigStore {
     #map = new Map<string, string>();
@@ -30,6 +31,10 @@ export class ConfigStore {
         return Buffer.from(this.getString(key), 'hex');
     }
 
+    getAddress = (key: string) => {
+        return Address.parseFriendly(this.getString('key')).address;
+    };
+
     getInt = (key: string) => {
         return parseInt(this.getString(key));
     }
@@ -50,6 +55,10 @@ export class ConfigStore {
 
     setBuffer = (key: string, value: Buffer) => {
         this.setString(key, value.toString('hex'));
+    }
+
+    setAddress = (key: string, address: Address) => {
+        this.setString(key, address.toFriendly());
     }
 
     save() {
