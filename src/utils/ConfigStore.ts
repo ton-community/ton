@@ -32,7 +32,7 @@ export class ConfigStore {
     }
 
     getAddress = (key: string) => {
-        return Address.parseFriendly(this.getString('key')).address;
+        return Address.parseFriendly(this.getString(key)).address;
     };
 
     getInt = (key: string) => {
