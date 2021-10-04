@@ -6,6 +6,7 @@ export interface ContractSource {
     initialData: Cell;
     workchain: number;
     type: string;
+    backup(): string;
 }
 
 export async function contractAddress(source: ContractSource) {

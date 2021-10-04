@@ -1,4 +1,4 @@
-import { Cell } from "../..";
+import { Cell, ConfigStore } from "../..";
 import { Maybe } from "../../types";
 import { ContractSource } from "./ContractSource";
 
@@ -34,6 +34,11 @@ export class WalletV3R2Source implements ContractSource {
         });
     }
 
+    static restore(backup: string) {
+        const store = new ConfigStore(backup);
+        return WalletV3R2Source.create({ publicKey: store.getBuffer('pk'), workchain: store.getInt('wc'), walletId: store.getInt('walletId') });
+    }
+
     readonly initialCode: Cell;
     readonly initialData: Cell;
     readonly publicKey: Buffer;
@@ -55,5 +60,13 @@ export class WalletV3R2Source implements ContractSource {
         this.initialCode = opts.initialCode;
         this.initialData = opts.initialData;
         Object.freeze(this);
+    }
+
+    backup = () => {
+        const store = new ConfigStore();
+        store.setInt('wc', this.workchain);
+        store.setInt('walletId', this.walletId);
+        store.setBuffer('pk', this.publicKey);
+        return store.save();
     }
 }

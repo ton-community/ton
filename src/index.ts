@@ -33,3 +33,6 @@ export { WalletV2R1Source } from './contracts/sources/WalletV2R1Source';
 export { WalletV2R2Source } from './contracts/sources/WalletV2R2Source';
 export { WalletV3R1Source } from './contracts/sources/WalletV3R1Source';
 export { WalletV3R2Source } from './contracts/sources/WalletV3R2Source';
+
+// Utils
+export { ConfigStore } from './utils/ConfigStore';

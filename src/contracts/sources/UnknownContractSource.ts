@@ -15,4 +15,8 @@ export class UnknownContractSource implements ContractSource {
         this.type = type;
         this.workchain = workchain;
     }
+
+    backup = () => {
+        throw Error('Unknown');
+    }
 }

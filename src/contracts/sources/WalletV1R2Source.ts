@@ -1,4 +1,4 @@
-import { Cell } from "../..";
+import { Cell, ConfigStore } from "../..";
 import { ContractSource } from "./ContractSource";
 export class WalletV1R2Source implements ContractSource {
 
@@ -16,6 +16,11 @@ export class WalletV1R2Source implements ContractSource {
         return new WalletV1R2Source({ publicKey, initialCode, initialData, workchain });
     }
 
+    static restore(backup: string) {
+        const store = new ConfigStore(backup);
+        return WalletV1R2Source.create({ publicKey: store.getBuffer('pk'), workchain: store.getInt('wc') });
+    }
+
     readonly publicKey: Buffer;
     readonly initialCode: Cell;
     readonly initialData: Cell;
@@ -29,5 +34,12 @@ export class WalletV1R2Source implements ContractSource {
         this.initialData = opts.initialData;
         this.workchain = opts.workchain;
         Object.freeze(this);
+    }
+
+    backup = () => {
+        const store = new ConfigStore();
+        store.setInt('wc', this.workchain);
+        store.setBuffer('pk', this.publicKey);
+        return store.save();
     }
 }
