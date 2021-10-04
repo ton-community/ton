@@ -26,7 +26,7 @@ export class ElectorContract implements Contract {
         if (!stake.startsWith('0x')) {
             throw Error('Invalid response');
         }
-        return new BN(stake.slice(2));
+        return new BN(stake.slice(2), 'hex');
     }
 
     async getElectionEntities() {
