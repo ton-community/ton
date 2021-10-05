@@ -7,7 +7,7 @@ import { UnknownContractSource } from "./sources/UnknownContractSource";
 
 export class ElectorContract implements Contract {
     readonly address: Address = Address.parseRaw('-1:3333333333333333333333333333333333333333333333333333333333333333');
-    readonly source: ContractSource = new UnknownContractSource('org.ton.elector', -1);
+    readonly source: ContractSource = new UnknownContractSource('org.ton.elector', -1, 'Elector Contract');
     private readonly client: TonClient;
 
     constructor(client: TonClient) {

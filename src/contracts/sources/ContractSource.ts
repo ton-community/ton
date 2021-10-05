@@ -7,6 +7,7 @@ export interface ContractSource {
     workchain: number;
     type: string;
     backup(): string;
+    describe(): string;
 }
 
 export async function contractAddress(source: ContractSource) {

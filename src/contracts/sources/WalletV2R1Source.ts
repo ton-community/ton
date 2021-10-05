@@ -43,4 +43,8 @@ export class WalletV2R1Source implements ContractSource {
         store.setBuffer('pk', this.publicKey);
         return store.save();
     }
+
+    describe = () => {
+        return 'Wallet V2 Contract';
+    }
 }

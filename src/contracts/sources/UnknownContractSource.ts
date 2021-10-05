@@ -10,13 +10,19 @@ export class UnknownContractSource implements ContractSource {
     }
     readonly workchain: number;
     readonly type: string;
+    readonly description: string;
 
-    constructor(type: string, workchain: number) {
+    constructor(type: string, workchain: number, description: string) {
         this.type = type;
         this.workchain = workchain;
+        this.description = description;
     }
 
     backup = () => {
         throw Error('Unknown');
+    }
+
+    describe = () => {
+        return this.description;
     }
 }
