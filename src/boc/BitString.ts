@@ -173,7 +173,9 @@ export class BitString implements Iterable<boolean> {
     }
 
     clone() {
-        return new BitString(this.#buffer.slice(0), this.#length, this.#cursor);
+        let buf = Buffer.alloc(this.#buffer.length);
+        this.#buffer.copy(buf);
+        return new BitString(buf, this.#length, this.#cursor);
     }
 
     toString() {
@@ -209,7 +211,8 @@ export class BitString implements Iterable<boolean> {
 
     setTopUppedArray(array: Buffer, fullfilledBytes = true) {
         this.#length = array.length * 8;
-        this.#buffer = array;
+        this.#buffer = Buffer.alloc(array.length);
+        array.copy(this.#buffer);
         this.#cursor = this.length;
         if (fullfilledBytes || !this.length) {
             return;
