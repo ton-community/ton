@@ -26,7 +26,8 @@ export class TonClient {
     #api: HttpApi;
 
     services = {
-        elector: new ElectorContract(this)
+        configs: new ConfigContract(this),
+        elector: new ElectorContract(this),
     };
 
     constructor(parameters: TonClientParameters) {
