@@ -30,10 +30,26 @@ export class BitStringReader {
         return this.readUint(bits).toNumber();
     }
 
+    readBuffer(size: number) {
+        let res: number[] = [];
+        for (let i = 0; i < size; i++) {
+            res.push(this.readUintNumber(8));
+        }
+        return Buffer.from(res);
+    }
+
     readBit() {
         let r = this.getBit(this.offset);
         this.offset++;
         return r;
+    }
+
+    readCoins() {
+        let bytes = this.readUintNumber(4);
+        if (bytes === 0) {
+            return new BN(0);
+        }
+        return new BN(this.readBuffer(bytes).toString('hex'), 'hex');
     }
 
     readUnaryLength() {

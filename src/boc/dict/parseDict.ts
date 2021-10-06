@@ -28,7 +28,6 @@ function doParse<T>(prefix: string, src: Cell, n: number, res: Map<string, T>, e
         if (lb1 === 0) {
             // Long label detected
             prefixLength = reader.readUintNumber(Math.ceil(Math.log2(n + 1)));
-            console.warn(prefixLength);
             for (let i = 0; i < prefixLength; i++) {
                 pp += reader.readBit() ? '1' : '0';
             }
@@ -36,7 +35,6 @@ function doParse<T>(prefix: string, src: Cell, n: number, res: Map<string, T>, e
             // Same label detected
             let bit = reader.readBit() ? '1' : '0';
             prefixLength = reader.readUintNumber(Math.ceil(Math.log2(n + 1)));
-            console.warn(prefixLength);
             for (let i = 0; i < prefixLength; i++) {
                 pp += bit;
             }
@@ -50,6 +48,12 @@ function doParse<T>(prefix: string, src: Cell, n: number, res: Map<string, T>, e
         doParse(pp + '0', src.refs[0], n - prefixLength - 1, res, extractor);
         doParse(pp + '1', src.refs[1], n - prefixLength - 1, res, extractor);
     }
+}
+
+export function parseDict<T>(src: Cell, keySize: number, extractor: (cell: Cell, reader: BitStringReader) => T) {
+    let res: Map<string, T> = new Map();
+    doParse('', src, keySize, res, extractor);
+    return res;
 }
 
 export function parseDictBitString(src: Cell, keySize: number) {

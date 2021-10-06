@@ -79,10 +79,10 @@ export class InternalMessage implements Message {
         cell.bits.writeBit(this.bounced);
         cell.bits.writeAddress(this.from);
         cell.bits.writeAddress(this.to);
-        cell.bits.writeGrams(this.value);
+        cell.bits.writeCoins(this.value);
         cell.bits.writeBit(false); // Currency collection (not supported)
-        cell.bits.writeGrams(this.ihrFees);
-        cell.bits.writeGrams(this.fwdFees);
+        cell.bits.writeCoins(this.ihrFees);
+        cell.bits.writeCoins(this.fwdFees);
         cell.bits.writeUint(this.createdLt, 64);
         cell.bits.writeUint(this.createdAt, 32);
         this.body.writeTo(cell);

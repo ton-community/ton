@@ -28,7 +28,7 @@ export class ExternalMessage implements Message {
         cell.bits.writeUint(2, 2);
         cell.bits.writeAddress(this.from);
         cell.bits.writeAddress(this.to);
-        cell.bits.writeGrams(this.importFee);
+        cell.bits.writeCoins(this.importFee);
         this.body.writeTo(cell);
     }
 }

@@ -1,3 +1,5 @@
+import inspectSymbol from 'symbol.inspect';
+
 const bounceable_tag = 0x11;
 const non_bounceable_tag = 0x51;
 const test_flag = 0x80;
@@ -152,4 +154,6 @@ export class Address {
             return buffer.toString('base64');
         }
     }
+
+    [inspectSymbol] = () => this.toFriendly()
 }

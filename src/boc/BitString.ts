@@ -145,7 +145,7 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    writeGrams(amount: number | BN) {
+    writeCoins(amount: number | BN) {
         if (amount == 0) {
             this.writeUint(0, 4);
         } else {
