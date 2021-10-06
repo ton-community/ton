@@ -6,6 +6,7 @@ import { ContractSource } from "./sources/ContractSource";
 import { UnknownContractSource } from "./sources/UnknownContractSource";
 
 export class ElectorContract implements Contract {
+    // Please note that we are NOT loading address from config to avoid mistake and send validator money to a wrong contract
     readonly address: Address = Address.parseRaw('-1:3333333333333333333333333333333333333333333333333333333333333333');
     readonly source: ContractSource = new UnknownContractSource('org.ton.elector', -1, 'Elector Contract');
     private readonly client: TonClient;
