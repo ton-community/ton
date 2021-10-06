@@ -1,5 +1,6 @@
 import BN from 'bn.js';
 import { Address } from '../address/Address';
+import inspectSymbol from 'symbol.inspect';
 
 export class BitString implements Iterable<boolean> {
 
@@ -189,6 +190,8 @@ export class BitString implements Iterable<boolean> {
         }
         return res;
     }
+
+    [inspectSymbol] = () => this.toFiftHex()
 
     toFiftHex(): string {
         if (this.cursor % 4 === 0) {

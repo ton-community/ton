@@ -12,8 +12,9 @@ import { Wallet } from "./Wallet";
 import { ElectorContract } from "../contracts/ElectorContract";
 import { Maybe } from '../types';
 import { BN } from 'bn.js';
-import { WalletContract, WalletContractType, WalletSource } from '..';
+import { WalletContractType, WalletSource } from '..';
 import { TonTransaction, TonMessage } from './TonTransaction';
+import { ConfigContract } from '../contracts/ConfigContract';
 
 export type TonClientParameters = {
     endpoint: string
@@ -155,7 +156,9 @@ export class TonClient {
         let state = info.state as 'frozen' | 'active' | 'uninitialized';
         return {
             balance,
-            state
+            state,
+            code: info.code !== '' ? Buffer.from(info.code, 'base64') : null,
+            data: info.data !== '' ? Buffer.from(info.data, 'base64') : null
         };
     }
 

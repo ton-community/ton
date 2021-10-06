@@ -1,6 +1,7 @@
 import { Maybe } from '../types';
 import { BitString } from './BitString';
 import { deserializeBoc, hashCell, serializeToBoc } from './boc';
+import inspectSymbol from 'symbol.inspect';
 
 export class Cell {
 
@@ -35,6 +36,8 @@ export class Cell {
         return serializeToBoc(this, idx, crc32, cacheBits, flags);
     }
 
+    [inspectSymbol] = () => this.toString()
+
     toString(indent?: string): string {
         let id = indent || '';
         let s = id + 'x{' + this.bits.toFiftHex() + '}\n';
@@ -43,5 +46,21 @@ export class Cell {
             s += i.toString(id + ' ');
         }
         return s;
+    }
+
+    withReference(cell: Cell) {
+        this.refs.push(cell);
+        return this;
+    }
+
+    withData(src: string) {
+        for (let s of src) {
+            if (s === '0') {
+                this.bits.writeBit(0);
+            } else {
+                this.bits.writeBit(1);
+            }
+        }
+        return this;
     }
 }
