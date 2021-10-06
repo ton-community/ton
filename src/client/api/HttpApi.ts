@@ -96,7 +96,8 @@ export class HttpApi {
         if (isRight(decoded)) {
             return decoded.right;
         } else {
-            throw Error('Mailformed response: ' + r);
+            console.warn(r);
+            throw Error('Mailformed response');
         }
     }
 }

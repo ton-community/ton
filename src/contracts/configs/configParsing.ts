@@ -108,3 +108,40 @@ export function configParse8(src: Cell | null | undefined) {
         capabilities
     }
 }
+
+export function configParse40(src: Cell | null | undefined) {
+    if (!src) {
+        return null;
+    }
+
+    let reader = new BitStringReader(src.bits);
+    let header = reader.readUintNumber(8);
+    if (header !== 1) {
+        throw Error('Invalid config');
+    }
+
+    let defaultFlatFine = reader.readCoins();
+    let defaultProportionaFine = reader.readCoins();
+    let severityFlatMult = reader.readUintNumber(16);
+    let severityProportionalMult = reader.readUintNumber(16);
+    let unfunishableInterval = reader.readUintNumber(16);
+    let longInterval = reader.readUintNumber(16);
+    let longFlatMult = reader.readUintNumber(16);
+    let longProportionalMult = reader.readUintNumber(16);
+    let mediumInterval = reader.readUintNumber(16);
+    let mediumFlatMult = reader.readUintNumber(16);
+    let mediumProportionalMult = reader.readUintNumber(16);
+    return {
+        defaultFlatFine,
+        defaultProportionaFine,
+        severityFlatMult,
+        severityProportionalMult,
+        unfunishableInterval,
+        longInterval,
+        longFlatMult,
+        longProportionalMult,
+        mediumInterval,
+        mediumFlatMult,
+        mediumProportionalMult
+    };
+}

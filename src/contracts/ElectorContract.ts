@@ -1,5 +1,4 @@
 import BN from "bn.js";
-import { state } from "fp-ts";
 import { Address, TonClient } from "..";
 import { Contract } from "./Contract";
 import { ContractSource } from "./sources/ContractSource";
