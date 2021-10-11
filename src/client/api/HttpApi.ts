@@ -2,6 +2,7 @@ import fetch from 'isomorphic-unfetch';
 import { Address } from '../..';
 import * as t from 'io-ts';
 import { isRight } from 'fp-ts/lib/Either';
+import reporter from 'io-ts-reporters';
 
 const version = require('../../../package.json').version as string;
 
@@ -96,7 +97,9 @@ export class HttpApi {
         if (isRight(decoded)) {
             return decoded.right;
         } else {
-            console.warn(r);
+            for (let report of reporter.report(r)) {
+                console.warn(report);
+            }
             throw Error('Mailformed response');
         }
     }

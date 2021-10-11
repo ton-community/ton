@@ -37,6 +37,7 @@
     "ethjs-unit": "0.1.6",
     "fp-ts": "^2.11.1",
     "io-ts": "^2.2.16",
+    "io-ts-reporters": "^2.0.0",
     "isomorphic-unfetch": "3.1.0",
     "symbol.inspect": "1.0.1",
     "ton-crypto": "1.5.1",
