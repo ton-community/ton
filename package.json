@@ -1,6 +1,6 @@
 {
   "name": "ton",
-  "version": "4.10.1",
+  "version": "4.10.2",
   "repository": "https://github.com/ex3ndr/ton.git",
   "author": "Steve Korshakov <steve@korshakov.com>",
   "license": "MIT",
