@@ -94,7 +94,7 @@ export class TonClient {
                 storageFee: new BN(r.storage_fee),
                 otherFee: new BN(r.other_fee),
                 fee: new BN(r.fee),
-                inMessage: convertMessage(r.in_msg),
+                inMessage: r.in_msg ? convertMessage(r.in_msg) : null,
                 outMessages: r.out_msgs.map(convertMessage)
             })
         }

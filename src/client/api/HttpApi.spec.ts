@@ -31,5 +31,6 @@ describe('HttpApi', () => {
     it('should get transactions', async () => {
         const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC');
         await api.getTransactions(Address.parseFriendly('kf91o4NNTryJ-Cw3sDGt9OTiafmETdVFUMvylQdFPoOxIsLm').address, { limit: 10 });
+        await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 100 });
     });
 });

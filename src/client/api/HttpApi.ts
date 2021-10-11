@@ -33,7 +33,7 @@ const getTransactions = t.array(t.type({
     fee: t.string,
     storage_fee: t.string,
     other_fee: t.string,
-    in_msg: t.type({
+    in_msg: t.union([t.undefined, t.type({
         source: t.string,
         destination: t.string,
         value: t.string,
@@ -41,7 +41,7 @@ const getTransactions = t.array(t.type({
         ihr_fee: t.string,
         created_lt: t.string,
         body_hash: t.string
-    }),
+    })]),
     out_msgs: t.array(t.type({
         source: t.string,
         destination: t.string,

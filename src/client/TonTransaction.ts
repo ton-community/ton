@@ -20,6 +20,6 @@ export type TonTransaction = {
     otherFee: BN;
     fee: BN;
     data: string;
-    inMessage: TonMessage;
+    inMessage: TonMessage | null;
     outMessages: TonMessage[];
 };
