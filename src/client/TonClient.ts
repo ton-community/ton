@@ -113,6 +113,14 @@ export class TonClient {
     }
 
     /**
+     * Send file to a network
+     * @param src source file
+     */
+    async sendFile(src: Buffer) {
+        await this.#api.sendBoc(src);
+    }
+
+    /**
      * Send external message to contract
      * @param contract contract to send message
      * @param src message body
