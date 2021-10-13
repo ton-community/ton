@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import { keyPairFromSecretKey } from "ton-crypto";
-import { Address, Cell, ContractSource, TonClient } from "..";
+import { Address, Cell, ContractSource, ExternalMessage, RawMessage, StateInit, TonClient } from "..";
 import { contractAddress } from "../contracts/sources/ContractSource";
 import { WalletSource } from "../contracts/sources/WalletSource";
 import { WalletV1R2Source } from "../contracts/sources/WalletV1R2Source";
@@ -224,6 +224,7 @@ export class Wallet {
             throw Error('Please, prepare wallet first');
         }
 
+        // Transfer
         const transfer = await contract.createTransfer({
             secretKey: args.secretKey,
             seqno: args.seqno,
@@ -236,7 +237,18 @@ export class Wallet {
             })
         });
 
-        return transfer;
+        // External message
+        const message = new ExternalMessage({
+            to: contract.address,
+            body: new CommonMessageInfo({
+                stateInit: new StateInit({ code: contract.source.initialCode, data: contract.source.initialData }),
+                body: new RawMessage(transfer)
+            })
+        });
+
+        const res = new Cell();
+        message.writeTo(res);
+        return res;
     }
 
     /**
@@ -244,10 +256,6 @@ export class Wallet {
      * @param transfer signed transfer for commit
      */
     async transferCommit(transfer: Cell) {
-        const contract = this.#contract;
-        if (!contract) {
-            throw Error('Please, prepare wallet first');
-        }
-        await this.#client.sendExternalMessage(contract, transfer);
+        await this.#client.sendFile(await transfer.toBoc({ idx: false }));
     }
 }
