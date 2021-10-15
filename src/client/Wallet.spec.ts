@@ -34,6 +34,23 @@ describe('Wallet', () => {
         await awaitBalance(client, dest, balance);
     }, 60000);
 
+    it('should trasnfer with comment', async () => {
+        const client = createTestClient();
+        let treasure = await openTestTreasure(client);
+        let dest = Address.parseFriendly('EQClZ-KEDodcnyoyPX7c0qBBQ9QePzzquVwKuaqHk7F01825').address;
+        let balance = await client.getBalance(dest);
+        let seqno = await treasure.wallet.getSeqNo();
+        await treasure.wallet.transfer({
+            to: dest,
+            value: toNano(0.05),
+            bounce: false,
+            seqno,
+            secretKey: treasure.secretKey,
+            payload: 'Hello World!'
+        });
+        await awaitBalance(client, dest, balance);
+    }, 60000);
+
     it('should trasnfer by stages', async () => {
         const client = createTestClient();
         let treasure = await openTestTreasure(client);

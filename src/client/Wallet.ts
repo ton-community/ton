@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import { keyPairFromSecretKey } from "ton-crypto";
-import { Address, Cell, ExternalMessage, RawMessage, StateInit, TonClient } from "..";
+import { Address, BinaryMessage, Cell, CommentMessage, ExternalMessage, Message, RawMessage, StateInit, TonClient } from "..";
 import { contractAddress } from "../contracts/sources/ContractSource";
 import { WalletSource } from "../contracts/sources/WalletSource";
 import { WalletV1R2Source } from "../contracts/sources/WalletV1R2Source";
@@ -193,11 +193,22 @@ export class Wallet {
         secretKey: Buffer,
         bounce: boolean,
         sendMode?: Maybe<SendMode>,
-        timeout?: Maybe<number>
+        timeout?: Maybe<number>,
+        payload?: Maybe<string | Buffer>
     }) {
         const contract = this.#contract;
         if (!contract) {
             throw Error('Please, prepare wallet first');
+        }
+
+        // Resolve payload
+        let payload: Message | null = null;
+        if (args.payload) {
+            if (typeof args.payload === 'string') {
+                payload = new CommentMessage(args.payload);
+            } else if (Buffer.isBuffer(args.payload)) {
+                payload = new BinaryMessage(args.payload);
+            }
         }
 
         // Check transfer
@@ -210,7 +221,7 @@ export class Wallet {
                 to: args.to,
                 value: args.value,
                 bounce: args.bounce,
-                body: new CommonMessageInfo()
+                body: new CommonMessageInfo({ body: payload })
             })
         });
 
@@ -229,12 +240,23 @@ export class Wallet {
         seqno: number,
         value: BN,
         secretKey: Buffer,
+        payload?: Maybe<string | Buffer>,
         timeout?: Maybe<number>,
         sendMode?: Maybe<SendMode>
     }) {
         const contract = this.#contract;
         if (!contract) {
             throw Error('Please, prepare wallet first');
+        }
+
+        // Resolve payload
+        let payload: Message | null = null;
+        if (args.payload) {
+            if (typeof args.payload === 'string') {
+                payload = new CommentMessage(args.payload);
+            } else if (Buffer.isBuffer(args.payload)) {
+                payload = new BinaryMessage(args.payload);
+            }
         }
 
         // Transfer
@@ -247,7 +269,7 @@ export class Wallet {
                 to: args.to,
                 value: args.value,
                 bounce: args.bounce,
-                body: new CommonMessageInfo()
+                body: new CommonMessageInfo({ body: payload })
             })
         });
 

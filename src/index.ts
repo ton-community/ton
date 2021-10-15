@@ -17,6 +17,8 @@ export { ExternalMessage } from './messages/ExternalMessage';
 export { EmptyMessage } from './messages/EmptyMessage';
 export { StateInit } from './messages/StateInit';
 export { CommonMessageInfo } from './messages/CommonMessageInfo';
+export { CommentMessage } from './messages/CommentMessage';
+export { BinaryMessage } from './messages/BinaryMessage';
 
 // Contracts
 export { Contract } from './contracts/Contract';
