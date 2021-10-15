@@ -7,6 +7,7 @@ export { Address } from './address/Address';
 export { toNano, fromNano } from './utils/convert';
 export { KeyStore, KeyRecord } from './keystore/KeyStore';
 export { TonTransaction, TonMessage } from './client/TonTransaction';
+export { SendMode } from './client/SendMode';
 
 // Messages
 export { Message } from './messages/Message';

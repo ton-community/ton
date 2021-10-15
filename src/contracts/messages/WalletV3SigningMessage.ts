@@ -4,19 +4,19 @@ import { Message } from "../../messages/Message";
 
 export class WalletV3SigningMessage implements Message {
 
-    readonly timestamp: number;
+    readonly timeout: number;
     readonly seqno: number;
     readonly walletId: number;
     readonly order: Message;
     readonly sendMode: number;
 
-    constructor(args: { timestamp?: Maybe<number>, seqno: Maybe<number>, walletId?: number, sendMode: number, order: Message }) {
+    constructor(args: { timeout?: Maybe<number>, seqno: Maybe<number>, walletId?: number, sendMode: number, order: Message }) {
         this.order = args.order;
         this.sendMode = args.sendMode;
-        if (args.timestamp !== undefined && args.timestamp !== null) {
-            this.timestamp = args.timestamp;
+        if (args.timeout !== undefined && args.timeout !== null) {
+            this.timeout = args.timeout;
         } else {
-            this.timestamp = Date.now();
+            this.timeout = Math.floor(Date.now() / 1e3) + 60; // Default timeout: 60 seconds
         }
         if (args.seqno !== undefined && args.seqno !== null) {
             this.seqno = args.seqno;
@@ -37,8 +37,7 @@ export class WalletV3SigningMessage implements Message {
                 cell.bits.writeBit(1);
             }
         } else {
-            const timestamp = Math.floor(this.timestamp / 1e3); // In seconds
-            cell.bits.writeUint(timestamp + 60, 32); // 60 seconds timeout
+            cell.bits.writeUint(this.timeout, 32);
         }
         cell.bits.writeUint(this.seqno, 32);
         cell.bits.writeUint8(this.sendMode);

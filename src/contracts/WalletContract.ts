@@ -4,6 +4,7 @@ import { Contract } from "./Contract";
 import { contractAddress } from "./sources/ContractSource";
 import { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3 } from "./messages/createWalletTransfer";
 import { WalletSource } from "./sources/WalletSource";
+import { Maybe } from "../types";
 
 export class WalletContract implements Contract {
 
@@ -31,14 +32,14 @@ export class WalletContract implements Contract {
         }
     }
 
-    createTransfer(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer }) {
+    createTransfer(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer, timeout?: Maybe<number> }) {
         switch (this.source.walletVersion) {
             case 'v1':
                 return createWalletTransferV1({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
             case 'v2':
-                return createWalletTransferV2({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
+                return createWalletTransferV2({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, timeout: args.timeout });
             case 'v3':
-                return createWalletTransferV3({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId });
+                return createWalletTransferV3({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId, timeout: args.timeout });
             default:
                 throw Error('Unknown contract type: ' + (this.source as any).type);
         }

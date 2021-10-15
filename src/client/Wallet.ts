@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import { keyPairFromSecretKey } from "ton-crypto";
-import { Address, Cell, ContractSource, ExternalMessage, RawMessage, StateInit, TonClient } from "..";
+import { Address, Cell, ExternalMessage, RawMessage, StateInit, TonClient } from "..";
 import { contractAddress } from "../contracts/sources/ContractSource";
 import { WalletSource } from "../contracts/sources/WalletSource";
 import { WalletV1R2Source } from "../contracts/sources/WalletV1R2Source";
@@ -12,6 +12,8 @@ import { WalletV3R2Source } from "../contracts/sources/WalletV3R2Source";
 import { WalletContract } from "../contracts/WalletContract";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { InternalMessage } from "../messages/InternalMessage";
+import { Maybe } from "../types";
+import { SendMode } from "./SendMode";
 
 export type WalletContractType =
     | 'org.ton.wallets.simple'
@@ -184,7 +186,15 @@ export class Wallet {
     /**
      * Transfers value to specified address
      */
-    async transfer(args: { seqno: number, to: Address, value: BN, secretKey: Buffer, bounce: boolean }) {
+    async transfer(args: {
+        seqno: number,
+        to: Address,
+        value: BN,
+        secretKey: Buffer,
+        bounce: boolean,
+        sendMode?: Maybe<SendMode>,
+        timeout?: Maybe<number>
+    }) {
         const contract = this.#contract;
         if (!contract) {
             throw Error('Please, prepare wallet first');
@@ -194,7 +204,8 @@ export class Wallet {
         const transfer = await contract.createTransfer({
             secretKey: args.secretKey,
             seqno: args.seqno,
-            sendMode: 3,
+            sendMode: args.sendMode || (SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATLY),
+            timeout: args.timeout,
             order: new InternalMessage({
                 to: args.to,
                 value: args.value,
@@ -217,7 +228,9 @@ export class Wallet {
         bounce: boolean,
         seqno: number,
         value: BN,
-        secretKey: Buffer
+        secretKey: Buffer,
+        timeout?: Maybe<number>,
+        sendMode?: Maybe<SendMode>
     }) {
         const contract = this.#contract;
         if (!contract) {
@@ -228,7 +241,8 @@ export class Wallet {
         const transfer = await contract.createTransfer({
             secretKey: args.secretKey,
             seqno: args.seqno,
-            sendMode: 3,
+            sendMode: args.sendMode || (SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATLY),
+            timeout: args.timeout,
             order: new InternalMessage({
                 to: args.to,
                 value: args.value,

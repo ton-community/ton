@@ -15,6 +15,6 @@ describe('parseDict', () => {
                 .withData('1011111011111101111100100001'));
 
         let res = parseDictBitString(root, 16);
-        expect(res.keys.length).toBe(3);
+        expect(Array.from(res.keys()).length).toBe(3);
     });
 });

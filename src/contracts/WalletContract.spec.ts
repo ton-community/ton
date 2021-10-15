@@ -1,6 +1,6 @@
 import { BN } from "bn.js";
 import { mnemonicNew, mnemonicToWalletKey } from "ton-crypto";
-import { WalletSource } from "..";
+import { SendMode, WalletSource } from "..";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { EmptyMessage } from "../messages/EmptyMessage";
 import { InternalMessage } from "../messages/InternalMessage";
