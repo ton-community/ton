@@ -2,7 +2,7 @@ import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
 import { Cell } from "../boc/Cell";
-import { HttpApi } from "./api/HttpApi";
+import { HttpApi, HTTPMessage } from "./api/HttpApi";
 import { ExternalMessage } from "../messages/ExternalMessage";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { StateInit } from "../messages/StateInit";
@@ -67,22 +67,20 @@ export class TonClient {
         // Fetch transactions
         let tx = await this.#api.getTransactions(address, opts);
         let res: TonTransaction[] = [];
-        function convertMessage(t: {
-            source: string,
-            destination: string,
-            value: string,
-            fwd_fee: string,
-            ihr_fee: string,
-            created_lt: string,
-            body_hash: string
-        }): TonMessage {
+        function convertMessage(t: HTTPMessage): TonMessage {
             return {
                 source: t.source !== '' ? Address.parseFriendly(t.source).address : null,
                 destination: t.destination !== '' ? Address.parseFriendly(t.destination).address : null,
                 forwardFee: new BN(t.fwd_fee),
                 ihrFee: new BN(t.ihr_fee),
                 value: new BN(t.value),
-                createdLt: t.created_lt
+                createdLt: t.created_lt,
+                body: (
+                    t.msg_data['@type'] === 'msg.dataRaw'
+                        ? { type: 'data', data: Buffer.from(t.msg_data.body, 'base64') }
+                        : (t.msg_data['@type'] === 'msg.dataText'
+                            ? { type: 'text', text: Buffer.from(t.msg_data.text, 'base64').toString('utf-8') }
+                            : null))
             };
         }
 

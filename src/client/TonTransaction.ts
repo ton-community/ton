@@ -1,6 +1,14 @@
 import BN from "bn.js";
 import { Address } from "..";
 
+export type TonMessageData = {
+    type: 'text',
+    text: string
+} | {
+    type: 'data',
+    data: Buffer
+}
+
 export type TonMessage = {
     source: Address | null;
     destination: Address | null;
@@ -8,6 +16,7 @@ export type TonMessage = {
     forwardFee: BN;
     ihrFee: BN;
     createdLt: string;
+    body: TonMessageData | null;
 };
 
 export type TonTransaction = {
