@@ -67,6 +67,40 @@ const getTransactions = t.array(t.type({
     out_msgs: t.array(message)
 }));
 
+const blockIdExt = t.type({
+    '@type': t.literal('ton.blockIdExt'),
+    workchain: t.number,
+    shard: t.string,
+    seqno: t.number,
+    root_hash: t.string,
+    file_hash: t.string
+})
+
+const getMasterchain = t.type({
+    state_root_hash: t.string,
+    last: blockIdExt,
+    init: blockIdExt
+});
+
+const getShards = t.type({
+    shards: t.array(blockIdExt)
+});
+
+const blockShortTxt = t.type({
+    '@type': t.literal('blocks.shortTxId'),
+    mode: t.number,
+    account: t.string,
+    lt: t.string,
+    hash: t.string
+})
+
+const getBlockTransactions = t.type({
+    id: blockIdExt,
+    req_count: t.number,
+    incomplete: t.boolean,
+    transactions: t.array(blockShortTxt)
+});
+
 export type HTTPTransaction = t.TypeOf<typeof getTransactions>[number];
 export type HTTPMessage = t.TypeOf<typeof message>;
 
@@ -81,7 +115,34 @@ export class HttpApi {
     }
 
     async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string }) {
-        return await this.doCall('getTransactions', { address: address.toString(), ...opts }, getTransactions);
+        let hash: string | undefined = undefined;
+        if (opts.hash) {
+            hash = Buffer.from(opts.hash, 'base64').toString('hex');
+        }
+        return await this.doCall('getTransactions', { address: address.toString(), ...opts, hash }, getTransactions);
+    }
+
+    async getMasterchainInfo() {
+        return await this.doCall('getMasterchainInfo', {}, getMasterchain);
+    }
+
+    async getShards(seqno: number) {
+        return (await this.doCall('shards', { seqno }, getShards)).shards;
+    }
+
+    async getBlockTransactions(workchain: number, seqno: number, shard: string) {
+        return await this.doCall('getBlockTransactions', { workchain, seqno, shard }, getBlockTransactions)
+    }
+
+    async getTransaction(address: Address, lt: string, hash: string) {
+        hash = Buffer.from(hash, 'base64').toString('hex');
+        let res = await this.doCall('getTransactions', { address: address.toString(), lt, hash, limit: 1 }, getTransactions);
+        let ex = res.find((v) => v.transaction_id.lt === lt && v.transaction_id.hash === hash);
+        if (ex) {
+            return ex;
+        } else {
+            return null;
+        }
     }
 
     async callGetMethod(address: Address, method: string, params: any[]) {

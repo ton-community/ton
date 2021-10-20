@@ -2,7 +2,7 @@ import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
 import { Cell } from "../boc/Cell";
-import { HttpApi, HTTPMessage } from "./api/HttpApi";
+import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
 import { ExternalMessage } from "../messages/ExternalMessage";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { StateInit } from "../messages/StateInit";
@@ -18,6 +18,36 @@ import { ConfigContract } from '../contracts/ConfigContract';
 
 export type TonClientParameters = {
     endpoint: string
+}
+
+function convertMessage(t: HTTPMessage): TonMessage {
+    return {
+        source: t.source !== '' ? Address.parseFriendly(t.source).address : null,
+        destination: t.destination !== '' ? Address.parseFriendly(t.destination).address : null,
+        forwardFee: new BN(t.fwd_fee),
+        ihrFee: new BN(t.ihr_fee),
+        value: new BN(t.value),
+        createdLt: t.created_lt,
+        body: (
+            t.msg_data['@type'] === 'msg.dataRaw'
+                ? { type: 'data', data: Buffer.from(t.msg_data.body, 'base64') }
+                : (t.msg_data['@type'] === 'msg.dataText'
+                    ? { type: 'text', text: Buffer.from(t.msg_data.text, 'base64').toString('utf-8') }
+                    : null))
+    };
+}
+
+function convertTransaction(r: HTTPTransaction): TonTransaction {
+    return {
+        id: { lt: r.transaction_id.lt, hash: r.transaction_id.hash },
+        time: r.utime,
+        data: r.data,
+        storageFee: new BN(r.storage_fee),
+        otherFee: new BN(r.other_fee),
+        fee: new BN(r.fee),
+        inMessage: r.in_msg ? convertMessage(r.in_msg) : null,
+        outMessages: r.out_msgs.map(convertMessage)
+    }
 }
 
 export class TonClient {
@@ -67,36 +97,73 @@ export class TonClient {
         // Fetch transactions
         let tx = await this.#api.getTransactions(address, opts);
         let res: TonTransaction[] = [];
-        function convertMessage(t: HTTPMessage): TonMessage {
-            return {
-                source: t.source !== '' ? Address.parseFriendly(t.source).address : null,
-                destination: t.destination !== '' ? Address.parseFriendly(t.destination).address : null,
-                forwardFee: new BN(t.fwd_fee),
-                ihrFee: new BN(t.ihr_fee),
-                value: new BN(t.value),
-                createdLt: t.created_lt,
-                body: (
-                    t.msg_data['@type'] === 'msg.dataRaw'
-                        ? { type: 'data', data: Buffer.from(t.msg_data.body, 'base64') }
-                        : (t.msg_data['@type'] === 'msg.dataText'
-                            ? { type: 'text', text: Buffer.from(t.msg_data.text, 'base64').toString('utf-8') }
-                            : null))
-            };
-        }
+
 
         for (let r of tx) {
-            res.push({
-                id: { lt: r.transaction_id.lt, hash: r.transaction_id.hash },
-                time: r.utime,
-                data: r.data,
-                storageFee: new BN(r.storage_fee),
-                otherFee: new BN(r.other_fee),
-                fee: new BN(r.fee),
-                inMessage: r.in_msg ? convertMessage(r.in_msg) : null,
-                outMessages: r.out_msgs.map(convertMessage)
-            })
+            res.push(convertTransaction(r))
         }
         return res;
+    }
+
+    /**
+     * Get transaction by it's id
+     * @param address address
+     * @param lt logical time
+     * @param hash transaction hash
+     * @returns transaction or null if not exist
+     */
+    async getTransaction(address: Address, lt: string, hash: string) {
+        let res = await this.#api.getTransaction(address, lt, hash);
+        if (res) {
+            return convertTransaction(res);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Fetch latest masterchain info
+     * @returns masterchain info
+     */
+    async getMasterchainInfo() {
+        let r = await this.#api.getMasterchainInfo();
+        return {
+            workchain: r.init.workchain,
+            shard: r.init.shard,
+            initSeqno: r.init.seqno,
+            latestSeqno: r.init.seqno
+        }
+    }
+
+    /**
+     * Fetch latest workchain shards
+     * @param seqno masterchain seqno
+     */
+    async getWorkchainShards(seqno: number) {
+        let r = await this.#api.getShards(seqno);
+        return r.map((m) => ({
+            workchain: m.workchain,
+            shard: m.shard,
+            seqno: m.seqno
+        }));
+    }
+
+    /**
+     * Fetch transactions inf shards
+     * @param workchain 
+     * @param seqno 
+     * @param shard 
+     */
+    async getShardTransactions(workchain: number, seqno: number, shard: string) {
+        let tx = await this.#api.getBlockTransactions(workchain, seqno, shard);
+        if (tx.incomplete) {
+            throw Error('Unsupported');
+        }
+        return tx.transactions.map((v) => ({
+            account: Address.parseRaw(v.account),
+            lt: v.lt,
+            hash: v.hash
+        }))
     }
 
     /**

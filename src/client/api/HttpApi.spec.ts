@@ -33,4 +33,13 @@ describe('HttpApi', () => {
         await api.getTransactions(Address.parseFriendly('kf91o4NNTryJ-Cw3sDGt9OTiafmETdVFUMvylQdFPoOxIsLm').address, { limit: 10 });
         await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 100 });
     });
+
+    it('should get masterchain info', async () => {
+        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
+        let mc = await api.getMasterchainInfo();
+        let shards = await api.getShards(mc.last.seqno);
+        expect(shards.length).toBe(1);
+        await api.getBlockTransactions(-1, mc.last.seqno, mc.last.shard);
+        await api.getBlockTransactions(shards[0].workchain, shards[0].seqno, shards[0].shard);
+    });
 });
