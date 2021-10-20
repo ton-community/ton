@@ -129,9 +129,9 @@ export class TonClient {
         let r = await this.#api.getMasterchainInfo();
         return {
             workchain: r.init.workchain,
-            shard: r.init.shard,
+            shard: r.last.shard,
             initSeqno: r.init.seqno,
-            latestSeqno: r.init.seqno
+            latestSeqno: r.last.seqno
         }
     }
 

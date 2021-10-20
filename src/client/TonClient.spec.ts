@@ -55,6 +55,12 @@ describe('TonClient', () => {
         expect(state.state).toBe('active');
     });
 
+    it('should resolve masterchain info', async () => {
+        const client = createTestClient();
+        let res = await client.getMasterchainInfo();
+        expect(res.shard).not.toEqual('0');
+    });
+
     // it('should being able to read all transactions', async () => {
     //     const client = await createTestClient();
     //     const address = Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address;
