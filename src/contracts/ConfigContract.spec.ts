@@ -3,7 +3,7 @@ import { ConfigContract } from "./ConfigContract";
 
 describe('ConfigContract', () => {
     it('should execute get methods', async () => {
-        const client = createTestClient();
+        const client = createTestClient(true);
         const contract = new ConfigContract(client);
 
         // Check seqno method

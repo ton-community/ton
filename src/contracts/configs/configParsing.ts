@@ -1,7 +1,7 @@
 import { BN } from "bn.js";
 import { Address, Cell } from "../..";
 import { BitStringReader } from "../../boc/BitStringReader";
-import { parseDict } from "../../boc/dict/parseDict";
+import { parseDict, parseDictBitString } from "../../boc/dict/parseDict";
 
 export function configParseMasterAddress(src: Cell | null | undefined) {
     if (src) {
@@ -10,6 +10,54 @@ export function configParseMasterAddress(src: Cell | null | undefined) {
     } else {
         return null;
     }
+}
+
+export function configParseWorkchainDescriptor(src: Cell, reader: BitStringReader) {
+    if (reader.readUint(8).toNumber() !== 0xA6) {
+        throw Error('Invalid config');
+    }
+    let enabledSince = reader.readUint(32).toNumber();
+    let actialMinSplit = reader.readUint(8).toNumber();
+    let min_split = reader.readUint(8).toNumber();
+    let max_split = reader.readUint(8).toNumber();
+    let basic = reader.readBit();
+    let active = reader.readBit();
+    let accept_msgs = reader.readBit();
+    let flags = reader.readUint(13).toNumber();
+    let zerostateRootHash = reader.readBuffer(32);
+    let zerostateFileHash = reader.readBuffer(32);
+    let version = reader.readUint(32).toNumber();
+    
+    // Only basic format supported
+    if (reader.readBit()) {
+        throw Error('Invalid config');
+    }
+    let vmVersion = reader.readUint(32).toNumber();
+    let vmMode = reader.readUint(64);
+
+    return {
+        enabledSince,
+        actialMinSplit,
+        min_split,
+        max_split,
+        basic,
+        active,
+        accept_msgs,
+        flags,
+        zerostateRootHash,
+        zerostateFileHash,
+        version,
+        format: {
+            vmVersion,
+            vmMode
+        }
+    };
+    //     workchain#a6 enabled_since:uint32 actual_min_split:(## 8) 
+    //     min_split:(## 8) max_split:(## 8) { actual_min_split <= min_split }
+    //     basic:(## 1) active:Bool accept_msgs:Bool flags:(## 13) { flags = 0 }
+    //     zerostate_root_hash:bits256 zerostate_file_hash:bits256
+    //     version:uint32 format:(WorkchainFormat basic)
+    //     = WorkchainDescr;
 }
 
 export function configParseMasterAddressRequired(src: Cell | null | undefined) {
@@ -144,4 +192,16 @@ export function configParse40(src: Cell | null | undefined) {
         mediumFlatMult,
         mediumProportionalMult
     };
+}
+
+export function configParse12(src: Cell | null | undefined) {
+    if (!src) {
+        throw Error('Invalid config');
+    }
+    const reader = new BitStringReader(src.bits);
+    if (reader.readUint(1).toNumber()) {
+        return parseDict(src.refs[0], 32, configParseWorkchainDescriptor);
+    } else {
+        throw Error('No workchains exist')
+    }
 }
