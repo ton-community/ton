@@ -1,7 +1,7 @@
 import { BN } from "bn.js";
 import { Address, Cell } from "../..";
 import { BitStringReader } from "../../boc/BitStringReader";
-import { parseDict, parseDictBitString } from "../../boc/dict/parseDict";
+import { parseDict } from "../../boc/dict/parseDict";
 
 export function configParseMasterAddress(src: Cell | null | undefined) {
     if (src) {
@@ -27,7 +27,7 @@ export function configParseWorkchainDescriptor(src: Cell, reader: BitStringReade
     let zerostateRootHash = reader.readBuffer(32);
     let zerostateFileHash = reader.readBuffer(32);
     let version = reader.readUint(32).toNumber();
-    
+
     // Only basic format supported
     if (reader.readBit()) {
         throw Error('Invalid config');
@@ -52,12 +52,69 @@ export function configParseWorkchainDescriptor(src: Cell, reader: BitStringReade
             vmMode
         }
     };
-    //     workchain#a6 enabled_since:uint32 actual_min_split:(## 8) 
-    //     min_split:(## 8) max_split:(## 8) { actual_min_split <= min_split }
-    //     basic:(## 1) active:Bool accept_msgs:Bool flags:(## 13) { flags = 0 }
-    //     zerostate_root_hash:bits256 zerostate_file_hash:bits256
-    //     version:uint32 format:(WorkchainFormat basic)
-    //     = WorkchainDescr;
+}
+
+function readPublicKey(reader: BitStringReader) {
+    // 8e81278a
+    if (reader.readUint(32).toNumber() !== 0x8e81278a) {
+        throw Error('Invalid config');
+    }
+    return reader.readBuffer(32);
+}
+
+export function parseValidatorDescr(src: Cell, reader: BitStringReader) {
+    let header = reader.readUint(8).toNumber();
+    if (header === 0x53) {
+        return {
+            publicKey: readPublicKey(reader),
+            weight: reader.readUint(64),
+            adnlAddress: null
+        };
+    } else if (header === 0x73) {
+        return {
+            publicKey: readPublicKey(reader),
+            weight: reader.readUint(64),
+            adnlAddress: reader.readBuffer(32)
+        };
+    } else {
+        throw Error('Invalid config');
+    }
+}
+
+export function parseValidatorSet(src: Cell) {
+    let reader = new BitStringReader(src.bits);
+    let header = reader.readUint(8).toNumber();
+    if (header === 0x11) {
+        let timeSince = reader.readUint(32).toNumber();
+        let timeUntil = reader.readUint(32).toNumber();
+        let total = reader.readUint(16).toNumber();
+        let main = reader.readUint(16).toNumber();
+        let list = parseDict(src.refs[0], 16, parseValidatorDescr);
+        return {
+            timeSince,
+            timeUntil,
+            total,
+            main,
+            totalWeight: null,
+            list
+        };
+    } else if (header === 0x12) {
+        let timeSince = reader.readUint(32).toNumber();
+        let timeUntil = reader.readUint(32).toNumber();
+        let total = reader.readUint(16).toNumber();
+        let main = reader.readUint(16).toNumber();
+        let totalWeight = reader.readUint(64);
+        let exists = reader.readBit();
+        let list = exists ? parseDict(src.refs[0], 16, parseValidatorDescr) : null;
+        return {
+            timeSince,
+            timeUntil,
+            total,
+            main,
+            totalWeight,
+            list
+        };
+    }
 }
 
 export function configParseMasterAddressRequired(src: Cell | null | undefined) {
@@ -204,4 +261,11 @@ export function configParse12(src: Cell | null | undefined) {
     } else {
         throw Error('No workchains exist')
     }
+}
+
+export function configParseValidatorSet(src: Cell | null | undefined) {
+    if (!src) {
+        return null;
+    }
+    return parseValidatorSet(src);
 }

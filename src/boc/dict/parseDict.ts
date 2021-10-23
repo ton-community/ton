@@ -44,6 +44,9 @@ function doParse<T>(prefix: string, src: Cell, n: number, res: Map<string, T>, e
     if (n - prefixLength === 0) {
         res.set(new BN(pp, 2).toString(10), extractor(src, reader));
     } else {
+        if (src.refs.length < 2) {
+            throw Error('Invalid dict');
+        }
         // NOTE: Left and right branches are implicitly contain prefixes '0' and '1'
         doParse(pp + '0', src.refs[0], n - prefixLength - 1, res, extractor);
         doParse(pp + '1', src.refs[1], n - prefixLength - 1, res, extractor);

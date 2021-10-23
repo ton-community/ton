@@ -1,7 +1,7 @@
 import { Address, Cell, Contract, ContractSource, TonClient, UnknownContractSource } from "..";
 import { BitStringReader } from "../boc/BitStringReader";
 import { parseDictRefs } from "../boc/dict/parseDict";
-import { configParse12, configParse15, configParse16, configParse17, configParse18, configParse40, configParse8, configParseMasterAddress, configParseMasterAddressRequired } from "./configs/configParsing";
+import { configParse12, configParse15, configParse16, configParse17, configParse18, configParse40, configParse8, configParseMasterAddress, configParseMasterAddressRequired, configParseValidatorSet } from "./configs/configParsing";
 
 
 export class ConfigContract implements Contract {
@@ -47,6 +47,14 @@ export class ConfigContract implements Contract {
                 ...configParse15(configs.get('15')),
                 ...configParse16(configs.get('16')),
                 ...configParse17(configs.get('17'))
+            },
+            validatorSets: {
+                prevValidators: configParseValidatorSet(configs.get('32')),
+                prevTempValidators: configParseValidatorSet(configs.get('33')),
+                currentValidators: configParseValidatorSet(configs.get('34')),
+                currentTempValidators: configParseValidatorSet(configs.get('35')),
+                nextValidators: configParseValidatorSet(configs.get('36')),
+                nextTempValidators: configParseValidatorSet(configs.get('36'))
             },
             validatorsPunish: configParse40(configs.get('40')),
             storagePrices: configParse18(configs.get('18')),
