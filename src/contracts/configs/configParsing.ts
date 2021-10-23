@@ -117,6 +117,20 @@ export function parseValidatorSet(src: Cell) {
     }
 }
 
+export function parseBridge(src: Cell) {
+    let reader = new BitStringReader(src.bits);
+    let bridgeAddress = reader.readBuffer(32);
+    let oracleMultisigAddress = reader.readBuffer(32);
+    let oracles = reader.readBit() ? parseDict(src.refs[0], 256, (c, r) => r.readBuffer(32)) : null;
+    let externalChainAddress = reader.readBuffer(32);
+    return {
+        bridgeAddress,
+        oracleMultisigAddress,
+        oracles,
+        externalChainAddress
+    }
+}
+
 export function configParseMasterAddressRequired(src: Cell | null | undefined) {
     if (!src) {
         throw Error('Invalid config');
@@ -268,4 +282,11 @@ export function configParseValidatorSet(src: Cell | null | undefined) {
         return null;
     }
     return parseValidatorSet(src);
+}
+
+export function configParseBridge(src: Cell | null | undefined) {
+    if (!src) {
+        return null;
+    }
+    return parseBridge(src);
 }
