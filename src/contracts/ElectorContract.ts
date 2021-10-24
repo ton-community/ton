@@ -44,6 +44,9 @@ export class ElectorContract implements Contract {
             let stake = new BN(e.tuple.elements[1].tuple.elements[0].number.number);
 
             let addrraw = new BN(e.tuple.elements[1].tuple.elements[2].number.number).toString('hex');
+            while (addrraw.length < 64) {
+                addrraw = '0' + addrraw;
+            }
 
             let address = new Address(-1, Buffer.from(addrraw, 'hex'));
             // console.warn(Buffer.from(addrraw, 'hex').length);
