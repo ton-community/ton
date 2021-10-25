@@ -1,5 +1,6 @@
 import BN from "bn.js";
-import { Address, TonClient } from "..";
+import { Address, Cell, TonClient } from "..";
+import { parseDict, parseDictBitString } from "../boc/dict/parseDict";
 import { Contract } from "./Contract";
 import { ContractSource } from "./sources/ContractSource";
 import { UnknownContractSource } from "./sources/UnknownContractSource";
@@ -27,6 +28,48 @@ export class ElectorContract implements Contract {
             throw Error('Invalid response');
         }
         return new BN(stake.slice(2), 'hex');
+    }
+
+    async getPastElectionsList() {
+        let res = await this.client.callGetMethod(this.address, 'past_elections_list');
+        let list = res.stack[0][1].elements;
+        let elections: { id: number, unfreezeAt: number, stakeHeld: number }[] = [];
+        for (let el of list) {
+            let elect = el.tuple.elements;
+            let id = new BN(elect[0].number.number).toNumber();
+            let unfreezeAt = new BN(elect[1].number.number).toNumber();
+            let stakeHeld = new BN(elect[3].number.number).toNumber();
+            elections.push({ id, unfreezeAt, stakeHeld });
+        }
+        return elections;
+    }
+
+
+    async getPastElections() {
+        let res = await this.client.callGetMethod(this.address, 'past_elections');
+        let list = res.stack[0][1].elements;
+        let elections: { id: number, unfreezeAt: number, stakeHeld: number, totalStake: BN, bonuses: BN, frozen: Map<string, { address: Address, weight: BN, stake: BN }> }[] = [];
+        for (let el of list) {
+            let elect = el.tuple.elements;
+            let id = new BN(elect[0].number.number).toNumber();
+            let unfreezeAt = new BN(elect[1].number.number).toNumber();
+            let stakeHeld = new BN(elect[2].number.number).toNumber();
+            let totalStake = new BN(elect[5].number.number);
+            let bonuses = new BN(elect[6].number.number);
+            let frozenDict = Cell.fromBoc(Buffer.from(elect[4].cell.bytes, 'base64'))[0];
+            let frozen = parseDict(frozenDict, 256, (cell, reader) => {
+                let address = new Address(-1, reader.readBuffer(32));
+                let weight = reader.readUint(64);
+                let stake = reader.readCoins();
+                return {
+                    address,
+                    weight,
+                    stake
+                };
+            });
+            elections.push({ id, unfreezeAt, stakeHeld, totalStake, bonuses, frozen });
+        }
+        return elections;
     }
 
     async getElectionEntities() {
