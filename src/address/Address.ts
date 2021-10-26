@@ -70,8 +70,24 @@ function parseFriendlyAddress(src: string | Buffer) {
 
 export class Address {
 
-    isFriendly(source: String) {
-        return source.indexOf(':') >= 0;
+    static isFriendly(source: String) {
+        return source.indexOf(':') < 0;
+    }
+
+    static normalize(source: string | Address) {
+        if (typeof source === 'string') {
+            return Address.parse(source).toFriendly();
+        } else {
+            return source.toFriendly();
+        }
+    }
+
+    static parse(source: string) {
+        if (Address.isFriendly(source)) {
+            return this.parseFriendly(source).address;
+        } else {
+            return this.parseRaw(source);
+        }
     }
 
     static parseRaw(source: string) {
