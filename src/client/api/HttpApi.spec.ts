@@ -46,6 +46,18 @@ describe('HttpApi', () => {
         expect(tx2.length).toBe(10);
     });
 
+    it('should support get transaction', async () => {
+        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC');
+        let tx1 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 10 });
+        let tx = await api.getTransaction(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address,
+            tx1[0].transaction_id.lt,
+            tx1[0].transaction_id.hash
+        );
+        expect(tx1.length).toBe(10);
+        expect(tx).not.toBeNull();
+        expect(tx).not.toBeUndefined();
+    });
+
     it('should get masterchain info', async () => {
         const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
         let mc = await api.getMasterchainInfo();

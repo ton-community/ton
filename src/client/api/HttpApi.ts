@@ -156,8 +156,8 @@ export class HttpApi {
     }
 
     async getTransaction(address: Address, lt: string, hash: string) {
-        hash = Buffer.from(hash, 'base64').toString('hex');
-        let res = await this.doCall('getTransactions', { address: address.toString(), lt, hash, limit: 1 }, getTransactions);
+        let convHash = Buffer.from(hash, 'base64').toString('hex');
+        let res = await this.doCall('getTransactions', { address: address.toString(), lt, hash: convHash, limit: 1 }, getTransactions);
         let ex = res.find((v) => v.transaction_id.lt === lt && v.transaction_id.hash === hash);
         if (ex) {
             return ex;
