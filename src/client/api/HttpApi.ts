@@ -130,10 +130,14 @@ export class HttpApi {
 
         // Do request
         let res = await this.doCall('getTransactions', { address: address.toString(), ...opts, limit, hash }, getTransactions);
+        if (res.length > limit) {
+            res = res.slice(0, limit);
+        }
 
         // Adjust result
         if (opts.hash && opts.lt) {
-            return res.slice(1);
+            res.shift();
+            return res;
         } else {
             return res;
         }

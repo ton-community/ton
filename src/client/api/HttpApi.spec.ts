@@ -42,8 +42,8 @@ describe('HttpApi', () => {
             lt: tx1[tx1.length - 1].transaction_id.lt,
             hash: tx1[tx1.length - 1].transaction_id.hash,
         });
-        console.warn(tx1);
-        console.warn(tx2);
+        expect(tx1.length).toBe(10);
+        expect(tx2.length).toBe(10);
     });
 
     it('should get masterchain info', async () => {
