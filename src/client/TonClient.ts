@@ -97,8 +97,6 @@ export class TonClient {
         // Fetch transactions
         let tx = await this.#api.getTransactions(address, opts);
         let res: TonTransaction[] = [];
-
-
         for (let r of tx) {
             res.push(convertTransaction(r))
         }

@@ -34,6 +34,18 @@ describe('HttpApi', () => {
         await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 100 });
     });
 
+    it('should support paging', async () => {
+        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC');
+        let tx1 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 10 });
+        let tx2 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, {
+            limit: 10,
+            lt: tx1[tx1.length - 1].transaction_id.lt,
+            hash: tx1[tx1.length - 1].transaction_id.hash,
+        });
+        console.warn(tx1);
+        console.warn(tx2);
+    });
+
     it('should get masterchain info', async () => {
         const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
         let mc = await api.getMasterchainInfo();

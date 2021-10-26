@@ -115,11 +115,28 @@ export class HttpApi {
     }
 
     async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string }) {
+
+        // Convert hash
         let hash: string | undefined = undefined;
         if (opts.hash) {
             hash = Buffer.from(opts.hash, 'base64').toString('hex');
         }
-        return await this.doCall('getTransactions', { address: address.toString(), ...opts, hash }, getTransactions);
+
+        // Adjust limit
+        let limit = opts.limit;
+        if (opts.hash && opts.lt) {
+            limit++;
+        }
+
+        // Do request
+        let res = await this.doCall('getTransactions', { address: address.toString(), ...opts, limit, hash }, getTransactions);
+
+        // Adjust result
+        if (opts.hash && opts.lt) {
+            return res.slice(1);
+        } else {
+            return res;
+        }
     }
 
     async getMasterchainInfo() {
