@@ -3,6 +3,8 @@ import { Address } from '../..';
 import * as t from 'io-ts';
 import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
+import { TonCache } from '../TonCache';
+import DataLoader from 'dataloader';
 
 const version = require('../../../package.json').version as string;
 
@@ -53,7 +55,7 @@ const message = t.type({
     msg_data: messageData
 });
 
-const getTransactions = t.array(t.type({
+const transaction = t.type({
     data: t.string,
     utime: t.number,
     transaction_id: t.type({
@@ -65,7 +67,9 @@ const getTransactions = t.array(t.type({
     other_fee: t.string,
     in_msg: t.union([t.undefined, message]),
     out_msgs: t.array(message)
-}));
+});
+
+const getTransactions = t.array(transaction);
 
 const blockIdExt = t.type({
     '@type': t.literal('ton.blockIdExt'),
@@ -104,10 +108,79 @@ const getBlockTransactions = t.type({
 export type HTTPTransaction = t.TypeOf<typeof getTransactions>[number];
 export type HTTPMessage = t.TypeOf<typeof message>;
 
+class TypedCache<K, V> {
+    readonly namespace: string;
+    readonly cache: TonCache;
+    readonly codec: t.Type<V>;
+    readonly keyEncoder: (src: K) => string;
+
+    constructor(namespace: string, cache: TonCache, codec: t.Type<V>, keyEncoder: (src: K) => string) {
+        this.namespace = namespace;
+        this.cache = cache;
+        this.codec = codec;
+        this.keyEncoder = keyEncoder;
+    }
+
+    async get(key: K) {
+        let ex = await this.cache.get(this.namespace, this.keyEncoder(key));
+        if (ex) {
+            let decoded = this.codec.decode(JSON.parse(ex));
+            if (isRight(decoded)) {
+                return decoded.right;
+            }
+        }
+        return null;
+    }
+
+    async set(key: K, value: V | null) {
+        if (value !== null) {
+            await this.cache.set(this.namespace, this.keyEncoder(key), JSON.stringify(value));
+        } else {
+            await this.cache.set(this.namespace, this.keyEncoder(key), null);
+        }
+    }
+}
+
 export class HttpApi {
     readonly endpoint: string;
-    constructor(endpoint: string) {
+    readonly cache: TonCache;
+
+    private shardCache: TypedCache<number, t.TypeOf<typeof blockIdExt>[]>;
+    private shardLoader: DataLoader<number, t.TypeOf<typeof blockIdExt>[]>;
+    private shardTransactionsCache: TypedCache<{ workchain: number, shard: string, seqno: number }, t.TypeOf<typeof getBlockTransactions>>;
+    private shardTransactionsLoader: DataLoader<{ workchain: number, shard: string, seqno: number }, t.TypeOf<typeof getBlockTransactions>, string>;
+
+    constructor(endpoint: string, cache: TonCache) {
         this.endpoint = endpoint;
+        this.cache = cache;
+
+        // Shard
+        this.shardCache = new TypedCache('ton-shard', cache, t.array(blockIdExt), (src) => src + '');
+        this.shardLoader = new DataLoader(async (src) => {
+            return await Promise.all(src.map(async (v) => {
+                const cached = await this.shardCache.get(v);
+                if (cached) {
+                    return cached;
+                }
+                let loaded = (await this.doCall('shards', { seqno: v }, getShards)).shards;
+                await this.shardCache.set(v, loaded);
+                return loaded;
+            }));
+        });
+
+        // Shard Transactions
+        this.shardTransactionsCache = new TypedCache('ton-shard-tx', cache, getBlockTransactions, (src) => src.workchain + ':' + src.shard + ':' + src.seqno);
+        this.shardTransactionsLoader = new DataLoader(async (src) => {
+            return await Promise.all(src.map(async (v) => {
+                const cached = await this.shardTransactionsCache.get(v);
+                if (cached) {
+                    return cached;
+                }
+                let loaded = await this.doCall('getBlockTransactions', { workchain: v.workchain, seqno: v.seqno, shard: v.shard }, getBlockTransactions);
+                await this.shardTransactionsCache.set(v, loaded);
+                return loaded;
+            }));
+        }, { cacheKeyFn: (src) => src.workchain + ':' + src.shard + ':' + src.seqno });
     }
 
     getAddressInformation(address: Address) {
@@ -148,11 +221,11 @@ export class HttpApi {
     }
 
     async getShards(seqno: number) {
-        return (await this.doCall('shards', { seqno }, getShards)).shards;
+        return await this.shardLoader.load(seqno);
     }
 
     async getBlockTransactions(workchain: number, seqno: number, shard: string) {
-        return await this.doCall('getBlockTransactions', { workchain, seqno, shard }, getBlockTransactions)
+        return await this.shardTransactionsLoader.load({ workchain, seqno, shard });
     }
 
     async getTransaction(address: Address, lt: string, hash: string) {

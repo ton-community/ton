@@ -2,17 +2,18 @@ import { BN } from "bn.js";
 import { Address, Cell } from "../..";
 import { CommonMessageInfo } from "../../messages/CommonMessageInfo";
 import { ExternalMessage } from "../../messages/ExternalMessage";
+import { InMemoryCache } from "../TonCache";
 import { HttpApi } from "./HttpApi";
 
 describe('HttpApi', () => {
     it('should get balance', async () => {
-        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
+        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         let res = await api.getAddressInformation(Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address);
         expect(new BN(res.balance).gte(new BN(0))).toBe(true);
     });
 
     it('should send external messages', async () => {
-        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
+        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         const message = new ExternalMessage({
             to: Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address,
             body: new CommonMessageInfo()
@@ -23,19 +24,19 @@ describe('HttpApi', () => {
     });
 
     it('should get seqno', async () => {
-        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
+        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         let res = await api.callGetMethod(Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address, 'seqno', []);
         expect(res.exit_code).toBe(0);
     });
 
     it('should get transactions', async () => {
-        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC');
+        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         await api.getTransactions(Address.parseFriendly('kf91o4NNTryJ-Cw3sDGt9OTiafmETdVFUMvylQdFPoOxIsLm').address, { limit: 10 });
         await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 100 });
     });
 
     it('should support paging', async () => {
-        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC');
+        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         let tx1 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 10 });
         let tx2 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, {
             limit: 10,
@@ -47,7 +48,7 @@ describe('HttpApi', () => {
     });
 
     it('should support get transaction', async () => {
-        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC');
+        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         let tx1 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 10 });
         let tx = await api.getTransaction(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address,
             tx1[0].transaction_id.lt,
@@ -59,7 +60,7 @@ describe('HttpApi', () => {
     });
 
     it('should get masterchain info', async () => {
-        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC');
+        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         let mc = await api.getMasterchainInfo();
         let shards = await api.getShards(mc.last.seqno);
         expect(shards.length).toBe(1);

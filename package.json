@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "bn.js": "5.2.0",
+    "dataloader": "^2.0.0",
     "ethjs-unit": "0.1.6",
     "fp-ts": "^2.11.1",
     "io-ts": "^2.2.16",

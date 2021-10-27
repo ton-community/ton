@@ -15,9 +15,16 @@ import { BN } from 'bn.js';
 import { WalletContractType, WalletSource } from '..';
 import { TonTransaction, TonMessage } from './TonTransaction';
 import { ConfigContract } from '../contracts/ConfigContract';
+import { InMemoryCache, TonCache } from './TonCache';
 
 export type TonClientParameters = {
-    endpoint: string
+    endpoint: string;
+    cache?: Maybe<TonCache>;
+}
+
+export type TonClientResolvedParameters = {
+    endpoint: string;
+    cache: TonCache;
 }
 
 function convertMessage(t: HTTPMessage): TonMessage {
@@ -51,7 +58,7 @@ function convertTransaction(r: HTTPTransaction): TonTransaction {
 }
 
 export class TonClient {
-    readonly parameters: TonClientParameters;
+    readonly parameters: TonClientResolvedParameters;
 
     #api: HttpApi;
 
@@ -61,8 +68,11 @@ export class TonClient {
     };
 
     constructor(parameters: TonClientParameters) {
-        this.parameters = parameters;
-        this.#api = new HttpApi(parameters.endpoint);
+        this.parameters = {
+            endpoint: parameters.endpoint,
+            cache: parameters.cache ? parameters.cache : new InMemoryCache()
+        };
+        this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache);
     }
 
     /**
