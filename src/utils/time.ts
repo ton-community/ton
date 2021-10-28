@@ -28,7 +28,7 @@ export function forever() {
     return promise;
 }
 
-export async function backoff<T>(callback: () => Promise<T>): Promise<T> {
+export async function backoff<T>(callback: () => Promise<T>, log: boolean): Promise<T> {
     let currentFailureCount = 0;
     const minDelay = 500;
     const maxDelay = 15000;
@@ -38,7 +38,9 @@ export async function backoff<T>(callback: () => Promise<T>): Promise<T> {
             return await callback();
         } catch (e) {
             if (currentFailureCount > 3) {
-                console.warn(e);
+                if (log) {
+                    console.warn(e);
+                }
             }
             if (currentFailureCount < maxFailureCount) {
                 currentFailureCount++;

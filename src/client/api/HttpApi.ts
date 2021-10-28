@@ -276,10 +276,7 @@ export class HttpApi {
         if (isRight(decoded)) {
             return decoded.right;
         } else {
-            for (let report of reporter.report(decoded)) {
-                console.warn(report);
-            }
-            throw Error('Mailformed response');
+            throw Error('Mailformed response: ' + reporter.report(decoded).join(', '));
         }
     }
 }

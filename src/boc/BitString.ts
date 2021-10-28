@@ -230,7 +230,6 @@ export class BitString implements Iterable<boolean> {
                 }
             }
             if (!foundEndBit) {
-                console.log(array, fullfilledBytes);
                 throw new Error("Incorrect TopUppedArray");
             }
         }
