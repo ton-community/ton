@@ -14,6 +14,12 @@ export class BitStringReader {
         this.length = string.cursor;
     }
 
+    skip(bits: number) {
+        for (let i = 0; i < bits; i++) {
+            this.readBit();
+        }
+    }
+
     readUint(bits: number) {
         if (bits == 0) {
             return new BN(0);
