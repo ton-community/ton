@@ -240,7 +240,17 @@ export class TonClient {
             balance,
             state,
             code: info.code !== '' ? Buffer.from(info.code, 'base64') : null,
-            data: info.data !== '' ? Buffer.from(info.data, 'base64') : null
+            data: info.data !== '' ? Buffer.from(info.data, 'base64') : null,
+            lastTransaction: info.last_transaction_id.lt !== '0' ? {
+                lt: info.last_transaction_id.lt,
+                hash: info.last_transaction_id.hash,
+            } : null,
+            blockId: {
+                workchain: info.block_id.workchain,
+                shard: info.block_id.shard,
+                seqno: info.block_id.seqno
+            },
+            timestampt: info.sync_utime
         };
     }
 

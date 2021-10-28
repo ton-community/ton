@@ -8,11 +8,27 @@ import DataLoader from 'dataloader';
 
 const version = require('../../../package.json').version as string;
 
+const blockIdExt = t.type({
+    '@type': t.literal('ton.blockIdExt'),
+    workchain: t.number,
+    shard: t.string,
+    seqno: t.number,
+    root_hash: t.string,
+    file_hash: t.string
+});
+
 const addressInformation = t.type({
     balance: t.union([t.number, t.string]),
     state: t.union([t.literal('active'), t.literal('uninitialized'), t.literal('frozen')]),
     data: t.string,
-    code: t.string
+    code: t.string,
+    last_transaction_id: t.type({
+        '@type': t.literal('internal.transactionId'),
+        lt: t.string,
+        hash: t.string
+    }),
+    block_id: blockIdExt,
+    sync_utime: t.number
 });
 
 const bocResponse = t.type({
@@ -70,15 +86,6 @@ const transaction = t.type({
 });
 
 const getTransactions = t.array(transaction);
-
-const blockIdExt = t.type({
-    '@type': t.literal('ton.blockIdExt'),
-    workchain: t.number,
-    shard: t.string,
-    seqno: t.number,
-    root_hash: t.string,
-    file_hash: t.string
-})
 
 const getMasterchain = t.type({
     state_root_hash: t.string,
