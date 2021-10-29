@@ -9,6 +9,7 @@ export { KeyStore, KeyRecord } from './keystore/KeyStore';
 export { TonTransaction, TonMessage, TonMessageData } from './client/TonTransaction';
 export { SendMode } from './client/SendMode';
 export { TonCache, InMemoryCache } from './client/TonCache';
+export { HttpApi } from './client/api/HttpApi';
 
 // Messages
 export { Message } from './messages/Message';
