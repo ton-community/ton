@@ -42,3 +42,4 @@ export { WalletV3R2Source } from './contracts/sources/WalletV3R2Source';
 
 // Utils
 export { ConfigStore } from './utils/ConfigStore';
+export { parseDict, parseDictBitString, parseDictRefs } from './boc/dict/parseDict';
