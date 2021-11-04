@@ -10,6 +10,7 @@ export { TonTransaction, TonMessage, TonMessageData } from './client/TonTransact
 export { SendMode } from './client/SendMode';
 export { TonCache, InMemoryCache } from './client/TonCache';
 export { HttpApi } from './client/api/HttpApi';
+export { Slice } from './boc/Slice';
 
 // Messages
 export { Message } from './messages/Message';
