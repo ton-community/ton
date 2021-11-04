@@ -1,4 +1,4 @@
-import { BitStringReader, Cell } from "..";
+import { BitStringReader, Cell, parseDict } from "..";
 
 export class Slice {
     private readonly bits: BitStringReader;
@@ -27,6 +27,23 @@ export class Slice {
 
     readCoins = () => {
         return this.bits.readCoins();
+    }
+
+    readOptDict = <T>(keySize: number, extractor: (slice: Slice) => T) => {
+        if (this.readBit()) {
+            return this.readDict(keySize, extractor);
+        } else {
+            return null;
+        }
+    }
+
+    readDict = <T>(keySize: number, extractor: (slice: Slice) => T) => {
+        let first = this.refs.shift();
+        if (first) {
+            return parseDict(first, keySize, (cell) => extractor(new Slice(cell)));
+        } else {
+            throw Error('No ref');
+        }
     }
 
     readRef = () => {
