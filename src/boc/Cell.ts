@@ -2,6 +2,7 @@ import { Maybe } from '../types';
 import { BitString } from './BitString';
 import { deserializeBoc, hashCell, serializeToBoc } from './boc';
 import inspectSymbol from 'symbol.inspect';
+import { Slice } from '..';
 
 export class Cell {
 
@@ -15,6 +16,10 @@ export class Cell {
 
     constructor(isExotic: boolean = false) {
         this.isExotic = isExotic;
+    }
+
+    beginParse() {
+        return new Slice(this);
     }
 
     writeCell(anotherCell: Cell) {

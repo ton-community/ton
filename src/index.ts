@@ -25,7 +25,6 @@ export { BinaryMessage } from './messages/BinaryMessage';
 
 // Contracts
 export { Contract } from './contracts/Contract';
-export { ElectorContract } from './contracts/ElectorContract';
 export { WalletContract } from './contracts/WalletContract';
 export { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3 } from './contracts/messages/createWalletTransfer';
 

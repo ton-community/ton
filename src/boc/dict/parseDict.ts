@@ -1,15 +1,11 @@
 import { BN } from "bn.js";
 import { BitString } from "../BitString";
-import { BitStringReader } from "../BitStringReader";
-import { Cell } from "../Cell";
+import { Slice } from "../Slice";
 
-function doParse<T>(prefix: string, src: Cell, n: number, res: Map<string, T>, extractor: (cell: Cell, reader: BitStringReader) => T) {
-
-    // Is Fork
-    let reader = new BitStringReader(src.bits);
+function doParse<T>(prefix: string, slice: Slice, n: number, res: Map<string, T>, extractor: (slice: Slice) => T) {
 
     // Reading label
-    let lb0 = reader.readBit() ? 1 : 0;
+    let lb0 = slice.readBit() ? 1 : 0;
     let prefixLength = 0;
     let pp = prefix;
 
@@ -17,24 +13,24 @@ function doParse<T>(prefix: string, src: Cell, n: number, res: Map<string, T>, e
         // Short label detected
 
         // Read 
-        prefixLength = reader.readUnaryLength();
+        prefixLength = slice.readUnaryLength();
 
         // Read prefix
         for (let i = 0; i < prefixLength; i++) {
-            pp += reader.readBit() ? '1' : '0';
+            pp += slice.readBit() ? '1' : '0';
         }
     } else {
-        let lb1 = reader.readBit() ? 1 : 0;
+        let lb1 = slice.readBit() ? 1 : 0;
         if (lb1 === 0) {
             // Long label detected
-            prefixLength = reader.readUintNumber(Math.ceil(Math.log2(n + 1)));
+            prefixLength = slice.readUintNumber(Math.ceil(Math.log2(n + 1)));
             for (let i = 0; i < prefixLength; i++) {
-                pp += reader.readBit() ? '1' : '0';
+                pp += slice.readBit() ? '1' : '0';
             }
         } else {
             // Same label detected
-            let bit = reader.readBit() ? '1' : '0';
-            prefixLength = reader.readUintNumber(Math.ceil(Math.log2(n + 1)));
+            let bit = slice.readBit() ? '1' : '0';
+            prefixLength = slice.readUintNumber(Math.ceil(Math.log2(n + 1)));
             for (let i = 0; i < prefixLength; i++) {
                 pp += bit;
             }
@@ -42,31 +38,30 @@ function doParse<T>(prefix: string, src: Cell, n: number, res: Map<string, T>, e
     }
 
     if (n - prefixLength === 0) {
-        res.set(new BN(pp, 2).toString(10), extractor(src, reader));
+        res.set(new BN(pp, 2).toString(10), extractor(slice));
     } else {
-        if (src.refs.length < 2) {
-            throw Error('Invalid dict');
-        }
+        let left = slice.readRef();
+        let right = slice.readRef();
         // NOTE: Left and right branches are implicitly contain prefixes '0' and '1'
-        doParse(pp + '0', src.refs[0], n - prefixLength - 1, res, extractor);
-        doParse(pp + '1', src.refs[1], n - prefixLength - 1, res, extractor);
+        doParse(pp + '0', left, n - prefixLength - 1, res, extractor);
+        doParse(pp + '1', right, n - prefixLength - 1, res, extractor);
     }
 }
 
-export function parseDict<T>(src: Cell, keySize: number, extractor: (cell: Cell, reader: BitStringReader) => T) {
+export function parseDict<T>(slice: Slice, keySize: number, extractor: (slice: Slice) => T) {
     let res: Map<string, T> = new Map();
-    doParse('', src, keySize, res, extractor);
+    doParse('', slice, keySize, res, extractor);
     return res;
 }
 
-export function parseDictBitString(src: Cell, keySize: number) {
+export function parseDictBitString(slice: Slice, keySize: number) {
     let res: Map<string, BitString> = new Map();
-    doParse('', src, keySize, res, (c, reader) => reader.readRemaining());
+    doParse('', slice, keySize, res, (slice) => slice.readRemaining());
     return res;
 }
 
-export function parseDictRefs(src: Cell, keySize: number) {
-    let res: Map<string, Cell> = new Map();
-    doParse('', src, keySize, res, (c) => c.refs[0]);
+export function parseDictRefs(slice: Slice, keySize: number) {
+    let res: Map<string, Slice> = new Map();
+    doParse('', slice, keySize, res, (slice) => slice.readRef());
     return res;
 }

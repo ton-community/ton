@@ -1,39 +1,38 @@
 import { BN } from "bn.js";
-import { Address, Cell } from "../..";
+import { Address, Slice } from "../..";
 import { BitStringReader } from "../../boc/BitStringReader";
 import { parseDict } from "../../boc/dict/parseDict";
 
-export function configParseMasterAddress(src: Cell | null | undefined) {
-    if (src) {
-        let reader = new BitStringReader(src.bits);
-        return new Address(-1, reader.readBuffer(32));
+export function configParseMasterAddress(slice: Slice | null | undefined) {
+    if (slice) {
+        return new Address(-1, slice.readBuffer(32));
     } else {
         return null;
     }
 }
 
-export function configParseWorkchainDescriptor(src: Cell, reader: BitStringReader) {
-    if (reader.readUint(8).toNumber() !== 0xA6) {
+export function configParseWorkchainDescriptor(slice: Slice) {
+    if (slice.readUint(8).toNumber() !== 0xA6) {
         throw Error('Invalid config');
     }
-    let enabledSince = reader.readUint(32).toNumber();
-    let actialMinSplit = reader.readUint(8).toNumber();
-    let min_split = reader.readUint(8).toNumber();
-    let max_split = reader.readUint(8).toNumber();
-    let basic = reader.readBit();
-    let active = reader.readBit();
-    let accept_msgs = reader.readBit();
-    let flags = reader.readUint(13).toNumber();
-    let zerostateRootHash = reader.readBuffer(32);
-    let zerostateFileHash = reader.readBuffer(32);
-    let version = reader.readUint(32).toNumber();
+    let enabledSince = slice.readUint(32).toNumber();
+    let actialMinSplit = slice.readUint(8).toNumber();
+    let min_split = slice.readUint(8).toNumber();
+    let max_split = slice.readUint(8).toNumber();
+    let basic = slice.readBit();
+    let active = slice.readBit();
+    let accept_msgs = slice.readBit();
+    let flags = slice.readUint(13).toNumber();
+    let zerostateRootHash = slice.readBuffer(32);
+    let zerostateFileHash = slice.readBuffer(32);
+    let version = slice.readUint(32).toNumber();
 
     // Only basic format supported
-    if (reader.readBit()) {
+    if (slice.readBit()) {
         throw Error('Invalid config');
     }
-    let vmVersion = reader.readUint(32).toNumber();
-    let vmMode = reader.readUint(64);
+    let vmVersion = slice.readUint(32).toNumber();
+    let vmMode = slice.readUint(64);
 
     return {
         enabledSince,
@@ -54,42 +53,41 @@ export function configParseWorkchainDescriptor(src: Cell, reader: BitStringReade
     };
 }
 
-function readPublicKey(reader: BitStringReader) {
+function readPublicKey(slice: Slice) {
     // 8e81278a
-    if (reader.readUint(32).toNumber() !== 0x8e81278a) {
+    if (slice.readUint(32).toNumber() !== 0x8e81278a) {
         throw Error('Invalid config');
     }
-    return reader.readBuffer(32);
+    return slice.readBuffer(32);
 }
 
-export function parseValidatorDescr(src: Cell, reader: BitStringReader) {
-    let header = reader.readUint(8).toNumber();
+export function parseValidatorDescr(slice: Slice) {
+    let header = slice.readUint(8).toNumber();
     if (header === 0x53) {
         return {
-            publicKey: readPublicKey(reader),
-            weight: reader.readUint(64),
+            publicKey: readPublicKey(slice),
+            weight: slice.readUint(64),
             adnlAddress: null
         };
     } else if (header === 0x73) {
         return {
-            publicKey: readPublicKey(reader),
-            weight: reader.readUint(64),
-            adnlAddress: reader.readBuffer(32)
+            publicKey: readPublicKey(slice),
+            weight: slice.readUint(64),
+            adnlAddress: slice.readBuffer(32)
         };
     } else {
         throw Error('Invalid config');
     }
 }
 
-export function parseValidatorSet(src: Cell) {
-    let reader = new BitStringReader(src.bits);
-    let header = reader.readUint(8).toNumber();
+export function parseValidatorSet(slice: Slice) {
+    let header = slice.readUint(8).toNumber();
     if (header === 0x11) {
-        let timeSince = reader.readUint(32).toNumber();
-        let timeUntil = reader.readUint(32).toNumber();
-        let total = reader.readUint(16).toNumber();
-        let main = reader.readUint(16).toNumber();
-        let list = parseDict(src.refs[0], 16, parseValidatorDescr);
+        let timeSince = slice.readUint(32).toNumber();
+        let timeUntil = slice.readUint(32).toNumber();
+        let total = slice.readUint(16).toNumber();
+        let main = slice.readUint(16).toNumber();
+        let list = parseDict(slice.readRef(), 16, parseValidatorDescr);
         return {
             timeSince,
             timeUntil,
@@ -99,13 +97,13 @@ export function parseValidatorSet(src: Cell) {
             list
         };
     } else if (header === 0x12) {
-        let timeSince = reader.readUint(32).toNumber();
-        let timeUntil = reader.readUint(32).toNumber();
-        let total = reader.readUint(16).toNumber();
-        let main = reader.readUint(16).toNumber();
-        let totalWeight = reader.readUint(64);
-        let exists = reader.readBit();
-        let list = exists ? parseDict(src.refs[0], 16, parseValidatorDescr) : null;
+        let timeSince = slice.readUint(32).toNumber();
+        let timeUntil = slice.readUint(32).toNumber();
+        let total = slice.readUint(16).toNumber();
+        let main = slice.readUint(16).toNumber();
+        let totalWeight = slice.readUint(64);
+        let exists = slice.readBit();
+        let list = exists ? parseDict(slice.readRef(), 16, parseValidatorDescr) : null;
         return {
             timeSince,
             timeUntil,
@@ -117,12 +115,11 @@ export function parseValidatorSet(src: Cell) {
     }
 }
 
-export function parseBridge(src: Cell) {
-    let reader = new BitStringReader(src.bits);
-    let bridgeAddress = reader.readBuffer(32);
-    let oracleMultisigAddress = reader.readBuffer(32);
-    let oracles = reader.readBit() ? parseDict(src.refs[0], 256, (c, r) => r.readBuffer(32)) : null;
-    let externalChainAddress = reader.readBuffer(32);
+export function parseBridge(slice: Slice) {
+    let bridgeAddress = slice.readBuffer(32);
+    let oracleMultisigAddress = slice.readBuffer(32);
+    let oracles = slice.readBit() ? parseDict(slice.readRef(), 256, (slice) => slice.readBuffer(32)) : null;
+    let externalChainAddress = slice.readBuffer(32);
     return {
         bridgeAddress,
         oracleMultisigAddress,
@@ -131,23 +128,21 @@ export function parseBridge(src: Cell) {
     }
 }
 
-export function configParseMasterAddressRequired(src: Cell | null | undefined) {
-    if (!src) {
+export function configParseMasterAddressRequired(slice: Slice | null | undefined) {
+    if (!slice) {
         throw Error('Invalid config');
     }
-    return configParseMasterAddress(src)!;
+    return configParseMasterAddress(slice)!;
 }
 
-export function configParse15(src: Cell | null | undefined) {
-    if (!src) {
+export function configParse15(slice: Slice | null | undefined) {
+    if (!slice) {
         throw Error('Invalid config');
     }
-    let reader = new BitStringReader(src.bits);
-
-    let validatorsElectedFor = reader.readUintNumber(32);
-    let electorsStartBefore = reader.readUintNumber(32);
-    let electorsEndBefore = reader.readUintNumber(32);
-    let stakeHeldFor = reader.readUintNumber(32);
+    let validatorsElectedFor = slice.readUintNumber(32);
+    let electorsStartBefore = slice.readUintNumber(32);
+    let electorsEndBefore = slice.readUintNumber(32);
+    let stakeHeldFor = slice.readUintNumber(32);
     return {
         validatorsElectedFor,
         electorsStartBefore,
@@ -156,15 +151,14 @@ export function configParse15(src: Cell | null | undefined) {
     };
 }
 
-export function configParse16(src: Cell | null | undefined) {
-    if (!src) {
+export function configParse16(slice: Slice | null | undefined) {
+    if (!slice) {
         throw Error('Invalid config');
     }
-    let reader = new BitStringReader(src.bits);
 
-    let maxValidators = reader.readUintNumber(16);
-    let maxMainValidators = reader.readUintNumber(16);
-    let minValidators = reader.readUintNumber(16);
+    let maxValidators = slice.readUintNumber(16);
+    let maxMainValidators = slice.readUintNumber(16);
+    let minValidators = slice.readUintNumber(16);
     return {
         maxValidators,
         maxMainValidators,
@@ -172,15 +166,14 @@ export function configParse16(src: Cell | null | undefined) {
     };
 }
 
-export function configParse17(src: Cell | null | undefined) {
-    if (!src) {
+export function configParse17(slice: Slice | null | undefined) {
+    if (!slice) {
         throw Error('Invalid config');
     }
-    let reader = new BitStringReader(src.bits);
 
-    let minStake = reader.readCoins();
-    let maxStake = reader.readCoins();
-    let maxStakeFactor = reader.readUintNumber(32);
+    let minStake = slice.readCoins();
+    let maxStake = slice.readCoins();
+    let maxStakeFactor = slice.readUintNumber(32);
 
     return {
         minStake,
@@ -189,18 +182,17 @@ export function configParse17(src: Cell | null | undefined) {
     };
 }
 
-export function configParse18(src: Cell | null | undefined) {
-    if (!src) {
+export function configParse18(slice: Slice | null | undefined) {
+    if (!slice) {
         throw Error('Invalid config');
     }
 
-    return parseDict(src, 32, (cell) => {
-        let reader = new BitStringReader(cell.bits);
-        let utime_since = reader.readUint(32);
-        let bit_price_ps = reader.readUint(64);
-        let cell_price_ps = reader.readUint(64);
-        let mc_bit_price_ps = reader.readUint(64);
-        let mc_cell_price_ps = reader.readUint(64);
+    return parseDict(slice, 32, (slice) => {
+        let utime_since = slice.readUint(32);
+        let bit_price_ps = slice.readUint(64);
+        let cell_price_ps = slice.readUint(64);
+        let mc_bit_price_ps = slice.readUint(64);
+        let mc_cell_price_ps = slice.readUint(64);
         return {
             utime_since,
             bit_price_ps,
@@ -211,45 +203,43 @@ export function configParse18(src: Cell | null | undefined) {
     });
 }
 
-export function configParse8(src: Cell | null | undefined) {
-    if (!src) {
+export function configParse8(slice: Slice | null | undefined) {
+    if (!slice) {
         return {
             version: 0,
             capabilities: new BN(0)
         }
     }
 
-    let reader = new BitStringReader(src.bits);
-    let version = reader.readUintNumber(32);
-    let capabilities = reader.readUint(64);
+    let version = slice.readUintNumber(32);
+    let capabilities = slice.readUint(64);
     return {
         version,
         capabilities
     }
 }
 
-export function configParse40(src: Cell | null | undefined) {
-    if (!src) {
+export function configParse40(slice: Slice | null | undefined) {
+    if (!slice) {
         return null;
     }
 
-    let reader = new BitStringReader(src.bits);
-    let header = reader.readUintNumber(8);
+    let header = slice.readUintNumber(8);
     if (header !== 1) {
         throw Error('Invalid config');
     }
 
-    let defaultFlatFine = reader.readCoins();
-    let defaultProportionaFine = reader.readCoins();
-    let severityFlatMult = reader.readUintNumber(16);
-    let severityProportionalMult = reader.readUintNumber(16);
-    let unfunishableInterval = reader.readUintNumber(16);
-    let longInterval = reader.readUintNumber(16);
-    let longFlatMult = reader.readUintNumber(16);
-    let longProportionalMult = reader.readUintNumber(16);
-    let mediumInterval = reader.readUintNumber(16);
-    let mediumFlatMult = reader.readUintNumber(16);
-    let mediumProportionalMult = reader.readUintNumber(16);
+    let defaultFlatFine = slice.readCoins();
+    let defaultProportionaFine = slice.readCoins();
+    let severityFlatMult = slice.readUintNumber(16);
+    let severityProportionalMult = slice.readUintNumber(16);
+    let unfunishableInterval = slice.readUintNumber(16);
+    let longInterval = slice.readUintNumber(16);
+    let longFlatMult = slice.readUintNumber(16);
+    let longProportionalMult = slice.readUintNumber(16);
+    let mediumInterval = slice.readUintNumber(16);
+    let mediumFlatMult = slice.readUintNumber(16);
+    let mediumProportionalMult = slice.readUintNumber(16);
     return {
         defaultFlatFine,
         defaultProportionaFine,
@@ -265,28 +255,27 @@ export function configParse40(src: Cell | null | undefined) {
     };
 }
 
-export function configParse12(src: Cell | null | undefined) {
-    if (!src) {
+export function configParse12(slice: Slice | null | undefined) {
+    if (!slice) {
         throw Error('Invalid config');
     }
-    const reader = new BitStringReader(src.bits);
-    if (reader.readUint(1).toNumber()) {
-        return parseDict(src.refs[0], 32, configParseWorkchainDescriptor);
+    if (slice.readUint(1).toNumber()) {
+        return parseDict(slice.readRef(), 32, configParseWorkchainDescriptor);
     } else {
         throw Error('No workchains exist')
     }
 }
 
-export function configParseValidatorSet(src: Cell | null | undefined) {
-    if (!src) {
+export function configParseValidatorSet(slice: Slice | null | undefined) {
+    if (!slice) {
         return null;
     }
-    return parseValidatorSet(src);
+    return parseValidatorSet(slice);
 }
 
-export function configParseBridge(src: Cell | null | undefined) {
-    if (!src) {
+export function configParseBridge(slice: Slice | null | undefined) {
+    if (!slice) {
         return null;
     }
-    return parseBridge(src);
+    return parseBridge(slice);
 }

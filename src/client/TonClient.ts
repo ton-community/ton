@@ -9,7 +9,6 @@ import { StateInit } from "../messages/StateInit";
 import { Contract } from "../contracts/Contract";
 import { RawMessage } from "../messages/RawMessage";
 import { Wallet } from "./Wallet";
-import { ElectorContract } from "../contracts/ElectorContract";
 import { Maybe } from '../types';
 import { BN } from 'bn.js';
 import { WalletContractType, WalletSource } from '..';
@@ -63,8 +62,7 @@ export class TonClient {
     #api: HttpApi;
 
     services = {
-        configs: new ConfigContract(this),
-        elector: new ElectorContract(this),
+        configs: new ConfigContract(this)
     };
 
     constructor(parameters: TonClientParameters) {

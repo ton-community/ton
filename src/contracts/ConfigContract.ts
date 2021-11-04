@@ -28,8 +28,8 @@ export class ConfigContract implements Contract {
 
     async getConfigsRaw() {
         let data = (await this.client.getContractState(this.address)).data;
-        let cell = Cell.fromBoc(data!)[0];
-        let dict = cell.refs[0];
+        let slice = Cell.fromBoc(data!)[0].beginParse();
+        let dict = slice.readRef();
         let res = parseDictRefs(dict, 32);
         return res;
     }

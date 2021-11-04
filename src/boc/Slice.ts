@@ -1,11 +1,13 @@
 import { BitStringReader, Cell, parseDict } from "..";
 
 export class Slice {
+    readonly source: Cell;
     private readonly bits: BitStringReader;
     private readonly refs: Cell[] = [];
 
     constructor(cell: Cell) {
-        this.refs = cell.refs;
+        this.source = cell;
+        this.refs = [...cell.refs];
         this.bits = new BitStringReader(cell.bits);
     }
 
@@ -15,6 +17,10 @@ export class Slice {
 
     readUint = (bits: number) => {
         return this.bits.readUint(bits);
+    }
+
+    readUintNumber = (bits: number) => {
+        return this.bits.readUintNumber(bits);
     }
 
     readBuffer = (size: number) => {
@@ -37,6 +43,10 @@ export class Slice {
         return this.bits.readAddress();
     }
 
+    readUnaryLength = () => {
+        return this.bits.readUnaryLength();
+    }
+
     readOptDict = <T>(keySize: number, extractor: (slice: Slice) => T) => {
         if (this.readBit()) {
             return this.readDict(keySize, extractor);
@@ -48,7 +58,7 @@ export class Slice {
     readDict = <T>(keySize: number, extractor: (slice: Slice) => T) => {
         let first = this.refs.shift();
         if (first) {
-            return parseDict(first, keySize, (cell) => extractor(new Slice(cell)));
+            return parseDict(first.beginParse(), keySize, extractor);
         } else {
             throw Error('No ref');
         }
