@@ -29,6 +29,14 @@ export class Slice {
         return this.bits.readCoins();
     }
 
+    readRemaining = () => {
+        return this.bits.readRemaining();
+    }
+
+    readAddress = () => {
+        return this.bits.readAddress();
+    }
+
     readOptDict = <T>(keySize: number, extractor: (slice: Slice) => T) => {
         if (this.readBit()) {
             return this.readDict(keySize, extractor);

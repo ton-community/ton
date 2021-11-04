@@ -1,5 +1,5 @@
 import { BN } from "bn.js";
-import { BitString } from "..";
+import { Address, BitString } from "..";
 
 export class BitStringReader {
 
@@ -72,6 +72,23 @@ export class BitStringReader {
             res.writeBit(this.readBit());
         }
         return res;
+    }
+
+    readAddress() {
+        let type = this.readUintNumber(2);
+        if (type === 0) {
+            return null;
+        }
+        if (type !== 2) {
+            throw Error('Only STD address supported')
+        }
+        if (this.readUintNumber(1) !== 0) {
+            throw Error('Only STD address supported')
+        }
+
+        const wc = this.readUintNumber(8);
+        const hash = this.readBuffer(32);
+        return new Address(wc, hash);
     }
 
     private getBit(n: number) {
