@@ -58,6 +58,18 @@ export class BitStringReader {
         return new BN(this.readBuffer(bytes).toString('hex'), 'hex');
     }
 
+    readVarUInt(headerBits: number) {
+        let bytes = this.readUintNumber(headerBits);
+        if (bytes === 0) {
+            return new BN(0);
+        }
+        return new BN(this.readBuffer(bytes).toString('hex'), 'hex');
+    }
+
+    readVarUIntNumber(headerBits: number) {
+        return this.readVarUInt(headerBits).toNumber();
+    }
+
     readUnaryLength() {
         let res = 0;
         while (this.readBit()) {

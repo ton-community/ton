@@ -35,6 +35,14 @@ export class Slice {
         return this.bits.readCoins();
     }
 
+    readVarUInt = (headerBits: number) => {
+        return this.bits.readVarUInt(headerBits);
+    }
+
+    readVarUIntNumber = (headerBits: number) => {
+        return this.bits.readVarUIntNumber(headerBits);
+    }
+
     readRemaining = () => {
         return this.bits.readRemaining();
     }
