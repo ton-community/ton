@@ -213,7 +213,6 @@ function readActionPhase(slice: Slice) {
     const messagesCreated = slice.readUintNumber(16);
     const actionListHash = slice.readBuffer(32);
     const totalMessageSizes = readStorageUsedShort(slice);
-    console.warn(totalMessageSizes);
 
     return {
         success,
