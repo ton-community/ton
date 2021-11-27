@@ -7,11 +7,10 @@ import { ExternalMessage } from "../messages/ExternalMessage";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { StateInit } from "../messages/StateInit";
 import { Contract } from "../contracts/Contract";
-import { RawMessage } from "../messages/RawMessage";
 import { Wallet } from "./Wallet";
 import { Maybe } from '../types';
 import { BN } from 'bn.js';
-import { WalletContractType, WalletSource } from '..';
+import { CellMessage, WalletContractType, WalletSource } from '..';
 import { TonTransaction, TonMessage } from './TonTransaction';
 import { ConfigContract } from '../contracts/ConfigContract';
 import { InMemoryCache, TonCache } from './TonCache';
@@ -201,7 +200,7 @@ export class TonClient {
             const message = new ExternalMessage({
                 to: contract.address,
                 body: new CommonMessageInfo({
-                    body: new RawMessage(src)
+                    body: new CellMessage(src)
                 })
             });
             await this.sendMessage(message);
@@ -210,7 +209,7 @@ export class TonClient {
                 to: contract.address,
                 body: new CommonMessageInfo({
                     stateInit: new StateInit({ code: contract.source.initialCode, data: contract.source.initialData }),
-                    body: new RawMessage(src)
+                    body: new CellMessage(src)
                 })
             });
             await this.sendMessage(message);

@@ -14,7 +14,7 @@ export { Slice } from './boc/Slice';
 
 // Messages
 export { Message } from './messages/Message';
-export { RawMessage } from './messages/RawMessage';
+export { CellMessage } from './messages/CellMessage';
 export { InternalMessage } from './messages/InternalMessage';
 export { ExternalMessage } from './messages/ExternalMessage';
 export { EmptyMessage } from './messages/EmptyMessage';
@@ -45,4 +45,20 @@ export { ConfigStore } from './utils/ConfigStore';
 export { parseDict, parseDictBitString, parseDictRefs } from './boc/dict/parseDict';
 
 // Transaction
-export { parseTransaction } from './block/parseTransaction';
+export {
+    parseTransaction,
+    RawAccountStatus,
+    RawCurrencyCollection,
+    RawCommonMessageInfo,
+    RawStateInit,
+    RawMessage,
+    RawHashUpdate,
+    RawAccountStatusChange,
+    RawStorageUsedShort,
+    RawStoragePhase,
+    RawComputePhase,
+    RawActionPhase,
+    RawBouncePhase,
+    RawTransactionDescription,
+    RawTransaction
+} from './block/parseTransaction';

@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import { Address, Slice } from "..";
+import { Address, Cell, Slice } from "..";
 
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L243
@@ -7,7 +7,8 @@ import { Address, Slice } from "..";
 // acc_state_frozen$01 = AccountStatus;
 // acc_state_active$10 = AccountStatus;
 // acc_state_nonexist$11 = AccountStatus;
-function readAccountStatus(slice: Slice) {
+export type RawAccountStatus = 'uninitialized' | 'frozen' | 'active' | 'non-existing';
+function readAccountStatus(slice: Slice): RawAccountStatus {
     const status = slice.readUintNumber(2);
     if (status === 0x00) {
         return 'uninitialized';
@@ -21,23 +22,22 @@ function readAccountStatus(slice: Slice) {
     if (status === 0x03) {
         return 'non-existing';
     }
+    throw Error('Unreachable');
 }
-
-export type RawAccountStatus = ReturnType<typeof readAccountStatus>;
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L120
 // extra_currencies$_ dict:(HashmapE 32 (VarUInteger 32)) 
 //  = ExtraCurrencyCollection;
 //  currencies$_ grams:Grams other:ExtraCurrencyCollection 
 //            = CurrencyCollection;
-function readCurrencyCollection(slice: Slice) {
+export type RawCurrencyCollection = { coins: BN };
+function readCurrencyCollection(slice: Slice): RawCurrencyCollection {
     const coins = slice.readCoins();
     if (slice.readBit()) {
         throw Error('Currency collctions are not supported yet');
     }
     return { coins };
 }
-export type RawCurrencyCollection = ReturnType<typeof readCurrencyCollection>;
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L123
 // int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
@@ -48,7 +48,34 @@ export type RawCurrencyCollection = ReturnType<typeof readCurrencyCollection>;
 //  import_fee:Grams = CommonMsgInfo;
 // ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
 //  created_lt:uint64 created_at:uint32 = CommonMsgInfo;
-function readCommonMsgInfo(slice: Slice) {
+export type RawCommonMessageInfo =
+    | {
+        type: 'internal',
+        ihrDisabled: boolean,
+        bounce: boolean,
+        bounced: boolean,
+        src: Address | null,
+        dest: Address | null,
+        value: RawCurrencyCollection,
+        ihrFee: BN,
+        fwdFee: BN,
+        createdLt: BN,
+        createdAt: number
+    }
+    | {
+        type: 'external-out',
+        src: Address | null,
+        dest: Address | null,
+        createdLt: BN,
+        createdAt: number
+    }
+    | {
+        type: 'external-in',
+        src: Address | null,
+        dest: Address | null,
+        importFee: BN
+    };
+function readCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
 
     if (!slice.readBit()) {
         // Internal
@@ -76,37 +103,37 @@ function readCommonMsgInfo(slice: Slice) {
             createdAt
         }
     } else if (slice.readBit()) {
-        // In external
+        // Outgoing external
         let src = slice.readAddress();
         let dest = slice.readAddress();
         let createdLt = slice.readUint(64);
         let createdAt = slice.readUintNumber(32);
         return {
-            type: 'external-in',
+            type: 'external-out',
             src,
             dest,
             createdLt,
             createdAt
         }
     } else {
-        // Out external
+        // Incoming external
         let src = slice.readAddress();
         let dest = slice.readAddress();
         let importFee = slice.readCoins()
         return {
-            type: 'external-out',
+            type: 'external-in',
             src,
             dest,
             importFee
         }
     }
 }
-export type RawCommonMessageInfo = ReturnType<typeof readCommonMsgInfo>;
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L141
 // _ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
 //  code:(Maybe ^Cell) data:(Maybe ^Cell)
 //  library:(HashmapE 256 SimpleLib) = StateInit;
+export type RawStateInit = { code: Cell | null, data: Cell | null };
 function readStateInit(slice: Slice) {
     if (slice.readBit()) {
         throw Error('Unsupported');
@@ -124,37 +151,41 @@ function readStateInit(slice: Slice) {
 
     return { data, code };
 }
-export type RawStateInit = ReturnType<typeof readStateInit>;
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L147
 // message$_ {X:Type} info:CommonMsgInfo
 //  init:(Maybe (Either StateInit ^StateInit))
 //  body:(Either X ^X) = Message X;
-function readMessage(slice: Slice) {
+export type RawMessage = {
+    info: RawCommonMessageInfo,
+    init: RawStateInit | null,
+    body: Cell
+};
+function readMessage(slice: Slice): RawMessage {
     const info = readCommonMsgInfo(slice);
     const hasInit = slice.readBit();
-    let stateInit: RawStateInit | null = null;
+    let init: RawStateInit | null = null;
     if (hasInit) {
         if (!slice.readBit()) {
-            stateInit = readStateInit(slice);
+            init = readStateInit(slice);
         } else {
-            stateInit = readStateInit(slice.readRef());
+            init = readStateInit(slice.readRef());
         }
     }
     const body = slice.readBit() ? slice.readRef().toCell() : slice.toCell();
 
     return {
         info,
-        stateInit,
+        init,
         body
     };
 }
-export type RawMessage = ReturnType<typeof readMessage>;
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L273
 // update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256
 //  = HASH_UPDATE X;
-function readHashUpdate(slice: Slice) {
+export type RawHashUpdate = { oldHash: Buffer, newHash: Buffer };
+function readHashUpdate(slice: Slice): RawHashUpdate {
     if (slice.readUintNumber(8) !== 0x72) {
         throw Error('Invalid transaction');
     }
@@ -166,7 +197,8 @@ function readHashUpdate(slice: Slice) {
 // acst_unchanged$0 = AccStatusChange;  // x -> x
 // acst_frozen$10 = AccStatusChange;    // init -> frozen
 // acst_deleted$11 = AccStatusChange;   // frozen -> deleted
-function readAccountChange(slice: Slice) {
+export type RawAccountStatusChange = 'unchanged' | 'frozen' | 'deleted';
+function readAccountChange(slice: Slice): RawAccountStatusChange {
     if (!slice.readBit()) {
         return 'unchanged';
     }
@@ -179,7 +211,8 @@ function readAccountChange(slice: Slice) {
 
 // storage_used_short$_ cells:(VarUInteger 7) 
 //  bits:(VarUInteger 7) = StorageUsedShort;
-function readStorageUsedShort(slice: Slice) {
+export type RawStorageUsedShort = { cells: number, bits: number };
+function readStorageUsedShort(slice: Slice): RawStorageUsedShort {
     return {
         cells: slice.readVarUIntNumber(3),
         bits: slice.readVarUIntNumber(3)
@@ -190,7 +223,8 @@ function readStorageUsedShort(slice: Slice) {
 //   storage_fees_due:(Maybe Grams)
 //   status_change:AccStatusChange
 //   = TrStoragePhase;
-function readStoragePhase(slice: Slice) {
+export type RawStoragePhase = { storageFeesCollected: BN, storageFeesDue: BN | null, statusChange: RawAccountStatusChange };
+function readStoragePhase(slice: Slice): RawStoragePhase {
     const storageFeesCollected = slice.readCoins();
     let storageFeesDue: BN | null = null;
     if (slice.readBit()) {
@@ -203,11 +237,11 @@ function readStoragePhase(slice: Slice) {
         statusChange
     }
 }
-type StoragePhase = ReturnType<typeof readStoragePhase>;
 
 // tr_phase_credit$_ due_fees_collected:(Maybe Grams)
 //   credit:CurrencyCollection = TrCreditPhase;
-function readCreditPhase(slice: Slice) {
+export type RawCreditPhase = { dueFeesColelcted: BN | null, credit: RawCurrencyCollection };
+function readCreditPhase(slice: Slice): RawCreditPhase {
     let dueFeesColelcted = slice.readBit() ? slice.readCoins() : null;
     const credit = readCurrencyCollection(slice);
     return {
@@ -215,7 +249,6 @@ function readCreditPhase(slice: Slice) {
         credit
     }
 }
-type CreditPhase = ReturnType<typeof readCreditPhase>;
 
 
 // tr_phase_compute_skipped$0 reason:ComputeSkipReason
@@ -231,8 +264,28 @@ type CreditPhase = ReturnType<typeof readCreditPhase>;
 //  cskip_no_state$00 = ComputeSkipReason;
 //  cskip_bad_state$01 = ComputeSkipReason;
 //  cskip_no_gas$10 = ComputeSkipReason;
-
-function readComputePhase(slice: Slice) {
+export type RawComputePhase =
+    | {
+        type: 'skipped',
+        reason: 'no-state' | 'bad-state' | 'no-gas'
+    }
+    | {
+        type: 'computed',
+        success: boolean,
+        messageStateUsed: boolean,
+        accountActivated: boolean,
+        gasFees: BN,
+        gasUsed: BN,
+        gasLimit: BN,
+        gasCredit: BN | null,
+        mode: number,
+        exitCode: number,
+        exitArg: number | null,
+        vmSteps: number,
+        vmInitStateHash: Buffer,
+        vmFinalStateHash: Buffer
+    };
+function readComputePhase(slice: Slice): RawComputePhase {
     if (!slice.readBit()) {
         const skipReason = slice.readUintNumber(2);
         if (skipReason === 0x00) {
@@ -289,8 +342,6 @@ function readComputePhase(slice: Slice) {
     }
 }
 
-type ComputePhase = ReturnType<typeof readComputePhase>;
-
 // tr_phase_action$_ success:Bool valid:Bool no_funds:Bool
 //   status_change:AccStatusChange
 //   total_fwd_fees:(Maybe Grams) total_action_fees:(Maybe Grams)
@@ -299,7 +350,23 @@ type ComputePhase = ReturnType<typeof readComputePhase>;
 //   action_list_hash:bits256 tot_msg_size:StorageUsedShort 
 //   = TrActionPhase;
 
-function readActionPhase(slice: Slice) {
+export type RawActionPhase = {
+    success: boolean,
+    valid: boolean,
+    noFunds: boolean,
+    statusChange: RawAccountStatusChange,
+    totalFwdFees: BN | null,
+    totalActionFees: BN | null,
+    resultCode: number,
+    resultArg: number | null,
+    totalActions: number,
+    specialActions: number,
+    skippedActions: number,
+    messagesCreated: number,
+    actionListHash: Buffer,
+    totalMessageSizes: RawStorageUsedShort
+};
+function readActionPhase(slice: Slice): RawActionPhase {
     const success = slice.readBit();
     const valid = slice.readBit();
     const noFunds = slice.readBit();
@@ -333,12 +400,14 @@ function readActionPhase(slice: Slice) {
     }
 }
 
-type ActionPhase = ReturnType<typeof readActionPhase>;
-
 // tr_phase_bounce_negfunds$00 = TrBouncePhase;
 // tr_phase_bounce_nofunds$01 msg_size:StorageUsedShort req_fwd_fees:Grams = TrBouncePhase;
 // tr_phase_bounce_ok$1 msg_size:StorageUsedShort msg_fees:Grams fwd_fees:Grams = TrBouncePhase;
-function readBouncePhase(slice: Slice) {
+export type RawBouncePhase =
+    | { type: 'ok', msgSize: RawStorageUsedShort, msgFees: BN, fwdFees: BN }
+    | { type: 'no-funds', msgSize: RawStorageUsedShort, fwdFees: BN }
+    | { type: 'negative-funds' };
+function readBouncePhase(slice: Slice): RawBouncePhase {
 
     // Is OK
     if (slice.readBit()) {
@@ -368,8 +437,6 @@ function readBouncePhase(slice: Slice) {
         type: 'negative-funds'
     }
 }
-
-type BouncePhase = ReturnType<typeof readBouncePhase>;
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L324
 // trans_ord$0000 credit_first:Bool
@@ -412,26 +479,50 @@ type BouncePhase = ReturnType<typeof readBouncePhase>;
 //   compute_ph:TrComputePhase action:(Maybe ^TrActionPhase)
 //   aborted:Bool destroyed:Bool
 //   = TransactionDescr;
-
-function readTransactionDescription(slice: Slice) {
+export type RawTransactionDescription =
+    | {
+        type: 'generic',
+        creditFirst: boolean,
+        storagePhase: RawStoragePhase | null,
+        creditPhase: RawCreditPhase | null,
+        computePhase: RawComputePhase,
+        actionPhase: RawActionPhase | null,
+        bouncePhase: RawBouncePhase | null,
+        aborted: boolean,
+        destroyed: boolean
+    }
+    | {
+        type: 'storage',
+        storagePhase: RawStoragePhase
+    }
+    | {
+        type: 'tick-tock',
+        isTock: boolean,
+        storagePhase: RawStoragePhase,
+        computePhase: RawComputePhase,
+        actionPhase: RawActionPhase | null,
+        aborted: boolean,
+        destroyed: boolean
+    };
+function readTransactionDescription(slice: Slice): RawTransactionDescription {
     const type = slice.readUintNumber(4);
     if (type === 0x00) {
         const creditFirst = slice.readBit();
-        let storagePhase: StoragePhase | null = null;
-        let creditPhase: CreditPhase | null = null;
+        let storagePhase: RawStoragePhase | null = null;
+        let creditPhase: RawCreditPhase | null = null;
         if (slice.readBit()) {
             storagePhase = readStoragePhase(slice);
         }
         if (slice.readBit()) {
             creditPhase = readCreditPhase(slice);
         }
-        let computePhase: ComputePhase = readComputePhase(slice);
-        let actionPhase: ActionPhase | null = null;
+        let computePhase: RawComputePhase = readComputePhase(slice);
+        let actionPhase: RawActionPhase | null = null;
         if (slice.readBit()) {
             actionPhase = readActionPhase(slice.readRef());
         }
         let aborted = slice.readBit();
-        let bouncePhase: BouncePhase | null = null;
+        let bouncePhase: RawBouncePhase | null = null;
         if (slice.readBit()) {
             bouncePhase = readBouncePhase(slice);
         }
@@ -449,7 +540,7 @@ function readTransactionDescription(slice: Slice) {
         }
     }
     if (type === 0x01) {
-        let storagePhase: StoragePhase = readStoragePhase(slice);
+        let storagePhase: RawStoragePhase = readStoragePhase(slice);
         return {
             type: 'storage',
             storagePhase
@@ -457,9 +548,9 @@ function readTransactionDescription(slice: Slice) {
     }
     if (type === 0x2 || type === 0x03) {
         const isTock = type === 0x03;
-        let storagePhase: StoragePhase = readStoragePhase(slice);
-        let computePhase: ComputePhase = readComputePhase(slice);
-        let actionPhase: ActionPhase | null = null;
+        let storagePhase: RawStoragePhase = readStoragePhase(slice);
+        let computePhase: RawComputePhase = readComputePhase(slice);
+        let actionPhase: RawActionPhase | null = null;
         if (slice.readBit()) {
             actionPhase = readActionPhase(slice.readRef());
         }
@@ -486,7 +577,24 @@ function readTransactionDescription(slice: Slice) {
 //  ^[ in_msg:(Maybe ^(Message Any)) out_msgs:(HashmapE 15 ^(Message Any)) ]
 //  total_fees:CurrencyCollection state_update:^(HASH_UPDATE Account)
 //  description:^TransactionDescr = Transaction;
-export function parseTransaction(workchain: number, slice: Slice) {
+export type RawTransaction = {
+    address: Address,
+    lt: BN,
+    prevTransaction: {
+        lt: BN,
+        hash: Buffer
+    }
+    time: number,
+    outMessagesCount: number,
+    oldStatus: RawAccountStatus,
+    newStatus: RawAccountStatus,
+    fees: RawCurrencyCollection,
+    update: RawHashUpdate,
+    description: RawTransactionDescription,
+    inMessage: RawMessage | null,
+    outMessages: RawMessage[]
+};
+export function parseTransaction(workchain: number, slice: Slice): RawTransaction {
     if (slice.readUintNumber(4) !== 0x07) {
         throw Error('Invalid transaction');
     }
@@ -520,9 +628,12 @@ export function parseTransaction(workchain: number, slice: Slice) {
     if (hasInMessage) {
         inMessage = readMessage(messages.readRef());
     }
-    let outMessages: Map<string, RawMessage> = new Map();
+    let outMessages: RawMessage[] = [];
     if (hasOutMessages) {
-        outMessages = messages.readDict(15, (slice) => readMessage(slice.readRef()));
+        let dict = messages.readDict(15, (slice) => readMessage(slice.readRef()));
+        for (let msg of Array.from(dict.values())) {
+            outMessages.push(msg);
+        }
     }
 
     // Currency collections

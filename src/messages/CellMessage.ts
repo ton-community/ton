@@ -1,7 +1,7 @@
 import { Cell } from "../boc/Cell";
 import { Message } from "./Message";
 
-export class RawMessage implements Message {
+export class CellMessage implements Message {
 
     private cell: Cell;
 

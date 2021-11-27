@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import { keyPairFromSecretKey } from "ton-crypto";
-import { Address, BinaryMessage, Cell, CommentMessage, ExternalMessage, Message, RawMessage, StateInit, TonClient } from "..";
+import { Address, BinaryMessage, Cell, CellMessage, CommentMessage, ExternalMessage, Message, StateInit, TonClient } from "..";
 import { contractAddress } from "../contracts/sources/ContractSource";
 import { WalletSource } from "../contracts/sources/WalletSource";
 import { WalletV1R2Source } from "../contracts/sources/WalletV1R2Source";
@@ -278,7 +278,7 @@ export class Wallet {
             to: contract.address,
             body: new CommonMessageInfo({
                 stateInit: new StateInit({ code: contract.source.initialCode, data: contract.source.initialData }),
-                body: new RawMessage(transfer)
+                body: new CellMessage(transfer)
             })
         });
 
