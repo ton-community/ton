@@ -107,4 +107,18 @@ export class Slice {
         // Build slice
         return new Slice(remaining, remainingRefs);
     }
+
+    toCell = () => {
+        // Copy remaining
+        const cloned = this.sourceBits.clone();
+        const reader = new BitStringReader(cloned);
+        reader.skip(this.bits.currentOffset);
+        const remaining = reader.readRemaining();
+
+        let cell = new Cell(false, remaining);
+        for (let r of this.refs) {
+            cell.refs.push(r);
+        }
+        return cell;
+    }
 }

@@ -10,12 +10,13 @@ export class Cell {
         return deserializeBoc(typeof src === 'string' ? Buffer.from(src, 'hex') : src);
     }
 
-    readonly bits = BitString.alloc(1023);
+    readonly bits: BitString;
     readonly refs: Cell[] = [];
     readonly isExotic: boolean;
 
-    constructor(isExotic: boolean = false) {
+    constructor(isExotic: boolean = false, bits = BitString.alloc(1023)) {
         this.isExotic = isExotic;
+        this.bits = bits;
     }
 
     beginParse() {

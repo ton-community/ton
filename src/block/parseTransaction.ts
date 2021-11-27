@@ -141,7 +141,7 @@ function readMessage(slice: Slice) {
             stateInit = readStateInit(slice.readRef());
         }
     }
-    const body = slice.readBit() ? slice.readRef().clone() : slice.clone();
+    const body = slice.readBit() ? slice.readRef().toCell() : slice.toCell();
 
     return {
         info,
