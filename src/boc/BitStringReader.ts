@@ -7,6 +7,10 @@ export class BitStringReader {
     private length: number;
     private offset = 0;
 
+    get currentOffset() {
+        return this.offset;
+    }
+
     constructor(string: BitString) {
         let r = Buffer.alloc(string.buffer.length);
         string.buffer.copy(r);

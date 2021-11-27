@@ -39,13 +39,114 @@ function readCurrencyCollection(slice: Slice) {
 }
 export type RawCurrencyCollection = ReturnType<typeof readCurrencyCollection>;
 
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L123
+// int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
+//  src:MsgAddressInt dest:MsgAddressInt 
+//  value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
+//  created_lt:uint64 created_at:uint32 = CommonMsgInfo;
+// ext_in_msg_info$10 src:MsgAddressExt dest:MsgAddressInt 
+//  import_fee:Grams = CommonMsgInfo;
+// ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
+//  created_lt:uint64 created_at:uint32 = CommonMsgInfo;
+function readCommonMsgInfo(slice: Slice) {
+
+    if (!slice.readBit()) {
+        // Internal
+        let ihrDisabled = slice.readBit();
+        let bounce = slice.readBit();
+        let bounced = slice.readBit();
+        let src = slice.readAddress();
+        let dest = slice.readAddress();
+        let value = readCurrencyCollection(slice);
+        let ihrFee = slice.readCoins();
+        let fwdFee = slice.readCoins();
+        let createdLt = slice.readUint(64);
+        let createdAt = slice.readUintNumber(32);
+        return {
+            type: 'internal',
+            ihrDisabled,
+            bounce,
+            bounced,
+            src,
+            dest,
+            value,
+            ihrFee,
+            fwdFee,
+            createdLt,
+            createdAt
+        }
+    } else if (slice.readBit()) {
+        // In external
+        let src = slice.readAddress();
+        let dest = slice.readAddress();
+        let createdLt = slice.readUint(64);
+        let createdAt = slice.readUintNumber(32);
+        return {
+            type: 'external-in',
+            src,
+            dest,
+            createdLt,
+            createdAt
+        }
+    } else {
+        // Out external
+        let src = slice.readAddress();
+        let dest = slice.readAddress();
+        let importFee = slice.readCoins()
+        return {
+            type: 'external-out',
+            src,
+            dest,
+            importFee
+        }
+    }
+}
+export type RawCommonMessageInfo = ReturnType<typeof readCommonMsgInfo>;
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L141
+// _ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
+//  code:(Maybe ^Cell) data:(Maybe ^Cell)
+//  library:(HashmapE 256 SimpleLib) = StateInit;
+function readStateInit(slice: Slice) {
+    if (slice.readBit()) {
+        throw Error('Unsupported');
+    }
+    if (slice.readBit()) {
+        throw Error('Unsupported');
+    }
+    const hasCode = slice.readBit();
+    const code = hasCode ? slice.readCell() : null;
+    const hasData = slice.readBit();
+    const data = hasData ? slice.readCell() : null;
+    if (slice.readBit()) {
+        throw Error('Unsupported');
+    }
+
+    return { data, code };
+}
+export type RawStateInit = ReturnType<typeof readStateInit>;
+
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L147
 // message$_ {X:Type} info:CommonMsgInfo
 //  init:(Maybe (Either StateInit ^StateInit))
 //  body:(Either X ^X) = Message X;
 function readMessage(slice: Slice) {
-    return {
+    const info = readCommonMsgInfo(slice);
+    const hasInit = slice.readBit();
+    let stateInit: RawStateInit | null = null;
+    if (hasInit) {
+        if (!slice.readBit()) {
+            stateInit = readStateInit(slice);
+        } else {
+            stateInit = readStateInit(slice.readRef());
+        }
+    }
+    const body = slice.readBit() ? slice.readRef().clone() : slice.clone();
 
+    return {
+        info,
+        stateInit,
+        body
     };
 }
 export type RawMessage = ReturnType<typeof readMessage>;
@@ -415,11 +516,13 @@ export function parseTransaction(workchain: number, slice: Slice) {
     const messages = slice.readRef();
     let hasInMessage = messages.readBit();
     let hasOutMessages = messages.readBit();
+    let inMessage: RawMessage | null = null;
     if (hasInMessage) {
-        readMessage(messages.readRef());
+        inMessage = readMessage(messages.readRef());
     }
+    let outMessages: Map<string, RawMessage> = new Map();
     if (hasOutMessages) {
-        console.warn(messages.readDict(15, readMessage));
+        outMessages = messages.readDict(15, (slice) => readMessage(slice.readRef()));
     }
 
     // Currency collections
@@ -445,6 +548,9 @@ export function parseTransaction(workchain: number, slice: Slice) {
         update,
 
         description,
+
+        inMessage,
+        outMessages,
 
         prevTransaction: {
             hash: prevTransHash,

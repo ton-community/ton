@@ -1,14 +1,19 @@
-import { BitStringReader, Cell, parseDict } from "..";
+import { BitString, BitStringReader, Cell, parseDict } from "..";
 
 export class Slice {
-    readonly source: Cell;
+
+    static fromCell(cell: Cell) {
+        return new Slice(cell.bits, cell.refs);
+    }
+
+    private readonly sourceBits: BitString;
     private readonly bits: BitStringReader;
     private readonly refs: Cell[] = [];
 
-    constructor(cell: Cell) {
-        this.source = cell;
-        this.refs = [...cell.refs];
-        this.bits = new BitStringReader(cell.bits);
+    private constructor(sourceBits: BitString, sourceRefs: Cell[]) {
+        this.sourceBits = sourceBits.clone();
+        this.refs = [...sourceRefs];
+        this.bits = new BitStringReader(this.sourceBits);
     }
 
     skip = (bits: number) => {
@@ -75,9 +80,31 @@ export class Slice {
     readRef = () => {
         let first = this.refs.shift()
         if (first) {
-            return new Slice(first);
+            return Slice.fromCell(first);
         } else {
             throw Error('No ref');
         }
+    }
+
+    readCell = () => {
+        let first = this.refs.shift()
+        if (first) {
+            return first;
+        } else {
+            throw Error('No ref');
+        }
+    }
+
+    clone = () => {
+
+        // Copy remaining
+        const cloned = this.sourceBits.clone();
+        const reader = new BitStringReader(cloned);
+        reader.skip(this.bits.currentOffset);
+        const remaining = reader.readRemaining();
+        const remainingRefs = [...this.refs];
+
+        // Build slice
+        return new Slice(remaining, remainingRefs);
     }
 }

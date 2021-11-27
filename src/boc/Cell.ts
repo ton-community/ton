@@ -19,7 +19,7 @@ export class Cell {
     }
 
     beginParse() {
-        return new Slice(this);
+        return Slice.fromCell(this);
     }
 
     writeCell(anotherCell: Cell) {

@@ -8,7 +8,7 @@ describe('Slice', () => {
         );
 
         let res = Cell.fromBoc(data)[0];
-        const slice = new Slice(res);
+        const slice = Slice.fromCell(res);
         const seqno = slice.readUint(32);
         const owner = slice.readAddress();
         const seed = slice.readBuffer(32);
