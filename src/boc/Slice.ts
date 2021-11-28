@@ -28,6 +28,14 @@ export class Slice {
         return this.bits.readUintNumber(bits);
     }
 
+    readInt = (bits: number) => {
+        return this.bits.readInt(bits);
+    }
+
+    readIntNumber = (bits: number) => {
+        return this.bits.readIntNumber(bits);
+    }
+
     readBuffer = (size: number) => {
         return this.bits.readBuffer(size);
     }
