@@ -1,7 +1,7 @@
 {
   "name": "ton",
   "version": "6.2.1",
-  "repository": "https://github.com/ex3ndr/ton.git",
+  "repository": "https://github.com/tonwhales/ton.git",
   "author": "Steve Korshakov <steve@korshakov.com>",
   "license": "MIT",
   "main": "dist/index.js",
