@@ -36,6 +36,28 @@ export class BitStringReader {
         return new BN(res, 2);
     }
 
+    readInt(bits: number) {
+        if (bits === 0) {
+            return new BN(0);
+        }
+        if (bits === 1) {
+            if (this.readBit() /* isNegative */) {
+                return new BN(-1);
+            } else {
+                return new BN(0);
+            }
+        }
+
+        if (this.readBit() /* isNegative */) {
+            let base = this.readUint(bits - 1);
+            const b = new BN(2);
+            const nb = b.pow(new BN(bits - 1));
+            return base.sub(nb);
+        } else {
+            return this.readUint(bits - 1);
+        }
+    }
+
     readUintNumber(bits: number) {
         return this.readUint(bits).toNumber();
     }
