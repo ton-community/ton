@@ -56,7 +56,7 @@ export class BitStringReader {
             let base = this.readUint(bits - 1);
             const b = new BN(2);
             const nb = b.pow(new BN(bits - 1));
-            return nb.sub(base);
+            return base.sub(nb);
         } else {
             return this.readUint(bits - 1);
         }

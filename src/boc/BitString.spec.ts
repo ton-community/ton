@@ -1,3 +1,4 @@
+import { BitStringReader } from "..";
 import { BitString } from "./BitString";
 
 describe('BitString', () => {
@@ -20,5 +21,12 @@ describe('BitString', () => {
         expect(bits[3]).toBe(false);
         expect(bits[4]).toBe(false);
         expect(bits[5]).toBe(true);
+    });
+
+    it('should correctly read and write numbers', () => {
+        let bitString = BitString.alloc(10);
+        bitString.writeInt(-1, 4);
+        let reader = new BitStringReader(bitString);
+        expect(reader.readIntNumber(4)).toBe(-1);
     });
 });
