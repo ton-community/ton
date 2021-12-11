@@ -1,6 +1,7 @@
 import BN from 'bn.js';
 import { Address } from '../address/Address';
 import inspectSymbol from 'symbol.inspect';
+import { BitStringReader } from '..';
 
 export class BitString implements Iterable<boolean> {
 
@@ -249,6 +250,23 @@ export class BitString implements Iterable<boolean> {
         }
         ret.#buffer = ret.#buffer.slice(0, Math.ceil(ret.cursor / 8));
         return ret.#buffer;
+    }
+
+    equals(src: BitString) {
+        if (src.cursor !== this.cursor) {
+            return false;
+        }
+        if (src.length !== this.length) {
+            return false;
+        }
+        let sr = new BitStringReader(src);
+        let tr = new BitStringReader(this);
+        for (let i = 0; i < src.cursor; i++) {
+            if (sr.readBit() !== tr.readBit()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     //

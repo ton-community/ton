@@ -69,4 +69,16 @@ export class Cell {
         }
         return this;
     }
+
+    equals(src: Cell) {
+        if (src.refs.length !== this.refs.length) {
+            return false;
+        }
+        for (let i = 0; i < src.refs.length; i++) {
+            if (!src.refs[i].equals(this.refs[i])) {
+                return false;
+            }
+        }
+        return this.bits.equals(src.bits);
+    }
 }

@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`serializeDict should build prefix tree 1`] = `
+Object {
+  "label": "00000000",
+  "node": Object {
+    "left": Object {
+      "label": "00",
+      "node": Object {
+        "left": Object {
+          "label": "1101",
+          "node": Object {
+            "type": "leaf",
+            "value": 169,
+          },
+        },
+        "right": Object {
+          "label": "0001",
+          "node": Object {
+            "type": "leaf",
+            "value": 289,
+          },
+        },
+        "type": "fork",
+      },
+    },
+    "right": Object {
+      "label": "1101111",
+      "node": Object {
+        "type": "leaf",
+        "value": 57121,
+      },
+    },
+    "type": "fork",
+  },
+}
+`;
