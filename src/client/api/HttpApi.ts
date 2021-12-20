@@ -5,6 +5,7 @@ import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
 import { TonCache } from '../TonCache';
 import DataLoader from 'dataloader';
+import { asyncTimeout } from 'teslabot';
 
 const version = require('../../../package.json').version as string;
 
@@ -255,7 +256,7 @@ export class HttpApi {
     }
 
     private async doCall<T>(method: string, body: any, codec: t.Type<T>) {
-        let res = await fetch(this.endpoint, {
+        let res = await asyncTimeout(fetch(this.endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -266,8 +267,8 @@ export class HttpApi {
                 jsonrpc: '2.0',
                 method: method,
                 params: body
-            })
-        });
+            }),
+        }), 30000);
         if (!res.ok) {
             throw Error('Received error: ' + await res.text());
         }
