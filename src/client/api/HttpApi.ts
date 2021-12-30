@@ -286,7 +286,7 @@ export class HttpApi {
                 method: method,
                 params: body
             }),
-        }), this.parameters.timeout!);
+        }), this.parameters.timeout);
         if (!res.ok) {
             throw Error('Received error: ' + await res.text());
         }

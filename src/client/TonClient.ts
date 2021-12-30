@@ -73,7 +73,7 @@ export class TonClient {
     constructor(parameters: TonClientParameters) {
         this.parameters = {
             endpoint: parameters.endpoint,
-            cache: parameters.cache ? parameters.cache : new InMemoryCache(),
+            cache: parameters.cache ? parameters.cache : new InMemoryCache()
         };
         this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache, {
             timeout: parameters.timeout,
