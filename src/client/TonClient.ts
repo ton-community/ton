@@ -18,6 +18,12 @@ import { InMemoryCache, TonCache } from './TonCache';
 export type TonClientParameters = {
     endpoint: string;
     cache?: Maybe<TonCache>;
+
+    /**
+     * HTTP request timeout in milliseconds.
+     */
+    timeout?: number;
+
 }
 
 export type TonClientResolvedParameters = {
@@ -69,7 +75,9 @@ export class TonClient {
             endpoint: parameters.endpoint,
             cache: parameters.cache ? parameters.cache : new InMemoryCache()
         };
-        this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache);
+        this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache, {
+            timeout: parameters.timeout,
+        });
     }
 
     /**
@@ -155,9 +163,9 @@ export class TonClient {
 
     /**
      * Fetch transactions inf shards
-     * @param workchain 
-     * @param seqno 
-     * @param shard 
+     * @param workchain
+     * @param seqno
+     * @param shard
      */
     async getShardTransactions(workchain: number, seqno: number, shard: string) {
         let tx = await this.#api.getBlockTransactions(workchain, seqno, shard);
