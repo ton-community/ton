@@ -149,18 +149,36 @@ class TypedCache<K, V> {
     }
 }
 
+export interface HttpApiParameters {
+
+    /**
+     * HTTP request timeout in milliseconds.
+     */
+    timeout?: number;
+
+}
+
+interface HttpApiResolvedParameters extends HttpApiParameters {
+    timeout: number;
+}
+
 export class HttpApi {
     readonly endpoint: string;
     readonly cache: TonCache;
 
+    private readonly parameters: HttpApiResolvedParameters;
     private shardCache: TypedCache<number, t.TypeOf<typeof blockIdExt>[]>;
     private shardLoader: DataLoader<number, t.TypeOf<typeof blockIdExt>[]>;
     private shardTransactionsCache: TypedCache<{ workchain: number, shard: string, seqno: number }, t.TypeOf<typeof getBlockTransactions>>;
     private shardTransactionsLoader: DataLoader<{ workchain: number, shard: string, seqno: number }, t.TypeOf<typeof getBlockTransactions>, string>;
 
-    constructor(endpoint: string, cache: TonCache) {
+    constructor(endpoint: string, cache: TonCache, parameters?: HttpApiParameters) {
         this.endpoint = endpoint;
         this.cache = cache;
+
+        this.parameters = {
+            timeout: parameters?.timeout || 30000, // 30 seconds by default
+        }
 
         // Shard
         this.shardCache = new TypedCache('ton-shard', cache, t.array(blockIdExt), (src) => src + '');
@@ -268,7 +286,7 @@ export class HttpApi {
                 method: method,
                 params: body
             }),
-        }), 30000);
+        }), this.parameters.timeout!);
         if (!res.ok) {
             throw Error('Received error: ' + await res.text());
         }
@@ -277,7 +295,7 @@ export class HttpApi {
         if (isRight(decoded)) {
             return decoded.right;
         } else {
-            throw Error('Mailformed response: ' + reporter.report(decoded).join(', '));
+            throw Error('Malformed response: ' + reporter.report(decoded).join(', '));
         }
     }
 }
