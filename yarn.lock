@@ -4119,10 +4119,10 @@ toidentifier@1.0.0:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
   integrity sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==
 
-ton-crypto@1.5.1:
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.5.1.tgz#5257a968ca85ca312d800f6f3cc23e738137cd34"
-  integrity sha512-YF6HAWpcGibJ+268sTxoDOswYvYAuUKFih+ZaY2Woe47oCqU+TVB/Cg54f+KsChTyQ7LP4jzSWDBiq5WCkwguA==
+ton-crypto@1.7.0:
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-1.7.0.tgz#f0f1eadffd0b1d25186d09cfe26662ee8c711a16"
+  integrity sha512-lim85tHr5bg1mTBGbC2fznlbXXusP7cgwtXIA7z3/nQ72h00IZRLWNetAozvf6sZAhn7WQzm9mRPFrcL2jXoAg==
   dependencies:
     jssha "3.2.0"
     tweetnacl "1.0.3"
