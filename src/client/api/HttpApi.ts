@@ -213,7 +213,7 @@ export class HttpApi {
         return this.doCall('getAddressInformation', { address: address.toString() }, addressInformation);
     }
 
-    async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string }) {
+    async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string, inclusive?: boolean }) {
 
         // Convert hash
         let hash: string | undefined = undefined;
@@ -223,7 +223,7 @@ export class HttpApi {
 
         // Adjust limit
         let limit = opts.limit;
-        if (opts.hash && opts.lt) {
+        if (opts.hash && opts.lt && opts.inclusive !== false) {
             limit++;
         }
 
@@ -234,7 +234,7 @@ export class HttpApi {
         }
 
         // Adjust result
-        if (opts.hash && opts.lt) {
+        if (opts.hash && opts.lt && opts.inclusive !== false) {
             res.shift();
             return res;
         } else {
