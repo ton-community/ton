@@ -223,7 +223,7 @@ export class HttpApi {
 
         // Adjust limit
         let limit = opts.limit;
-        if (opts.hash && opts.lt && opts.inclusive !== false) {
+        if (opts.hash && opts.lt && opts.inclusive !== true) {
             limit++;
         }
 
@@ -234,7 +234,7 @@ export class HttpApi {
         }
 
         // Adjust result
-        if (opts.hash && opts.lt && opts.inclusive !== false) {
+        if (opts.hash && opts.lt && opts.inclusive !== true) {
             res.shift();
             return res;
         } else {
