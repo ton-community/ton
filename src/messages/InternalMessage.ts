@@ -1,4 +1,5 @@
 import BN from "bn.js";
+import { CommonMessageInfo } from "..";
 import { Address } from "../address/Address";
 import { Cell } from "../boc/Cell";
 import { Maybe } from "../types";
@@ -16,7 +17,7 @@ export class InternalMessage implements Message {
     readonly fwdFees: BN;
     readonly createdAt: BN;
     readonly createdLt: BN;
-    readonly body: Message;
+    readonly body: CommonMessageInfo;
 
     constructor(opts: {
         to: Address,
@@ -29,7 +30,7 @@ export class InternalMessage implements Message {
         ihrDisabled?: Maybe<boolean>,
         bounced?: Maybe<boolean>,
         from?: Maybe<Address>,
-        body: Message
+        body: CommonMessageInfo
     }) {
         this.to = opts.to;
         this.value = new BN(opts.value);
