@@ -11,6 +11,8 @@ export { SendMode } from './client/SendMode';
 export { TonCache, InMemoryCache } from './client/TonCache';
 export { HttpApi } from './client/api/HttpApi';
 export { Slice } from './boc/Slice';
+export { ADNLAddress } from './address/ADNLAddress';
+export { ADNLKey } from './keystore/ADNLKey';
 
 // Messages
 export { Message } from './messages/Message';
