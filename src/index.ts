@@ -29,6 +29,7 @@ export { WalletContract } from './contracts/WalletContract';
 export { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3 } from './contracts/messages/createWalletTransfer';
 
 // Sources
+export { contractAddress } from './contracts/contractAddress';
 export { ContractSource } from './contracts/sources/ContractSource';
 export { WalletSource } from './contracts/sources/WalletSource';
 export { UnknownContractSource } from './contracts/sources/UnknownContractSource';
@@ -48,6 +49,20 @@ export { serializeDict } from './boc/dict/serializeDict';
 // Transaction
 export {
     parseTransaction,
+    parseAccountStatus,
+    parseCurrencyCollection,
+    parseCommonMsgInfo,
+    parseStateInit,
+    parseMessage,
+    parseHashUpdate,
+    parseAccountChange,
+    parseStorageUsedShort,
+    parseStoragePhase,
+    parseCreditPhase,
+    parseComputePhase,
+    parseActionPhase,
+    parseBouncePhase,
+    parseTransactionDescription,
     RawAccountStatus,
     RawCurrencyCollection,
     RawCommonMessageInfo,

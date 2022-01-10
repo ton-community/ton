@@ -8,7 +8,7 @@ import { Address, Cell, Slice } from "..";
 // acc_state_active$10 = AccountStatus;
 // acc_state_nonexist$11 = AccountStatus;
 export type RawAccountStatus = 'uninitialized' | 'frozen' | 'active' | 'non-existing';
-function readAccountStatus(slice: Slice): RawAccountStatus {
+export function parseAccountStatus(slice: Slice): RawAccountStatus {
     const status = slice.readUintNumber(2);
     if (status === 0x00) {
         return 'uninitialized';
@@ -31,7 +31,7 @@ function readAccountStatus(slice: Slice): RawAccountStatus {
 //  currencies$_ grams:Grams other:ExtraCurrencyCollection 
 //            = CurrencyCollection;
 export type RawCurrencyCollection = { coins: BN };
-function readCurrencyCollection(slice: Slice): RawCurrencyCollection {
+export function parseCurrencyCollection(slice: Slice): RawCurrencyCollection {
     const coins = slice.readCoins();
     if (slice.readBit()) {
         throw Error('Currency collctions are not supported yet');
@@ -75,7 +75,7 @@ export type RawCommonMessageInfo =
         dest: Address | null,
         importFee: BN
     };
-function readCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
+export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
 
     if (!slice.readBit()) {
         // Internal
@@ -84,7 +84,7 @@ function readCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
         let bounced = slice.readBit();
         let src = slice.readAddress();
         let dest = slice.readAddress();
-        let value = readCurrencyCollection(slice);
+        let value = parseCurrencyCollection(slice);
         let ihrFee = slice.readCoins();
         let fwdFee = slice.readCoins();
         let createdLt = slice.readUint(64);
@@ -134,7 +134,7 @@ function readCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
 //  code:(Maybe ^Cell) data:(Maybe ^Cell)
 //  library:(HashmapE 256 SimpleLib) = StateInit;
 export type RawStateInit = { code: Cell | null, data: Cell | null };
-function readStateInit(slice: Slice) {
+export function parseStateInit(slice: Slice) {
     if (slice.readBit()) {
         throw Error('Unsupported');
     }
@@ -161,15 +161,15 @@ export type RawMessage = {
     init: RawStateInit | null,
     body: Cell
 };
-function readMessage(slice: Slice): RawMessage {
-    const info = readCommonMsgInfo(slice);
+export function parseMessage(slice: Slice): RawMessage {
+    const info = parseCommonMsgInfo(slice);
     const hasInit = slice.readBit();
     let init: RawStateInit | null = null;
     if (hasInit) {
         if (!slice.readBit()) {
-            init = readStateInit(slice);
+            init = parseStateInit(slice);
         } else {
-            init = readStateInit(slice.readRef());
+            init = parseStateInit(slice.readRef());
         }
     }
     const body = slice.readBit() ? slice.readRef().toCell() : slice.toCell();
@@ -185,7 +185,7 @@ function readMessage(slice: Slice): RawMessage {
 // update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256
 //  = HASH_UPDATE X;
 export type RawHashUpdate = { oldHash: Buffer, newHash: Buffer };
-function readHashUpdate(slice: Slice): RawHashUpdate {
+export function parseHashUpdate(slice: Slice): RawHashUpdate {
     if (slice.readUintNumber(8) !== 0x72) {
         throw Error('Invalid transaction');
     }
@@ -198,7 +198,7 @@ function readHashUpdate(slice: Slice): RawHashUpdate {
 // acst_frozen$10 = AccStatusChange;    // init -> frozen
 // acst_deleted$11 = AccStatusChange;   // frozen -> deleted
 export type RawAccountStatusChange = 'unchanged' | 'frozen' | 'deleted';
-function readAccountChange(slice: Slice): RawAccountStatusChange {
+export function parseAccountChange(slice: Slice): RawAccountStatusChange {
     if (!slice.readBit()) {
         return 'unchanged';
     }
@@ -212,7 +212,7 @@ function readAccountChange(slice: Slice): RawAccountStatusChange {
 // storage_used_short$_ cells:(VarUInteger 7) 
 //  bits:(VarUInteger 7) = StorageUsedShort;
 export type RawStorageUsedShort = { cells: number, bits: number };
-function readStorageUsedShort(slice: Slice): RawStorageUsedShort {
+export function parseStorageUsedShort(slice: Slice): RawStorageUsedShort {
     return {
         cells: slice.readVarUIntNumber(3),
         bits: slice.readVarUIntNumber(3)
@@ -224,13 +224,13 @@ function readStorageUsedShort(slice: Slice): RawStorageUsedShort {
 //   status_change:AccStatusChange
 //   = TrStoragePhase;
 export type RawStoragePhase = { storageFeesCollected: BN, storageFeesDue: BN | null, statusChange: RawAccountStatusChange };
-function readStoragePhase(slice: Slice): RawStoragePhase {
+export function parseStoragePhase(slice: Slice): RawStoragePhase {
     const storageFeesCollected = slice.readCoins();
     let storageFeesDue: BN | null = null;
     if (slice.readBit()) {
         storageFeesDue = slice.readCoins();
     }
-    const statusChange = readAccountChange(slice);
+    const statusChange = parseAccountChange(slice);
     return {
         storageFeesCollected,
         storageFeesDue,
@@ -241,9 +241,9 @@ function readStoragePhase(slice: Slice): RawStoragePhase {
 // tr_phase_credit$_ due_fees_collected:(Maybe Grams)
 //   credit:CurrencyCollection = TrCreditPhase;
 export type RawCreditPhase = { dueFeesColelcted: BN | null, credit: RawCurrencyCollection };
-function readCreditPhase(slice: Slice): RawCreditPhase {
+export function parseCreditPhase(slice: Slice): RawCreditPhase {
     let dueFeesColelcted = slice.readBit() ? slice.readCoins() : null;
-    const credit = readCurrencyCollection(slice);
+    const credit = parseCurrencyCollection(slice);
     return {
         dueFeesColelcted,
         credit
@@ -285,7 +285,7 @@ export type RawComputePhase =
         vmInitStateHash: Buffer,
         vmFinalStateHash: Buffer
     };
-function readComputePhase(slice: Slice): RawComputePhase {
+export function parseComputePhase(slice: Slice): RawComputePhase {
     if (!slice.readBit()) {
         const skipReason = slice.readUintNumber(2);
         if (skipReason === 0x00) {
@@ -366,11 +366,11 @@ export type RawActionPhase = {
     actionListHash: Buffer,
     totalMessageSizes: RawStorageUsedShort
 };
-function readActionPhase(slice: Slice): RawActionPhase {
+export function parseActionPhase(slice: Slice): RawActionPhase {
     const success = slice.readBit();
     const valid = slice.readBit();
     const noFunds = slice.readBit();
-    const statusChange = readAccountChange(slice);
+    const statusChange = parseAccountChange(slice);
     const totalFwdFees = slice.readBit() ? slice.readCoins() : null;
     const totalActionFees = slice.readBit() ? slice.readCoins() : null;
     const resultCode = slice.readUintNumber(32); // TODO: Change to int32
@@ -380,7 +380,7 @@ function readActionPhase(slice: Slice): RawActionPhase {
     const skippedActions = slice.readUintNumber(16);
     const messagesCreated = slice.readUintNumber(16);
     const actionListHash = slice.readBuffer(32);
-    const totalMessageSizes = readStorageUsedShort(slice);
+    const totalMessageSizes = parseStorageUsedShort(slice);
 
     return {
         success,
@@ -407,11 +407,11 @@ export type RawBouncePhase =
     | { type: 'ok', msgSize: RawStorageUsedShort, msgFees: BN, fwdFees: BN }
     | { type: 'no-funds', msgSize: RawStorageUsedShort, fwdFees: BN }
     | { type: 'negative-funds' };
-function readBouncePhase(slice: Slice): RawBouncePhase {
+export function parseBouncePhase(slice: Slice): RawBouncePhase {
 
     // Is OK
     if (slice.readBit()) {
-        const msgSize = readStorageUsedShort(slice);
+        const msgSize = parseStorageUsedShort(slice);
         const msgFees = slice.readCoins();
         const fwdFees = slice.readCoins();
         return {
@@ -424,7 +424,7 @@ function readBouncePhase(slice: Slice): RawBouncePhase {
 
     // No funds
     if (slice.readBit()) {
-        const msgSize = readStorageUsedShort(slice);
+        const msgSize = parseStorageUsedShort(slice);
         const fwdFees = slice.readCoins();
         return {
             type: 'no-funds',
@@ -504,27 +504,27 @@ export type RawTransactionDescription =
         aborted: boolean,
         destroyed: boolean
     };
-function readTransactionDescription(slice: Slice): RawTransactionDescription {
+export function parseTransactionDescription(slice: Slice): RawTransactionDescription {
     const type = slice.readUintNumber(4);
     if (type === 0x00) {
         const creditFirst = slice.readBit();
         let storagePhase: RawStoragePhase | null = null;
         let creditPhase: RawCreditPhase | null = null;
         if (slice.readBit()) {
-            storagePhase = readStoragePhase(slice);
+            storagePhase = parseStoragePhase(slice);
         }
         if (slice.readBit()) {
-            creditPhase = readCreditPhase(slice);
+            creditPhase = parseCreditPhase(slice);
         }
-        let computePhase: RawComputePhase = readComputePhase(slice);
+        let computePhase: RawComputePhase = parseComputePhase(slice);
         let actionPhase: RawActionPhase | null = null;
         if (slice.readBit()) {
-            actionPhase = readActionPhase(slice.readRef());
+            actionPhase = parseActionPhase(slice.readRef());
         }
         let aborted = slice.readBit();
         let bouncePhase: RawBouncePhase | null = null;
         if (slice.readBit()) {
-            bouncePhase = readBouncePhase(slice);
+            bouncePhase = parseBouncePhase(slice);
         }
         const destroyed = slice.readBit();
         return {
@@ -540,7 +540,7 @@ function readTransactionDescription(slice: Slice): RawTransactionDescription {
         }
     }
     if (type === 0x01) {
-        let storagePhase: RawStoragePhase = readStoragePhase(slice);
+        let storagePhase: RawStoragePhase = parseStoragePhase(slice);
         return {
             type: 'storage',
             storagePhase
@@ -548,11 +548,11 @@ function readTransactionDescription(slice: Slice): RawTransactionDescription {
     }
     if (type === 0x2 || type === 0x03) {
         const isTock = type === 0x03;
-        let storagePhase: RawStoragePhase = readStoragePhase(slice);
-        let computePhase: RawComputePhase = readComputePhase(slice);
+        let storagePhase: RawStoragePhase = parseStoragePhase(slice);
+        let computePhase: RawComputePhase = parseComputePhase(slice);
         let actionPhase: RawActionPhase | null = null;
         if (slice.readBit()) {
-            actionPhase = readActionPhase(slice.readRef());
+            actionPhase = parseActionPhase(slice.readRef());
         }
         const aborted = slice.readBit();
         const destroyed = slice.readBit();
@@ -617,8 +617,8 @@ export function parseTransaction(workchain: number, slice: Slice): RawTransactio
     const outMessagesCount = slice.readUintNumber(15);
 
     // Status
-    const oldStatus = readAccountStatus(slice);
-    const newStatus = readAccountStatus(slice);
+    const oldStatus = parseAccountStatus(slice);
+    const newStatus = parseAccountStatus(slice);
 
     // Messages ref
     const messages = slice.readRef();
@@ -626,24 +626,24 @@ export function parseTransaction(workchain: number, slice: Slice): RawTransactio
     let hasOutMessages = messages.readBit();
     let inMessage: RawMessage | null = null;
     if (hasInMessage) {
-        inMessage = readMessage(messages.readRef());
+        inMessage = parseMessage(messages.readRef());
     }
     let outMessages: RawMessage[] = [];
     if (hasOutMessages) {
-        let dict = messages.readDict(15, (slice) => readMessage(slice.readRef()));
+        let dict = messages.readDict(15, (slice) => parseMessage(slice.readRef()));
         for (let msg of Array.from(dict.values())) {
             outMessages.push(msg);
         }
     }
 
     // Currency collections
-    let fees = readCurrencyCollection(slice);
+    let fees = parseCurrencyCollection(slice);
 
     // Hash update
-    let update = readHashUpdate(slice.readRef());
+    let update = parseHashUpdate(slice.readRef());
 
     // Description
-    let description = readTransactionDescription(slice.readRef());
+    let description = parseTransactionDescription(slice.readRef());
 
     return {
         address,

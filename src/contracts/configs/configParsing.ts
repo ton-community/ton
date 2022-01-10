@@ -1,6 +1,5 @@
 import { BN } from "bn.js";
 import { Address, Slice } from "../..";
-import { BitStringReader } from "../../boc/BitStringReader";
 import { parseDict } from "../../boc/dict/parseDict";
 
 export function configParseMasterAddress(slice: Slice | null | undefined) {

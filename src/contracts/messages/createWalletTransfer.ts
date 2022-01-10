@@ -1,4 +1,3 @@
-import { number } from "fp-ts";
 import { sign } from "ton-crypto";
 import { Cell, InternalMessage } from "../..";
 import { Maybe } from "../../types";

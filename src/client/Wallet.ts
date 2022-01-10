@@ -1,7 +1,6 @@
 import BN from "bn.js";
 import { keyPairFromSecretKey } from "ton-crypto";
-import { Address, BinaryMessage, Cell, CellMessage, CommentMessage, ExternalMessage, Message, StateInit, TonClient } from "..";
-import { contractAddress } from "../contracts/sources/ContractSource";
+import { Address, BinaryMessage, Cell, CellMessage, CommentMessage, contractAddress, ExternalMessage, Message, StateInit, TonClient } from "..";
 import { WalletSource } from "../contracts/sources/WalletSource";
 import { WalletV1R2Source } from "../contracts/sources/WalletV1R2Source";
 import { WalletV1R3Source } from "../contracts/sources/WalletV1R3Source";
