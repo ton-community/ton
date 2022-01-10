@@ -1,30 +1,9 @@
 import inspectSymbol from 'symbol.inspect';
+import { crc16 } from '../utils/crc16';
 
 const bounceable_tag = 0x11;
 const non_bounceable_tag = 0x51;
 const test_flag = 0x80;
-
-function crc16(data: Buffer) {
-    const poly = 0x1021;
-    let reg = 0;
-    const message = Buffer.alloc(data.length + 2);
-    message.set(data);
-    for (let byte of message) {
-        let mask = 0x80;
-        while (mask > 0) {
-            reg <<= 1;
-            if (byte & mask) {
-                reg += 1;
-            }
-            mask >>= 1
-            if (reg > 0xffff) {
-                reg &= 0xffff;
-                reg ^= poly;
-            }
-        }
-    }
-    return Buffer.from([Math.floor(reg / 256), reg % 256]);
-}
 
 function parseFriendlyAddress(src: string | Buffer) {
     const data = Buffer.isBuffer(src) ? src : Buffer.from(src, 'base64');
