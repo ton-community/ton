@@ -1,6 +1,6 @@
 {
   "name": "ton",
-  "version": "6.5.2",
+  "version": "6.6.0",
   "repository": "https://github.com/tonwhales/ton.git",
   "author": "Steve Korshakov <steve@korshakov.com>",
   "license": "MIT",
