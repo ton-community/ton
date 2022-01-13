@@ -11,6 +11,10 @@ export class BitStringReader {
         return this.offset;
     }
 
+    get remaining() {
+        return this.length - this.offset;
+    }
+
     constructor(string: BitString) {
         let r = Buffer.alloc(string.buffer.length);
         string.buffer.copy(r);

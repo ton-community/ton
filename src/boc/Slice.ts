@@ -16,6 +16,14 @@ export class Slice {
         this.bits = new BitStringReader(this.sourceBits);
     }
 
+    get remaining() {
+        return this.bits.remaining;
+    }
+
+    get remainingRefs() {
+        return this.refs.length;
+    }
+
     skip = (bits: number) => {
         this.bits.skip(bits);
     }
