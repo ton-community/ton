@@ -21,7 +21,8 @@ export class CommentMessage implements Message {
                     dest.bits.writeBuffer(bytes);
                     break;
                 }
-                bytes = bytes.slice(avaliable);
+                dest.bits.writeBuffer(bytes.slice(0, avaliable));
+                bytes = bytes.slice(avaliable, bytes.length);
                 let nc = new Cell();
                 dest.refs.push(nc);
                 dest = nc;
