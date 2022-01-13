@@ -12,7 +12,20 @@ export class CommentMessage implements Message {
     writeTo(cell: Cell) {
         if (this.comment.length > 0) {
             cell.bits.writeUint(0, 32);
-            cell.bits.writeString(this.comment);
+
+            let bytes = Buffer.from(this.comment);
+            let dest = cell;
+            while (bytes.length > 0) {
+                let avaliable = Math.floor(dest.bits.available / 8);
+                if (bytes.length <= avaliable) {
+                    dest.bits.writeBuffer(bytes);
+                    break;
+                }
+                bytes = bytes.slice(avaliable);
+                let nc = new Cell();
+                dest.refs.push(nc);
+                dest = nc;
+            }
         }
     }
 }
