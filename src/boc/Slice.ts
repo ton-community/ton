@@ -68,6 +68,13 @@ export class Slice {
         return this.bits.readRemaining();
     }
 
+    readRemainingBytes = () => {
+        if (this.bits.remaining % 8 !== 0) {
+            throw Error('Number remaining of bits is not multiply of 8');
+        }
+        return this.bits.readBuffer(this.bits.remaining / 8);
+    }
+
     readAddress = () => {
         return this.bits.readAddress();
     }
