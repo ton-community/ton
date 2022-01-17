@@ -1,7 +1,7 @@
 import { Address, Cell, Contract, ContractSource, TonClient, UnknownContractSource } from "..";
 import { BitStringReader } from "../boc/BitStringReader";
 import { parseDictRefs } from "../boc/dict/parseDict";
-import { configParse12, configParse15, configParse16, configParse17, configParse18, configParse40, configParse8, configParseBridge, configParseMasterAddress, configParseMasterAddressRequired, configParseValidatorSet } from "./configs/configParsing";
+import { configParse12, configParse15, configParse16, configParse17, configParse18, configParse40, configParse8, configParseBridge, configParseGasLImitsPrices, configParseMasterAddress, configParseMasterAddressRequired, configParseValidatorSet } from "./configs/configParsing";
 
 
 export class ConfigContract implements Contract {
@@ -63,6 +63,10 @@ export class ConfigContract implements Contract {
                 ethereum: configParseBridge(configs.get('71')),
                 binance: configParseBridge(configs.get('72')),
                 polygon: configParseBridge(configs.get('73'))
+            },
+            gasPrices: {
+                masterchain: configParseGasLImitsPrices(configs.get('20')),
+                workchain: configParseGasLImitsPrices(configs.get('21')),
             }
             // TODO: mint_new_price:Grams mint_add_price:Grams = ConfigParam 6;
             // TODO: to_mint:ExtraCurrencyCollection = ConfigParam 7

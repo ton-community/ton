@@ -278,3 +278,61 @@ export function configParseBridge(slice: Slice | null | undefined) {
     }
     return parseBridge(slice);
 }
+
+function parseGasLimitsInternal(slice: Slice) {
+    const tag = slice.readUintNumber(8);
+    if (tag === 0xde) {
+        const gasPrice = slice.readUint(64);
+        const gasLimit = slice.readUint(64);
+        const specialGasLimit = slice.readUint(64);
+        const gasCredit = slice.readUint(64);
+        const blockGasLimit = slice.readUint(64);
+        const freezeDueLimit = slice.readUint(64);
+        const deleteDueLimit = slice.readUint(64);
+        return {
+            gasPrice,
+            gasLimit,
+            specialGasLimit,
+            gasCredit,
+            blockGasLimit,
+            freezeDueLimit,
+            deleteDueLimit
+        };
+    } else if (tag === 0xdd) {
+        const gasPrice = slice.readUint(64);
+        const gasLimit = slice.readUint(64);
+        const gasCredit = slice.readUint(64);
+        const blockGasLimit = slice.readUint(64);
+        const freezeDueLimit = slice.readUint(64);
+        const deleteDueLimit = slice.readUint(64);
+        return {
+            gasPrice,
+            gasLimit,
+            gasCredit,
+            blockGasLimit,
+            freezeDueLimit,
+            deleteDueLimit
+        }
+    } else {
+        throw Error('Invalid config');
+    }
+}
+
+export function configParseGasLImitsPrices(slice: Slice | null | undefined) {
+    if (!slice) {
+        throw Error('Invalid config');
+    }
+    const tag = slice.readUintNumber(8);
+    if (tag === 0xd1) {
+        const flatLimit = slice.readUint(64);
+        const flatGasPrice = slice.readUint(64);
+        const other = parseGasLimitsInternal(slice);
+        return {
+            flatLimit,
+            flatGasPrice,
+            other
+        }
+    } else {
+        throw Error('Invalid config');
+    }
+}
