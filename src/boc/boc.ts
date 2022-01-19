@@ -1,6 +1,7 @@
 import { sha256 } from "ton-crypto";
 import { BitString, Cell } from "..";
 import { crc32c } from "./utils/crc32c";
+import { topologicalSort } from "./utils/topologicalSort";
 
 const reachBocMagicPrefix = Buffer.from('B5EE9C72', 'hex');
 const leanBocMagicPrefix = Buffer.from('68ff65f3', 'hex');
@@ -105,7 +106,7 @@ function readNBytesUIntFromArray(n: number, ui8array: Buffer) {
     return res;
 }
 
-function parseBocHeader(serializedBoc: Buffer) {
+export function parseBocHeader(serializedBoc: Buffer) {
     // snake_case is used to match TON docs
 
     // Preflight check
@@ -223,7 +224,7 @@ function parseBocHeader(serializedBoc: Buffer) {
     };
 }
 
-function deserializeCellData(cellData: Buffer, referenceIndexSize: number) {
+export function deserializeCellData(cellData: Buffer, referenceIndexSize: number) {
     if (cellData.length < 2) {
         throw new Error('Not enough bytes to encode cell descriptors');
     }
@@ -303,14 +304,15 @@ async function treeWalk(cell: Cell, topologicalOrderArray: [string, Cell][], ind
     return [topologicalOrderArray, indexHashmap];
 }
 
-async function serializeForBoc(cell: Cell, cellsIndex: CellIndex, refSize: number) {
+async function serializeForBoc(cell: Cell, refs: number[]) {
     const reprArray: Buffer[] = [];
 
     reprArray.push(getDataWithDescriptors(cell));
-    for (let k in cell.refs) {
-        const i = cell.refs[k];
-        const refHash = (await i.hash()).toString('hex');
-        const refIndexInt = cellsIndex[refHash];
+    for (let refIndexInt of refs) {
+        // const i = cell.refs[k];
+        // const refHash = (await i.hash()).toString('hex');
+        // const refIndexInt = cellsIndex[refHash];
+        // refIndexInt
         let refIndexHex = refIndexInt.toString(16);
         if (refIndexHex.length % 2) {
             refIndexHex = "0" + refIndexHex;
@@ -329,24 +331,22 @@ async function serializeForBoc(cell: Cell, cellsIndex: CellIndex, refSize: numbe
 export async function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, has_cache_bits = false, flags = 0) {
     const root_cell = cell;
 
-    const allcells = await treeWalk(root_cell, [], {});
-    const topologicalOrder = allcells[0];
-    const cellsIndex = allcells[1];
+    const allCells = await topologicalSort(root_cell);
 
-    const cells_num = topologicalOrder.length;
+    const cells_num = allCells.length;
     const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
     const s_bytes = Math.min(Math.ceil(s / 8), 1);
     let full_size = 0;
     let sizeIndex: number[] = [];
-    for (let cell_info of topologicalOrder) {
+    for (let cell_info of allCells) {
         //TODO it should be async map or async for
         sizeIndex.push(full_size);
-        full_size = full_size + (await serializeForBoc(cell_info[1], cellsIndex, s_bytes)).length;
+        full_size = full_size + (await serializeForBoc(cell_info.cell, cell_info.refs)).length;
     }
     const offset_bits = full_size.toString(2).length; // Minimal number of bits to offset/len (unused?)
     const offset_bytes = Math.max(Math.ceil(offset_bits / 8), 1);
 
-    const serialization = BitString.alloc((1023 + 32 * 4 + 32 * 3) * topologicalOrder.length);
+    const serialization = BitString.alloc((1023 + 32 * 4 + 32 * 3) * allCells.length);
     serialization.writeBuffer(reachBocMagicPrefix);
     serialization.writeBitArray([has_idx, hash_crc32, has_cache_bits]);
     serialization.writeUint(flags, 2);
@@ -358,13 +358,13 @@ export async function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = tr
     serialization.writeUint(full_size, offset_bytes * 8);
     serialization.writeUint(0, s_bytes * 8); // Root shoulh have index 0
     if (has_idx) {
-        topologicalOrder.forEach(
+        allCells.forEach(
             (cell_data, index) =>
                 serialization.writeUint(sizeIndex[index], offset_bytes * 8));
     }
-    for (let cell_info of topologicalOrder) {
+    for (let cell_info of allCells) {
         //TODO it should be async map or async for
-        const refcell_ser = await serializeForBoc(cell_info[1], cellsIndex, s_bytes);
+        const refcell_ser = await serializeForBoc(cell_info.cell, cell_info.refs);
         serialization.writeBuffer(refcell_ser);
     }
     let ser_arr = serialization.getTopUppedArray();
