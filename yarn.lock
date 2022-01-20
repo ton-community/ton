@@ -4119,20 +4119,20 @@ toidentifier@1.0.0:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
   integrity sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==
 
-ton-crypto-primitives@1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/ton-crypto-primitives/-/ton-crypto-primitives-1.0.1.tgz#c16c634c10c95ee3ec1356c542ccafbdbfb4b597"
-  integrity sha512-DUu5wlheatjDCq3ZpdHq7lUchtquUW/2x3ivL6P3o/8qapT4Or0j67OSPNVRbVvp7lwa97bHvuOnzPVWItOc9g==
+ton-crypto-primitives@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/ton-crypto-primitives/-/ton-crypto-primitives-2.0.0.tgz#e85cd68c0d523f6bdf3f306201a76e51b7e9312e"
+  integrity sha512-K+qKjpS0h9sPW6oExcpxnzuQ7nEgHEiDKwIqE/jWD25o8iFGe3FWj1gKxFNbKE9wwYKc5IV8FwrU+raF0KO5nQ==
   dependencies:
     jssha "3.2.0"
 
-ton-crypto@2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-2.0.1.tgz#f50a346324b5528cc87d431f51c1aacf9301d89c"
-  integrity sha512-6cWKXYY++FCMcAK7G5xCZIYz9b0/NmqtvEGA0T2LrYnRC2+BYRELTQ5LEeK1K8xOELIevu8eNahrgygmcOQEMA==
+ton-crypto@2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/ton-crypto/-/ton-crypto-2.0.2.tgz#dec9db4560a2905065d140f2bb3fac36df2a63aa"
+  integrity sha512-gG4iA7yKPQiiZWDbZoKJcWWuxrq/Ja4sK2T1D191G/n4/xWMhaiPBDmZKO8rChl6x/FMymqkBqPXPguMrVBmHg==
   dependencies:
     jssha "3.2.0"
-    ton-crypto-primitives "1.0.1"
+    ton-crypto-primitives "2.0.0"
     tweetnacl "1.0.3"
 
 tonweb@0.0.18:
