@@ -5,7 +5,7 @@ import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
 import { TonCache } from '../TonCache';
 import DataLoader from 'dataloader';
-import { asyncTimeout } from 'teslabot';
+import axios from 'axios';
 
 const version = require('../../../package.json').version as string;
 
@@ -274,24 +274,22 @@ export class HttpApi {
     }
 
     private async doCall<T>(method: string, body: any, codec: t.Type<T>) {
-        let res = await asyncTimeout(fetch(this.endpoint, {
-            method: 'POST',
+        let res = await axios.post<{ ok: boolean, result: T }>(this.endpoint, JSON.stringify({
+            id: '1',
+            jsonrpc: '2.0',
+            method: method,
+            params: body
+        }), {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Ton-Client-Version': version
             },
-            body: JSON.stringify({
-                id: '1',
-                jsonrpc: '2.0',
-                method: method,
-                params: body
-            }),
-        }), this.parameters.timeout);
-        if (!res.ok) {
-            throw Error('Received error: ' + await res.text());
+            timeout: this.parameters.timeout,
+        })
+        if (res.status !== 200 || !res.data.ok) {
+            throw Error('Received error: ' + res.data);
         }
-        let r = await res.json();
-        let decoded = codec.decode(r.result);
+        let decoded = codec.decode(res.data.result);
         if (isRight(decoded)) {
             return decoded.right;
         } else {
