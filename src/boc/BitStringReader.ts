@@ -132,7 +132,7 @@ export class BitStringReader {
             throw Error('Only STD address supported')
         }
 
-        const wc = this.readUintNumber(8);
+        const wc = this.readIntNumber(8);
         const hash = this.readBuffer(32);
         return new Address(wc, hash);
     }
