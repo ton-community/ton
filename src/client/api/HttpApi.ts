@@ -1,4 +1,3 @@
-import fetch from 'isomorphic-unfetch';
 import { Address } from '../..';
 import * as t from 'io-ts';
 import { isRight } from 'fp-ts/lib/Either';
