@@ -312,7 +312,7 @@ export class HttpApi {
             timeout: this.parameters.timeout,
         })
         if (res.status !== 200 || !res.data.ok) {
-            throw Error('Received error: ' + res.data);
+            throw Error('Received error: ' + JSON.stringify(res.data));
         }
         let decoded = codec.decode(res.data.result);
         if (isRight(decoded)) {
