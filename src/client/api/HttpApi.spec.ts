@@ -13,7 +13,7 @@ describe('HttpApi', () => {
     });
 
     it('should send external messages', async () => {
-        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
+        const api = new HttpApi('https://mainnet.tonhubapi.com/jsonRPC', new InMemoryCache());
         const message = new ExternalMessage({
             to: Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address,
             body: new CommonMessageInfo()
@@ -30,13 +30,13 @@ describe('HttpApi', () => {
     });
 
     it('should get transactions', async () => {
-        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC', new InMemoryCache());
+        const api = new HttpApi('https://mainnet.tonhubapi.com/jsonRPC', new InMemoryCache());
         await api.getTransactions(Address.parseFriendly('kf91o4NNTryJ-Cw3sDGt9OTiafmETdVFUMvylQdFPoOxIsLm').address, { limit: 10 });
         await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 100 });
     });
 
     it('should support paging', async () => {
-        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC', new InMemoryCache());
+        const api = new HttpApi('https://mainnet.tonhubapi.com/jsonRPC', new InMemoryCache());
         let tx1 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 10 });
         let tx2 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, {
             limit: 10,
@@ -48,7 +48,7 @@ describe('HttpApi', () => {
     });
 
     it('should support get transaction', async () => {
-        const api = new HttpApi('https://toncenter.com/api/v2/jsonRPC', new InMemoryCache());
+        const api = new HttpApi('https://mainnet.tonhubapi.com/jsonRPC', new InMemoryCache());
         let tx1 = await api.getTransactions(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address, { limit: 10 });
         let tx = await api.getTransaction(Address.parseFriendly('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF').address,
             tx1[0].transaction_id.lt,
@@ -60,11 +60,23 @@ describe('HttpApi', () => {
     });
 
     it('should get masterchain info', async () => {
-        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
+        const api = new HttpApi('https://mainnet.tonhubapi.com/jsonRPC', new InMemoryCache());
         let mc = await api.getMasterchainInfo();
         let shards = await api.getShards(mc.last.seqno);
         expect(shards.length).toBe(1);
         await api.getBlockTransactions(-1, mc.last.seqno, mc.last.shard);
         await api.getBlockTransactions(shards[0].workchain, shards[0].seqno, shards[0].shard);
+    });
+
+    it('should estimate fee', async () => {
+        const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
+        const cell = new Cell();
+        const fees = await api.estimateFee(Address.parse('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH'), {
+            body: cell,
+            initCode: null,
+            initData: null,
+            ignoreSignature: true
+        });
+        console.warn(fees);
     });
 });

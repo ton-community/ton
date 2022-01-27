@@ -14,6 +14,7 @@ import { CellMessage, WalletContractType, WalletSource } from '..';
 import { TonTransaction, TonMessage } from './TonTransaction';
 import { ConfigContract } from '../contracts/ConfigContract';
 import { InMemoryCache, TonCache } from './TonCache';
+import { boolean } from 'fp-ts';
 
 export type TonClientParameters = {
     endpoint: string;
@@ -196,6 +197,20 @@ export class TonClient {
      */
     async sendFile(src: Buffer) {
         await this.#api.sendBoc(src);
+    }
+
+    /**
+     * Estimate fees for external message
+     * @param address target address
+     * @returns 
+     */
+    async estimateExternalMessageFee(address: Address, args: {
+        body: Cell,
+        initCode: Cell | null,
+        initData: Cell | null,
+        ignoreSignature: boolean
+    }) {
+        return await this.#api.estimateFee(address, { body: args.body, initCode: args.initCode, initData: args.initData, ignoreSignature: args.ignoreSignature });
     }
 
     /**

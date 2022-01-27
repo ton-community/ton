@@ -1,4 +1,4 @@
-import { Address } from '../..';
+import { Address, Cell } from '../..';
 import * as t from 'io-ts';
 import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
@@ -33,6 +33,17 @@ const addressInformation = t.type({
 
 const bocResponse = t.type({
     '@type': t.literal('ok')
+});
+
+const feeResponse = t.type({
+    '@type': t.literal('query.fees'),
+    source_fees: t.type({
+        '@type': t.literal('fees'),
+        in_fwd_fee: t.number,
+        storage_fee: t.number,
+        gas_fee: t.number,
+        fwd_fee: t.number
+    })
 });
 
 const callGetMethod = t.type({
@@ -270,6 +281,21 @@ export class HttpApi {
 
     async sendBoc(body: Buffer) {
         await this.doCall('sendBoc', { boc: body.toString('base64') }, bocResponse);
+    }
+
+    async estimateFee(address: Address, args: {
+        body: Cell,
+        initCode: Cell | null,
+        initData: Cell | null,
+        ignoreSignature: boolean
+    }) {
+        return await this.doCall('estimateFee', {
+            address: address.toFriendly(),
+            body: (await args.body.toBoc({ idx: false })).toString('base64'),
+            'init_data': args.initData ? (await args.initData.toBoc({ idx: false })).toString('base64') : '',
+            'init_code': args.initCode ? (await args.initCode.toBoc({ idx: false })).toString('base64') : '',
+            ignore_chksig: args.ignoreSignature
+        }, feeResponse);
     }
 
     private async doCall<T>(method: string, body: any, codec: t.Type<T>) {
