@@ -28,7 +28,7 @@ async function expectCellEqual(src: Cell, src2: any) {
     for (let i = 0; i < src.refs.length; i++) {
         expectCellEqual(src.refs[i], src2.refs[i]);
     }
-    expect(await src.hash()).toEqual(Buffer.from(await src2.hash()));
+    expect(src.hash()).toEqual(Buffer.from(await src2.hash()));
 }
 
 describe('boc', () => {
@@ -43,12 +43,12 @@ describe('boc', () => {
             }
 
             // Serialize
-            let serialized = (await serializeToBoc(cells[0], false));
+            let serialized = serializeToBoc(cells[0], false);
             expect(serialized.toString('hex')).toBe(testCase.toLowerCase());
         });
     }
 
-    it('should deserialize boc twice from the same buffer', async () => {
+    it('should deserialize boc twice from the same buffer', () => {
         const SOURCE = Buffer.from(
             'te6ccgECDAEAARMAART/APSkE/S88sgLAQIBIAIDAgFIBAUC+PLtRNDTH9P/0//6QCH6RALTH/gjAdEIgwjXGCDTH1EauvKhAfkBVHAo+RBROPkQUSKx8qIBs46rUoKhgQcIufJmUwDXSvKlkyDXSo6R0wcBgQD8sPJk1FQxNNs88qPobCLRBZM4bCHi+AAEpMjLHxPL/8v/Ac8Wyx/J7VQKCwAE0DACASAGBwIBIAgJAE2+WX9qJoaY+Y6f+Y6f+Y/SAY6Y/o/BGA0JBAg4RcysCDhADQ8Bg4QAF7s5ztRNDTHzHXC/+AARuMl+1E0NcLH4ADIC0NMDAXiwk18DcOD6QDH6QDD6RAK6ArqwAB74D5Mg10qW0wfUAvsA6NE=',
             'base64'

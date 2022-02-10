@@ -1,4 +1,4 @@
-import { sha256 } from "ton-crypto";
+import { sha256, sha256_sync } from "ton-crypto";
 import { BitString, Cell } from "..";
 import { crc32c } from "./utils/crc32c";
 import { topologicalSort } from "./utils/topologicalSort";
@@ -70,7 +70,7 @@ function getDataWithDescriptors(cell: Cell) {
     return Buffer.concat([d1, d2, tuBits]);
 }
 
-async function getRepr(cell: Cell) {
+function getRepr(cell: Cell) {
     const reprArray: Buffer[] = [];
     reprArray.push(getDataWithDescriptors(cell));
     for (let k in cell.refs) {
@@ -79,7 +79,7 @@ async function getRepr(cell: Cell) {
     }
     for (let k in cell.refs) {
         const i = cell.refs[k];
-        reprArray.push(await i.hash());
+        reprArray.push(i.hash());
     }
     let x = Buffer.alloc(0);
     for (let k in reprArray) {
@@ -89,8 +89,8 @@ async function getRepr(cell: Cell) {
     return x;
 }
 
-export async function hashCell(cell: Cell) {
-    return await sha256(await getRepr(cell));
+export function hashCell(cell: Cell) {
+    return sha256_sync(getRepr(cell));
 }
 
 //
@@ -287,24 +287,7 @@ export function deserializeBoc(serializedBoc: Buffer) {
 // Serialize
 //
 
-type CellIndex = { [key: string]: number };
-
-async function treeWalk(cell: Cell, topologicalOrderArray: [string, Cell][], indexHashmap: CellIndex): Promise<[[string, Cell][], CellIndex]> {
-    const cellHash = (await cell.hash()).toString('hex');
-    if (cellHash in indexHashmap) { // Duplication cell
-        return [topologicalOrderArray, indexHashmap];
-    }
-    indexHashmap[cellHash] = topologicalOrderArray.length;
-    topologicalOrderArray.push([cellHash, cell]);
-    for (let subCell of cell.refs) {
-        const res = await treeWalk(subCell, topologicalOrderArray, indexHashmap);
-        topologicalOrderArray = res[0];
-        indexHashmap = res[1];
-    }
-    return [topologicalOrderArray, indexHashmap];
-}
-
-async function serializeForBoc(cell: Cell, refs: number[]) {
+function serializeForBoc(cell: Cell, refs: number[]) {
     const reprArray: Buffer[] = [];
 
     reprArray.push(getDataWithDescriptors(cell));
@@ -328,10 +311,10 @@ async function serializeForBoc(cell: Cell, refs: number[]) {
     return x;
 }
 
-export async function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, has_cache_bits = false, flags = 0) {
+export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, has_cache_bits = false, flags = 0) {
     const root_cell = cell;
 
-    const allCells = await topologicalSort(root_cell);
+    const allCells = topologicalSort(root_cell);
 
     const cells_num = allCells.length;
     const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
@@ -341,7 +324,7 @@ export async function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = tr
     for (let cell_info of allCells) {
         //TODO it should be async map or async for
         sizeIndex.push(full_size);
-        full_size = full_size + (await serializeForBoc(cell_info.cell, cell_info.refs)).length;
+        full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs)).length;
     }
     const offset_bits = full_size.toString(2).length; // Minimal number of bits to offset/len (unused?)
     const offset_bytes = Math.max(Math.ceil(offset_bits / 8), 1);
@@ -364,7 +347,7 @@ export async function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = tr
     }
     for (let cell_info of allCells) {
         //TODO it should be async map or async for
-        const refcell_ser = await serializeForBoc(cell_info.cell, cell_info.refs);
+        const refcell_ser = serializeForBoc(cell_info.cell, cell_info.refs);
         serialization.writeBuffer(refcell_ser);
     }
     let ser_arr = serialization.getTopUppedArray();

@@ -47,21 +47,21 @@ export function validateWalletType(src: string): WalletContractType | null {
     return null;
 }
 
-async function createContract(client: TonClient, type: WalletContractType, publicKey: Buffer, workchain: number) {
+function createContract(client: TonClient, type: WalletContractType, publicKey: Buffer, workchain: number) {
     if (type === 'org.ton.wallets.simple') {
         throw Error('Unsupported wallet');
     } else if (type === 'org.ton.wallets.simple.r2') {
-        return await WalletContract.create(client, WalletV1R2Source.create({ publicKey, workchain }));
+        return WalletContract.create(client, WalletV1R2Source.create({ publicKey, workchain }));
     } else if (type === 'org.ton.wallets.simple.r3') {
-        return await WalletContract.create(client, WalletV1R3Source.create({ publicKey, workchain }));
+        return WalletContract.create(client, WalletV1R3Source.create({ publicKey, workchain }));
     } else if (type === 'org.ton.wallets.v2') {
-        return await WalletContract.create(client, WalletV2R1Source.create({ publicKey, workchain }));
+        return WalletContract.create(client, WalletV2R1Source.create({ publicKey, workchain }));
     } else if (type === 'org.ton.wallets.v2.r2') {
-        return await WalletContract.create(client, WalletV2R2Source.create({ publicKey, workchain }));
+        return WalletContract.create(client, WalletV2R2Source.create({ publicKey, workchain }));
     } else if (type === 'org.ton.wallets.v3') {
-        return await WalletContract.create(client, WalletV3R1Source.create({ publicKey, workchain }));
+        return WalletContract.create(client, WalletV3R1Source.create({ publicKey, workchain }));
     } else if (type === 'org.ton.wallets.v3.r2') {
-        return await WalletContract.create(client, WalletV3R2Source.create({ publicKey, workchain }));
+        return WalletContract.create(client, WalletV3R2Source.create({ publicKey, workchain }));
     } else {
         throw Error('Unknown wallet type: ' + type);
     }
@@ -73,26 +73,26 @@ export class Wallet {
         return new Wallet(client, address);
     }
 
-    static async openDefault(client: TonClient, workchain: number, secretKey: Buffer): Promise<Wallet> {
+    static openDefault(client: TonClient, workchain: number, secretKey: Buffer): Wallet {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
-        let c = await createContract(client, 'org.ton.wallets.v3', publicKey, workchain);
+        let c = createContract(client, 'org.ton.wallets.v3', publicKey, workchain);
         let w = new Wallet(client, c.address);
-        await w.prepare(workchain, publicKey, 'org.ton.wallets.v3');
+        w.prepare(workchain, publicKey, 'org.ton.wallets.v3');
         return w;
     }
 
-    static async openByType(client: TonClient, workchain: number, secretKey: Buffer, type: WalletContractType): Promise<Wallet> {
+    static openByType(client: TonClient, workchain: number, secretKey: Buffer, type: WalletContractType): Wallet {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
-        let c = await createContract(client, type, publicKey, workchain);
+        let c = createContract(client, type, publicKey, workchain);
         let w = new Wallet(client, c.address);
-        await w.prepare(workchain, publicKey, type);
+        w.prepare(workchain, publicKey, type);
         return w;
     }
 
-    static async openFromSource(client: TonClient, source: WalletSource): Promise<Wallet> {
-        let address = await contractAddress(source);
+    static openFromSource(client: TonClient, source: WalletSource): Wallet {
+        let address = contractAddress(source);
         let w = new Wallet(client, address);
-        await w.prepareFromSource(source);
+        w.prepareFromSource(source);
         return w;
     }
 
@@ -100,7 +100,7 @@ export class Wallet {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
         let types: { address: Address, type: WalletContractType, deployed: boolean, balance: BN }[] = [];
         for (let type of allTypes) {
-            let contra = await createContract(client, type, publicKey, workchain);
+            let contra = createContract(client, type, publicKey, workchain);
             let deployed = await client.isContractDeployed(contra.address);
             let balance = await client.getBalance(contra.address);
             if (deployed || balance.gt(new BN(0))) {
@@ -131,16 +131,16 @@ export class Wallet {
             }
         }
         if (maxBalance.gt(new BN(0))) {
-            let c = await createContract(client, bestContract, publicKey, workchain);;
+            let c = createContract(client, bestContract, publicKey, workchain);;
             let w = new Wallet(client, c.address);
-            await w.prepare(workchain, publicKey, bestContract);
+            w.prepare(workchain, publicKey, bestContract);
             return w;
         }
 
         // Return last (as most recent)
-        let c = await createContract(client, allActive[allActive.length - 1].type, publicKey, workchain);
+        let c = createContract(client, allActive[allActive.length - 1].type, publicKey, workchain);
         let w = new Wallet(client, c.address);
-        await w.prepare(workchain, publicKey, allActive[allActive.length - 1].type);
+        w.prepare(workchain, publicKey, allActive[allActive.length - 1].type);
         return w;
     }
 
@@ -166,16 +166,16 @@ export class Wallet {
         }
     }
 
-    async prepare(workchain: number, publicKey: Buffer, type: WalletContractType = 'org.ton.wallets.v3') {
-        let contra = await createContract(this.#client, type, publicKey, workchain);
+    prepare(workchain: number, publicKey: Buffer, type: WalletContractType = 'org.ton.wallets.v3') {
+        let contra = createContract(this.#client, type, publicKey, workchain);
         if (!contra.address.equals(this.address)) {
             throw Error('Contract have different address');
         }
         this.#contract = contra;
     }
 
-    async prepareFromSource(source: WalletSource) {
-        let contra = await WalletContract.create(this.#client, source);
+    prepareFromSource(source: WalletSource) {
+        let contra = WalletContract.create(this.#client, source);
         if (!contra.address.equals(this.address)) {
             throw Error('Contract have different address');
         }
@@ -233,7 +233,7 @@ export class Wallet {
      * @param args sign
      * @returns 
      */
-    async transferSign(args: {
+    transferSign(args: {
         to: Address,
         bounce: boolean,
         seqno: number,
@@ -259,7 +259,7 @@ export class Wallet {
         }
 
         // Transfer
-        const transfer = await contract.createTransfer({
+        const transfer = contract.createTransfer({
             secretKey: args.secretKey,
             seqno: args.seqno,
             sendMode: args.sendMode || (SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATLY),
@@ -291,6 +291,6 @@ export class Wallet {
      * @param transfer signed transfer for commit
      */
     async transferCommit(transfer: Cell) {
-        await this.#client.sendFile(await transfer.toBoc({ idx: false }));
+        await this.#client.sendFile(transfer.toBoc({ idx: false }));
     }
 }

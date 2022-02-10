@@ -3,18 +3,18 @@ import { topologicalSort } from "./utils/topologicalSort";
 const NativeCell = require('tonweb/src/boc/Cell').Cell;
 
 describe('boc-serialize', () => {
-    it('should correctly serialize', async () => {
+    it('should correctly serialize', () => {
         const data = 'te6ccgEBGAEA6AACAxDCAQIBY6kNoJVjtnQKS39oygn723awA1zBAUUKFuLnm5heu7OKDFdoYWxlcyBUb2tlbgNXSExAAwEZodzWUAAAAAMgAAADJgQAPh5odHRwczovL3RvbndoYWxlcy5jb20vY29udGVudC8CA8zABQYCASAHCAIBSBQVAgEgCQoCASAPEAALo4AAACzAAgEgCwwACbYAAADDAgFIDQ4ACUAAAAY4AAlQAAAF+AALpgAAADBAAgEgERcCAVgSEwAJQAAABcgACVAAAAXoAAuhgAAALsACASAWFwAJtAAAALcACdgAAALU';
         const dataBuffer = Buffer.from(data, 'base64');
         const cell = deserializeBoc(dataBuffer)[0];
-        const data2 = (await cell.toBoc({ idx: false, crc32: false }));
+        const data2 = cell.toBoc({ idx: false, crc32: false });
         const cell2 = deserializeBoc(data2)[0];
         const header1 = parseBocHeader(dataBuffer);
         const header2 = parseBocHeader(data2);
         console.warn(header1);
         console.warn(header2);
 
-        const topology = await topologicalSort(cell);
+        const topology = topologicalSort(cell);
         console.warn(topology.map((v, i) => v.refs));
 
         // Header 1

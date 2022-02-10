@@ -279,7 +279,7 @@ export class TonClient {
      * @param source wallet address
      * @returns wallet with specified address
      */
-    async openWalletFromAddress(args: { source: Address }) {
+    openWalletFromAddress(args: { source: Address }) {
         return Wallet.open(this, args.source);
     }
 
@@ -289,7 +289,7 @@ export class TonClient {
      * @param secretKey wallet secret key
      * @returns best matched wallet
      */
-    async findWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
+    findWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
         return Wallet.findBestBySecretKey(this, args.workchain, args.secretKey);
     }
 
@@ -298,7 +298,7 @@ export class TonClient {
      * @param args workchain and secret key
      * @returns wallet
      */
-    async openWalletDefaultFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
+    openWalletDefaultFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
         return Wallet.openDefault(this, args.workchain, args.secretKey);
     }
 
@@ -307,11 +307,16 @@ export class TonClient {
      * @param args workchain and secret key
      * @returns wallet
      */
-    async openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer, type: WalletContractType }) {
+    openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer, type: WalletContractType }) {
         return Wallet.openByType(this, args.workchain, args.secretKey, args.type);
     }
 
-    async openWalletFromCustomContract(src: WalletSource) {
+    /**
+     * Opens wallet from custom contract
+     * @param src source
+     * @returns wallet
+     */
+    openWalletFromCustomContract(src: WalletSource) {
         return Wallet.openFromSource(this, src);
     }
 
@@ -323,7 +328,7 @@ export class TonClient {
         let mnemonic = await mnemonicNew(24, args.password);
         let key = await mnemonicToWalletKey(mnemonic, args.password);
         let kind = args.type || 'org.ton.wallets.v3';
-        let wallet = await Wallet.openByType(this, args.workchain, key.secretKey, kind);
+        let wallet = Wallet.openByType(this, args.workchain, key.secretKey, kind);
         return {
             mnemonic,
             key,

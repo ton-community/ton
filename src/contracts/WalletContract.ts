@@ -8,8 +8,8 @@ import { contractAddress } from "./contractAddress";
 
 export class WalletContract implements Contract {
 
-    static async create(client: TonClient, source: WalletSource) {
-        let address = await contractAddress(source);
+    static create(client: TonClient, source: WalletSource) {
+        let address = contractAddress(source);
         return new WalletContract(client, source, address);
     }
 

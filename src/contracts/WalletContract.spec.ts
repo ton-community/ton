@@ -9,6 +9,7 @@ import { awaitCondition } from "../tests/awaitCondition";
 import { createTestClient } from "../tests/createTestClient";
 import { openTestTreasure } from "../tests/openTestTreasure";
 import { toNano } from "../utils/convert";
+import { backoff } from "../utils/time";
 // import { delay } from "../utils/time";
 // import { WalletV1R1Source } from "./sources/WalletV1R1Source";
 import { WalletV1R2Source } from "./sources/WalletV1R2Source";
@@ -22,18 +23,18 @@ import { WalletContract } from "./WalletContract";
 async function testSource(secretKey: Buffer, source: WalletSource) {
     const client = createTestClient();
     const treasure = await openTestTreasure(client);
-    const contract = await WalletContract.create(client, source);
+    const contract = WalletContract.create(client, source);
     console.log('testing contract: ' + source.type + ' at ' + contract.address.toFriendly());
-    let treasureSeqno = await treasure.wallet.getSeqNo();
-    await treasure.wallet.transfer({ to: contract.address, seqno: treasureSeqno, value: toNano(0.1), secretKey: treasure.secretKey, bounce: false });
+    let treasureSeqno = await backoff(() => treasure.wallet.getSeqNo(), false);
+    await backoff(() => treasure.wallet.transfer({ to: contract.address, seqno: treasureSeqno, value: toNano(0.1), secretKey: treasure.secretKey, bounce: false }), false);
     console.log('awaiting transfer');
     await awaitBalance(client, contract.address, new BN(0));
 
     // Update seqno
     console.log('sending transaction');
-    let seqno = await contract.getSeqNo();
+    let seqno = await backoff(() => contract.getSeqNo(), false);
     expect(seqno).toBe(0);
-    const transfer = await contract.createTransfer({
+    const transfer = contract.createTransfer({
         seqno,
         sendMode: 3,
         secretKey,
@@ -44,11 +45,11 @@ async function testSource(secretKey: Buffer, source: WalletSource) {
             body: new CommonMessageInfo({ body: new EmptyMessage() })
         })
     });
-    await client.sendExternalMessage(contract, transfer);
+    await backoff(() => client.sendExternalMessage(contract, transfer), false);
 
     // Check seqno
     console.log('awaiting seqno');
-    await awaitCondition(30000, async () => (await contract.getSeqNo()) > 0);
+    await awaitCondition(30000, async () => (await backoff(() => contract.getSeqNo(), false)) > 0);
 }
 
 describe('WalletContract', () => {

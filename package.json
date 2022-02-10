@@ -42,7 +42,7 @@
     "io-ts-reporters": "^2.0.0",
     "symbol.inspect": "1.0.1",
     "teslabot": "^1.3.0",
-    "ton-crypto": "2.0.2",
+    "ton-crypto": "2.1.0",
     "tweetnacl": "1.0.3"
   }
 }

@@ -5,7 +5,7 @@ import { WalletV1SigningMessage } from "./WalletV1SigningMessage";
 import { WalletV2SigningMessage } from "./WalletV2SigningMessage";
 import { WalletV3SigningMessage } from "./WalletV3SigningMessage";
 
-export async function createWalletTransferV1(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer }) {
+export function createWalletTransferV1(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer }) {
 
     let signingMessage = new WalletV1SigningMessage({
         seqno: args.seqno,
@@ -16,7 +16,7 @@ export async function createWalletTransferV1(args: { seqno: number, sendMode: nu
     // Sign message
     const cell = new Cell();
     signingMessage.writeTo(cell);
-    let signature = sign(await cell.hash(), args.secretKey);
+    let signature = sign(cell.hash(), args.secretKey);
 
     // Body
     const body = new Cell();
@@ -26,7 +26,7 @@ export async function createWalletTransferV1(args: { seqno: number, sendMode: nu
     return body;
 }
 
-export async function createWalletTransferV2(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer, timeout?: Maybe<number> }) {
+export function createWalletTransferV2(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer, timeout?: Maybe<number> }) {
 
     let signingMessage = new WalletV2SigningMessage({
         seqno: args.seqno,
@@ -38,7 +38,7 @@ export async function createWalletTransferV2(args: { seqno: number, sendMode: nu
     // Sign message
     const cell = new Cell();
     signingMessage.writeTo(cell);
-    let signature = sign(await cell.hash(), args.secretKey);
+    let signature = sign(cell.hash(), args.secretKey);
 
     // Body
     const body = new Cell();
@@ -48,7 +48,7 @@ export async function createWalletTransferV2(args: { seqno: number, sendMode: nu
     return body;
 }
 
-export async function createWalletTransferV3(args: {
+export function createWalletTransferV3(args: {
     seqno: number,
     sendMode: number,
     walletId: number,
@@ -68,7 +68,7 @@ export async function createWalletTransferV3(args: {
     // Sign message
     const cell = new Cell();
     signingMessage.writeTo(cell);
-    let signature = sign(await cell.hash(), args.secretKey);
+    let signature = sign(cell.hash(), args.secretKey);
 
     // Body
     const body = new Cell();
