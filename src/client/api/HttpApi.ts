@@ -165,7 +165,7 @@ export interface HttpApiParameters {
      * HTTP request timeout in milliseconds.
      */
     timeout?: number;
-
+    apiKey?: string;
 }
 
 interface HttpApiResolvedParameters extends HttpApiParameters {
@@ -188,6 +188,7 @@ export class HttpApi {
 
         this.parameters = {
             timeout: parameters?.timeout || 30000, // 30 seconds by default
+            apiKey: parameters?.apiKey
         }
 
         // Shard
@@ -299,16 +300,20 @@ export class HttpApi {
     }
 
     private async doCall<T>(method: string, body: any, codec: t.Type<T>) {
+        let headers: Record<string, any> = {
+            'Content-Type': 'application/json',
+            'X-Ton-Client-Version': version,
+        }
+        if (this.parameters.apiKey) {
+            headers['X-API-Key'] = this.parameters.apiKey
+        }
         let res = await axios.post<{ ok: boolean, result: T }>(this.endpoint, JSON.stringify({
             id: '1',
             jsonrpc: '2.0',
             method: method,
             params: body
         }), {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Ton-Client-Version': version
-            },
+            headers,
             timeout: this.parameters.timeout,
         })
         if (res.status !== 200 || !res.data.ok) {
