@@ -24,7 +24,7 @@ export type TonClientParameters = {
      * HTTP request timeout in milliseconds.
      */
     timeout?: number;
-
+    apiKey?: string;
 }
 
 export type TonClientResolvedParameters = {
@@ -78,6 +78,7 @@ export class TonClient {
         };
         this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache, {
             timeout: parameters.timeout,
+            apiKey: parameters.apiKey
         });
     }
 
