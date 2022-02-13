@@ -305,7 +305,7 @@ export class HttpApi {
             'X-Ton-Client-Version': version,
         }
         if (this.parameters.apiKey) {
-            headers['X-Api-Key'] = this.parameters.apiKey
+            headers['X-API-Key'] = this.parameters.apiKey
         }
         let res = await axios.post<{ ok: boolean, result: T }>(this.endpoint, JSON.stringify({
             id: '1',
