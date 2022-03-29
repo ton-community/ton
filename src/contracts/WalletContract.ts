@@ -5,6 +5,7 @@ import { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3 
 import { WalletSource } from "./sources/WalletSource";
 import { Maybe } from "../types";
 import { contractAddress } from "./contractAddress";
+import { WalletV3Order } from "./messages/WalletV3SigningMessage";
 
 export class WalletContract implements Contract {
 
@@ -32,16 +33,25 @@ export class WalletContract implements Contract {
         }
     }
 
-    createTransfer(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer, timeout?: Maybe<number> }) {
-        switch (this.source.walletVersion) {
-            case 'v1':
-                return createWalletTransferV1({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
-            case 'v2':
-                return createWalletTransferV2({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, timeout: args.timeout });
-            case 'v3':
-                return createWalletTransferV3({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId, timeout: args.timeout });
-            default:
-                throw Error('Unknown contract type: ' + (this.source as any).type);
+    createTransfer(args: { seqno: number, sendMode: number, order: WalletV3Order, secretKey: Buffer, timeout?: Maybe<number> }) {
+        if (args.order instanceof InternalMessage) {
+            switch (this.source.walletVersion) {
+                case 'v1':
+                    return createWalletTransferV1({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
+                case 'v2':
+                    return createWalletTransferV2({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, timeout: args.timeout });
+                case 'v3':
+                    return createWalletTransferV3({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId, timeout: args.timeout });
+                default:
+                    throw Error('Unknown contract type: ' + (this.source as any).type);
+            }
+        } else {
+            switch (this.source.walletVersion) {
+                case 'v3':
+                    return createWalletTransferV3({ seqno: args.seqno, sendMode: 0, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId, timeout: args.timeout });
+                default:
+                    throw Error('Unknown contract type: ' + (this.source as any).type);
+            }
         }
     }
 }

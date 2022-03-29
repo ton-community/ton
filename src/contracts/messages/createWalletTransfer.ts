@@ -3,7 +3,7 @@ import { Cell, InternalMessage } from "../..";
 import { Maybe } from "../../types";
 import { WalletV1SigningMessage } from "./WalletV1SigningMessage";
 import { WalletV2SigningMessage } from "./WalletV2SigningMessage";
-import { WalletV3SigningMessage } from "./WalletV3SigningMessage";
+import { WalletV3Order, WalletV3SigningMessage } from "./WalletV3SigningMessage";
 
 export function createWalletTransferV1(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer }) {
 
@@ -52,7 +52,7 @@ export function createWalletTransferV3(args: {
     seqno: number,
     sendMode: number,
     walletId: number,
-    order: InternalMessage,
+    order: WalletV3Order,
     secretKey: Buffer,
     timeout?: Maybe<number>
 }) {
