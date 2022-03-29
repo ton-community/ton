@@ -1,7 +1,6 @@
 import { Cell } from "../../boc/Cell";
-import { Maybe } from "../../types";
 import { Message } from "../../messages/Message";
-import { InternalMessage } from "../../messages/InternalMessage";
+import { Maybe } from "../../types";
 
 export type WalletV3Order = {
     sendMode: number
