@@ -47,13 +47,13 @@ export class WalletV3SigningMessage implements Message {
         cell.bits.writeUint(this.seqno, 32);
         if (this.order instanceof Array) {
             this.order.forEach(({ sendMode, message }) => {
-                cell.bits.writeUint(sendMode, 8);
+                cell.bits.writeUint8(sendMode, 8);
                 let orderCell = new Cell();
                 message.writeTo(orderCell);
                 cell.refs.push(orderCell);
             })
         } else {
-            cell.bits.writeUint8(0);
+            cell.bits.writeUint8(this.sendMode);
             let orderCell = new Cell();
             this.order.writeTo(orderCell);
             cell.refs.push(orderCell);
