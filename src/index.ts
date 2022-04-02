@@ -13,6 +13,8 @@ export { HttpApi } from './client/api/HttpApi';
 export { Slice } from './boc/Slice';
 export { ADNLAddress } from './address/ADNLAddress';
 export { ADNLKey } from './keystore/ADNLKey';
+export { Builder, beginCell } from './boc/Builder';
+export { DictBuilder, beginDict } from './boc/DictBuilder';
 
 // Messages
 export { Message } from './messages/Message';

@@ -91,7 +91,7 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    writeUint(value: number | BN, bitLength: number) {
+    writeUint = (value: number | BN, bitLength: number) => {
         let v = new BN(value);
         if (bitLength == 0 || (value.toString(2).length > bitLength)) {
             if (v.isZero()) {
@@ -105,7 +105,7 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    writeInt(value: number | BN, bitLength: number) {
+    writeInt = (value: number | BN, bitLength: number) => {
         let v = new BN(value);
         if (bitLength == 1) {
             if (v.eq(new BN(-1))) {
@@ -130,23 +130,17 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    writeUint8(value: number) {
+    writeUint8 = (value: number) => {
         this.writeUint(value, 8);
     }
 
-    writeBuffer(buffer: Buffer) {
+    writeBuffer = (buffer: Buffer) => {
         for (let i = 0; i < buffer.length; i++) {
             this.writeUint8(buffer[i]);
         }
     }
 
-    writeString(s: string) {
-        for (let i = 0; i < s.length; i++) {
-            this.writeUint8(s.charCodeAt(i));
-        }
-    }
-
-    writeCoins(amount: number | BN) {
+    writeCoins = (amount: number | BN) => {
         if (amount == 0) {
             this.writeUint(0, 4);
         } else {
@@ -157,7 +151,7 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    writeAddress(address: Address | null) {
+    writeAddress = (address: Address | null) => {
         if (address === null) {
             this.writeUint(0, 2);
         } else {
@@ -168,7 +162,7 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    writeBitString(value: BitString) {
+    writeBitString = (value: BitString) => {
         for (let v of value) {
             this.writeBit(v);
         }
