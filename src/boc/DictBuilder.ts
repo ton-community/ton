@@ -12,18 +12,27 @@ export class DictBuilder {
         this.keySize = keySize;
     }
 
-    storeCell = (index: number | BN, value: Cell) => {
+    storeCell = (index: number | BN | Buffer, value: Cell) => {
         if (this.ended) {
             throw Error('Already ended')
         }
-        let key = index.toString(10);
+        let key: string;
+        if (typeof index === 'number') {
+            key = index.toString(10);
+        } else if (BN.isBN(index)) {
+            key = index.toString(10);
+        } else if (Buffer.isBuffer(index)) {
+            key = new BN(index.toString('hex'), 'hex').toString(10);
+        } else {
+            throw Error('Invalid index type');
+        }
         if (this.items.has(key)) {
             throw Error('Item ' + index + ' already exist')
         }
         this.items.set(key, value);
     }
 
-    writeRef = (index: number | BN, value: Cell) => {
+    storeRef = (index: number | BN | Buffer, value: Cell) => {
         if (this.ended) {
             throw Error('Already ended')
         }
