@@ -1,6 +1,7 @@
+import { readFile } from 'fs/promises';
+import path from 'path';
 import { deserializeBoc, deserializeCellData, parseBocHeader, serializeToBoc } from "./boc";
 import { topologicalSort } from "./utils/topologicalSort";
-const NativeCell = require('tonweb/src/boc/Cell').Cell;
 
 describe('boc-serialize', () => {
     it('should correctly serialize', () => {
@@ -41,4 +42,11 @@ describe('boc-serialize', () => {
         }
         console.warn(refs_array2);
     });
+
+    it('should serialize boc including >255 cells', async () => {
+        const data = await readFile(path.resolve(__dirname, '__testdata__', 'largeBoc.txt'), { encoding: 'utf-8' });
+        const dataBuffer = Buffer.from(data, 'base64');
+        let boc = deserializeBoc(dataBuffer);
+        boc = deserializeBoc(boc[0].toBoc());
+    })
 });

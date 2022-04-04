@@ -299,7 +299,7 @@ function serializeForBoc(cell: Cell, refs: number[], sSize: number) {
         let refIndexHex = refIndexInt.toString(16);
         if (refIndexHex.length < sSize * 2) {
             // Add leading zeros
-            refIndexHex = new Array(4 - refIndexHex.length).fill("0").join('') + refIndexHex;
+            refIndexHex = new Array(sSize * 2 - refIndexHex.length).fill("0").join('') + refIndexHex;
         }
         const reference = Buffer.from(refIndexHex, 'hex');
         reprArray.push(reference);

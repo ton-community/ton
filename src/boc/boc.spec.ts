@@ -1,5 +1,3 @@
-import { readFile } from 'fs/promises';
-import path from 'path';
 import { BitString, Cell } from "..";
 import { deserializeBoc, serializeToBoc } from "./boc";
 const NativeCell = require('tonweb/src/boc/Cell').Cell;
@@ -61,16 +59,9 @@ describe('boc', () => {
         Cell.fromBoc(SOURCE);
     });
 
-    it('should correctly serialize', async () => {
+    it('should correctly deserialize', async () => {
         const data = 'te6ccgECMgEABJgAART/APSkE/S88sgLAQIBIAIDAgFIBAUADPIwgEjy8AICywYHAgEgKCkCASAICQIBziYnAgEgCgsCASAXGAIBIAwNAgEgERICASAODwAhX6QAH6RoBGAsAAEvL00/8wgB7SASCHHAPLyAdDTAwFxsJJfA+DwAzEB0x9wggGGoCPAAI4WMwHTH4BIAoIQbWludLoS8vSCCxjzYZdb0z/6AFAD4gP4ASIQNEAFbwT4YYIQQDSjwFIQupMw8AzgghCKWy7nUhC6kzDwDeCCCxjzYVIQupMw8A/ggEAARNMHAaoC1xgBgAFiCEJglNXhSELqTMPAO4IIQt2Z0GlIQupMw8BHgghAl1T39upLwEOAwgEjy8AIBIBMUAgEgFRYAHRwIHLIywHLAMsHy//J0IAAjEEz9A5voSCVAtcBMAHgMXAygAD0cIAQyMsFBfAEFc8WJPoCFMtqEssfyz/PE8mAQPsAgAD0cIAQyMsFBvAEFs8WUAT6AhTLassfEss/zxPJcfsAgAgEgGRoCASAfIAIBIBscAgEgHR4AHQBgwf0Dm+hk/oAMOAwcIAA7IBKIcEA8vIgwgCZyAH6AgKDB/RDlzABgwf0WzDigABk7UTQ+gD0BPQE1NQwgAB8yFAF+gIT9AD0AMzMye1UgAgEgISICASAjJADtPhBbyQwMQLT/9Mf+gD0BNHwCiOAICmDB/AFgEcB8vSAR1MbuvL0UzDwCFNK8AgryMv/VCC4gCD0QwGlRVDwCQSkVCSQ8AlAE/ALghCYKv//JcjL/1JAyx9SIPQAJURDUoXwB4IQMGbRDwPIy/8Syx/0AEEw8AaAA4z4QW8kMDEC0//TH/oA9ATR8Aoh0NP/MIBJURu68vQjgCApgwfwBTGARwHy8lMo8AgpyMv/VCCWgCD0QwSkVCOQ8AkC8AuCEDSISpElyMv/UkDLH1Ig9AAlRENShfAHghBwE3yHA8jL/xLLH/QAQTDwBoAB5PhBbyQwMQLU9ATR7UTQ1DDQ0/8wgElTFLry9CLQ0/8wgEgCuvL08AoxUlDwC4IQyGK6vQLIzPQAQTDwBoAH3PhBbyQyA/QE0fAK0NMA+gDTH9Mf9AQwgEsl8vSAS1OSufL0gEtTk7ny9IBNJIIQO5rKAKBQDLsb8vT4JfgVUwehIPgRUwuAIPQOb6GT0x8wkjAg4gKlLIAg9A5voZZAHIAg9BadMCDIyx/J0EAcgCD0FuIKpATIywBQA4CUAOPoCyx/LHxf0AMnwC4IQGmk4fgLIyx/0AEEw8AYAUT4QW8kMDEC9ATR7UTQ1DDQ0/8wgElRE7ry9IIQHZOq2AHI9ABBMPAGgAFs+EFvJDAxAtT0BNHtRNDUMNDT/zCASVEUuvL0IfsEghByjaOhAsjM9ABBMPAGgAgEgKisCASAwMQAXu5pe1E0NQw0NP/MIAgEgLC0CASAuLwA7tuU9qJofQBqAOhp//gAgPgAgOoYaHgAmIJqGCKgQABGzI7wChA0XwSAAK7L+fAKECRfBIMH9A5voZP6ADDgMHCAAEbu9GCEIMl5MOAAducNPAKXwOAIDICgwfwBY';
         const dataBuffer = Buffer.from(data, 'base64');
         deserializeBoc(dataBuffer);
     });
-    
-    it('should serialize boc including >255 cells', async () => {
-        const data = await readFile(path.resolve(__dirname, '__testdata__', 'largeBoc.txt'), { encoding: 'utf-8' });
-        const dataBuffer = Buffer.from(data, 'base64');
-        let boc = deserializeBoc(dataBuffer);
-        boc = deserializeBoc(boc[0].toBoc());
-    })
 });
