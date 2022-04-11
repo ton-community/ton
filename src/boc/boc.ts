@@ -287,7 +287,7 @@ export function deserializeBoc(serializedBoc: Buffer) {
 // Serialize
 //
 
-function serializeForBoc(cell: Cell, refs: number[]) {
+function serializeForBoc(cell: Cell, refs: number[], sSize: number) {
     const reprArray: Buffer[] = [];
 
     reprArray.push(getDataWithDescriptors(cell));
@@ -297,8 +297,9 @@ function serializeForBoc(cell: Cell, refs: number[]) {
         // const refIndexInt = cellsIndex[refHash];
         // refIndexInt
         let refIndexHex = refIndexInt.toString(16);
-        if (refIndexHex.length % 2) {
-            refIndexHex = "0" + refIndexHex;
+        if (refIndexHex.length < sSize * 2) {
+            // Add leading zeros
+            refIndexHex = new Array(sSize * 2 - refIndexHex.length).fill("0").join('') + refIndexHex;
         }
         const reference = Buffer.from(refIndexHex, 'hex');
         reprArray.push(reference);
@@ -318,13 +319,13 @@ export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, ha
 
     const cells_num = allCells.length;
     const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
-    const s_bytes = Math.min(Math.ceil(s / 8), 1);
+    const s_bytes = Math.max(Math.ceil(s / 8), 1);
     let full_size = 0;
     let sizeIndex: number[] = [];
     for (let cell_info of allCells) {
         //TODO it should be async map or async for
         sizeIndex.push(full_size);
-        full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs)).length;
+        full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs, s_bytes)).length;
     }
     const offset_bits = full_size.toString(2).length; // Minimal number of bits to offset/len (unused?)
     const offset_bytes = Math.max(Math.ceil(offset_bits / 8), 1);
@@ -347,7 +348,7 @@ export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, ha
     }
     for (let cell_info of allCells) {
         //TODO it should be async map or async for
-        const refcell_ser = serializeForBoc(cell_info.cell, cell_info.refs);
+        const refcell_ser = serializeForBoc(cell_info.cell, cell_info.refs, s_bytes);
         serialization.writeBuffer(refcell_ser);
     }
     let ser_arr = serialization.getTopUppedArray();
