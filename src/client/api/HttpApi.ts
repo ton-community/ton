@@ -225,6 +225,8 @@ export class HttpApi {
     }
 
     async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string, inclusive?: boolean }) {
+        const inclusive = opts.inclusive;
+        delete opts.inclusive;
 
         // Convert hash
         let hash: string | undefined = undefined;
@@ -234,7 +236,7 @@ export class HttpApi {
 
         // Adjust limit
         let limit = opts.limit;
-        if (opts.hash && opts.lt && opts.inclusive !== true) {
+        if (opts.hash && opts.lt && inclusive !== true) {
             limit++;
         }
 
@@ -245,7 +247,7 @@ export class HttpApi {
         }
 
         // Adjust result
-        if (opts.hash && opts.lt && opts.inclusive !== true) {
+        if (opts.hash && opts.lt && inclusive !== true) {
             res.shift();
             return res;
         } else {
