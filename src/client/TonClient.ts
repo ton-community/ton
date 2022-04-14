@@ -107,6 +107,18 @@ export class TonClient {
     }
 
     /**
+     * Invoke get method that returns error code instead of throwing error
+     * @param address contract address
+     * @param name name of method
+     * @param params optional parameters
+     * @returns stack and gas_used field
+    */
+    async callGetMethodWithError(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[], exit_code: number }> {
+        let res = await this.#api.callGetMethod(address, name, params);
+        return { gas_used: res.gas_used, stack: res.stack, exit_code: res.exit_code };
+    }
+
+    /**
      * Get transactions
      * @param address address
      */
