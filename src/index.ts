@@ -15,6 +15,10 @@ export { ADNLAddress } from './address/ADNLAddress';
 export { ADNLKey } from './keystore/ADNLKey';
 export { Builder, beginCell } from './boc/Builder';
 export { DictBuilder, beginDict } from './boc/DictBuilder';
+export { bnToAddress } from './utils/bnToAddress';
+export { TupleSlice } from './boc/TupleSlice';
+export { getSupportedInterfaces, KnownInterface, SupportedInterface } from './introspection/getSupportedInterfaces';
+export { SupportedMessage, parseSupportedMessage } from './introspection/parseSupportedMessage';
 
 // Messages
 export { Message } from './messages/Message';
