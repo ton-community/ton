@@ -28,12 +28,26 @@ export type SupportedInterface = {
 }
 
 /**
+ * Resolves known interface
+ * @param src source id
+ * @returns known interface
+ */
+export function resolveKnownInterface(src: string): KnownInterface | null {
+    let kn = known[src];
+    if (kn) {
+        return kn;
+    } else {
+        return null;
+    }
+}
+
+/**
  * Fetching supported interfaces
  * @param src address
  * @param client client
  * @returns array of supported interfaces
  */
-export async function getSupportedInterfaces(src: Address, client: TonClient): Promise<SupportedInterface[]> {
+export async function getSupportedInterfacesRaw(src: Address, client: TonClient): Promise<string[]> {
     // Query interfaces
     let res = await client.callGetMethodWithError(src, 'supported_interfaces');
 
@@ -52,15 +66,9 @@ export async function getSupportedInterfaces(src: Address, client: TonClient): P
         }
 
         // Read all remaining
-        let interfaces: SupportedInterface[] = [];
+        let interfaces: string[] = [];
         while (slice.remaining > 0) {
-            let val = slice.readBigNumber().toString();
-            let kn = known[val];
-            if (kn) {
-                interfaces.push({ type: 'known', name: kn });
-            } else {
-                interfaces.push({ type: 'unknown', value: val });
-            }
+            interfaces.push(slice.readBigNumber().toString());
         }
         return interfaces;
     } catch (e) {
@@ -68,4 +76,22 @@ export async function getSupportedInterfaces(src: Address, client: TonClient): P
         console.warn(e);
         return [];
     }
+}
+
+/**
+ * Fetching supported interfaces
+ * @param src address
+ * @param client client
+ * @returns array of supported interfaces
+ */
+export async function getSupportedInterfaces(src: Address, client: TonClient): Promise<SupportedInterface[]> {
+    let supprotedRaw = await getSupportedInterfacesRaw(src, client);
+    return supprotedRaw.map((v) => {
+        let k = resolveKnownInterface(v);
+        if (k) {
+            return { type: 'known', name: k }
+        } else {
+            return { type: 'unknown', value: v };
+        }
+    });
 }
