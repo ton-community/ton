@@ -42,7 +42,7 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
     }
     if (op === crc32str('op::stake_withdraw::delayed')) {
         return {
-            type: 'withdraw:delayed',
+            type: 'withdraw::delayed',
             data: {}
         };
     }
