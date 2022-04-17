@@ -67,7 +67,7 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
             }
         };
     }
-    if (op === crc32str('op::upgrade::ok')) {
+    if (op === crc32str('op::upgrade::response')) {
         return {
             type: 'upgrade::ok',
             data: {}
