@@ -21,7 +21,7 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
     }
     if (op === crc32str('op::stake_deposit::response')) {
         return {
-            type: 'deposit:ok',
+            type: 'deposit::ok',
             data: {}
         };
     }
@@ -48,7 +48,7 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
     }
     if (op === crc32str('op::stake_withdraw::response')) {
         return {
-            type: 'withdraw:ok',
+            type: 'withdraw::ok',
             data: {}
         };
     }
