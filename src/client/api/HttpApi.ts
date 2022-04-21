@@ -4,7 +4,7 @@ import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
 import { TonCache } from '../TonCache';
 import DataLoader from 'dataloader';
-import axios from 'axios';
+import axios, { AxiosAdapter } from 'axios';
 
 const version = require('../../../package.json').version as string;
 
@@ -165,7 +165,16 @@ export interface HttpApiParameters {
      * HTTP request timeout in milliseconds.
      */
     timeout?: number;
+
+    /**
+     * API Key
+     */
     apiKey?: string;
+
+    /**
+     * Adapter for Axios
+     */
+    adapter?: AxiosAdapter;
 }
 
 interface HttpApiResolvedParameters extends HttpApiParameters {

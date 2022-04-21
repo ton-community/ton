@@ -15,6 +15,7 @@ import { TonTransaction, TonMessage } from './TonTransaction';
 import { ConfigContract } from '../contracts/ConfigContract';
 import { InMemoryCache, TonCache } from './TonCache';
 import { boolean } from 'fp-ts';
+import { AxiosAdapter } from 'axios';
 
 export type TonClientParameters = {
     endpoint: string;
@@ -24,7 +25,16 @@ export type TonClientParameters = {
      * HTTP request timeout in milliseconds.
      */
     timeout?: number;
+
+    /**
+     * API Key
+     */
     apiKey?: string;
+
+    /**
+     * HTTP Adapter for axios
+     */
+    httpAdapter?: AxiosAdapter;
 }
 
 export type TonClientResolvedParameters = {
@@ -78,7 +88,8 @@ export class TonClient {
         };
         this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache, {
             timeout: parameters.timeout,
-            apiKey: parameters.apiKey
+            apiKey: parameters.apiKey,
+            adapter: parameters.httpAdapter
         });
     }
 
