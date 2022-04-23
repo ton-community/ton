@@ -53,6 +53,7 @@ export { WalletV3R2Source } from './contracts/sources/WalletV3R2Source';
 export { ConfigStore } from './utils/ConfigStore';
 export { parseDict, parseDictBitString, parseDictRefs } from './boc/dict/parseDict';
 export { serializeDict } from './boc/dict/serializeDict';
+export { safeSign, safeSignVerify } from './client/safeSign';
 
 // Transaction
 export {
