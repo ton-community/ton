@@ -4,7 +4,7 @@ import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
 import { TonCache } from '../TonCache';
 import DataLoader from 'dataloader';
-import axios from 'axios';
+import axios, { AxiosAdapter } from 'axios';
 
 const version = require('../../../package.json').version as string;
 
@@ -165,7 +165,16 @@ export interface HttpApiParameters {
      * HTTP request timeout in milliseconds.
      */
     timeout?: number;
+
+    /**
+     * API Key
+     */
     apiKey?: string;
+
+    /**
+     * Adapter for Axios
+     */
+    adapter?: AxiosAdapter;
 }
 
 interface HttpApiResolvedParameters extends HttpApiParameters {
@@ -225,6 +234,8 @@ export class HttpApi {
     }
 
     async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string, inclusive?: boolean }) {
+        const inclusive = opts.inclusive;
+        delete opts.inclusive;
 
         // Convert hash
         let hash: string | undefined = undefined;
@@ -234,7 +245,7 @@ export class HttpApi {
 
         // Adjust limit
         let limit = opts.limit;
-        if (opts.hash && opts.lt && opts.inclusive !== true) {
+        if (opts.hash && opts.lt && inclusive !== true) {
             limit++;
         }
 
@@ -245,7 +256,7 @@ export class HttpApi {
         }
 
         // Adjust result
-        if (opts.hash && opts.lt && opts.inclusive !== true) {
+        if (opts.hash && opts.lt && inclusive !== true) {
             res.shift();
             return res;
         } else {

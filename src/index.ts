@@ -15,6 +15,10 @@ export { ADNLAddress } from './address/ADNLAddress';
 export { ADNLKey } from './keystore/ADNLKey';
 export { Builder, beginCell } from './boc/Builder';
 export { DictBuilder, beginDict } from './boc/DictBuilder';
+export { bnToAddress } from './utils/bnToAddress';
+export { TupleSlice } from './boc/TupleSlice';
+export { getSupportedInterfaces, resolveKnownInterface, getSupportedInterfacesRaw, KnownInterface, SupportedInterface } from './introspection/getSupportedInterfaces';
+export { SupportedMessage, parseSupportedMessage } from './introspection/parseSupportedMessage';
 
 // Messages
 export { Message } from './messages/Message';
@@ -49,6 +53,7 @@ export { WalletV3R2Source } from './contracts/sources/WalletV3R2Source';
 export { ConfigStore } from './utils/ConfigStore';
 export { parseDict, parseDictBitString, parseDictRefs } from './boc/dict/parseDict';
 export { serializeDict } from './boc/dict/serializeDict';
+export { safeSign, safeSignVerify } from './client/safeSign';
 
 // Transaction
 export {

@@ -15,6 +15,7 @@ import { TonTransaction, TonMessage } from './TonTransaction';
 import { ConfigContract } from '../contracts/ConfigContract';
 import { InMemoryCache, TonCache } from './TonCache';
 import { boolean } from 'fp-ts';
+import { AxiosAdapter } from 'axios';
 
 export type TonClientParameters = {
     endpoint: string;
@@ -24,7 +25,16 @@ export type TonClientParameters = {
      * HTTP request timeout in milliseconds.
      */
     timeout?: number;
+
+    /**
+     * API Key
+     */
     apiKey?: string;
+
+    /**
+     * HTTP Adapter for axios
+     */
+    httpAdapter?: AxiosAdapter;
 }
 
 export type TonClientResolvedParameters = {
@@ -78,7 +88,8 @@ export class TonClient {
         };
         this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache, {
             timeout: parameters.timeout,
-            apiKey: parameters.apiKey
+            apiKey: parameters.apiKey,
+            adapter: parameters.httpAdapter
         });
     }
 
@@ -104,6 +115,18 @@ export class TonClient {
             throw Error('Unable to execute get method. Got exit_code: ' + res.exit_code);
         }
         return { gas_used: res.gas_used, stack: res.stack };
+    }
+
+    /**
+     * Invoke get method that returns error code instead of throwing error
+     * @param address contract address
+     * @param name name of method
+     * @param params optional parameters
+     * @returns stack and gas_used field
+    */
+    async callGetMethodWithError(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[], exit_code: number }> {
+        let res = await this.#api.callGetMethod(address, name, params);
+        return { gas_used: res.gas_used, stack: res.stack, exit_code: res.exit_code };
     }
 
     /**
