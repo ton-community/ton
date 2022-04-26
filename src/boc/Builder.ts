@@ -101,6 +101,10 @@ export class Builder {
         return this;
     }
 
+    storeRefMaybe = (src: Cell | null) => {
+        return this.storeDict(src);
+    }
+
     endCell() {
         if (this.ended) {
             throw Error('Already ended')
