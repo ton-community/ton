@@ -129,18 +129,26 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
     }
 }
 
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L139
+// tick_tock$_ tick:Bool tock:Bool = TickTock;
+export type RawTickTock = { tick: boolean, tock: boolean };
+export function parseRawTickTock(slice: Slice): RawTickTock {
+    return {
+        tick: slice.readBit(),
+        tock: slice.readBit()
+    };
+}
+
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L141
 // _ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
 //  code:(Maybe ^Cell) data:(Maybe ^Cell)
 //  library:(HashmapE 256 SimpleLib) = StateInit;
-export type RawStateInit = { code: Cell | null, data: Cell | null };
+export type RawStateInit = { code: Cell | null, data: Cell | null, special: RawTickTock | null };
 export function parseStateInit(slice: Slice) {
     if (slice.readBit()) {
         throw Error('Unsupported');
     }
-    if (slice.readBit()) {
-        throw Error('Unsupported');
-    }
+    const special = slice.readBit() ? parseRawTickTock(slice) : null;
     const hasCode = slice.readBit();
     const code = hasCode ? slice.readCell() : null;
     const hasData = slice.readBit();
@@ -149,7 +157,7 @@ export function parseStateInit(slice: Slice) {
         throw Error('Unsupported');
     }
 
-    return { data, code };
+    return { data, code, special };
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L147

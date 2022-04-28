@@ -72,6 +72,7 @@ export {
     parseActionPhase,
     parseBouncePhase,
     parseTransactionDescription,
+    parseRawTickTock,
     RawAccountStatus,
     RawCurrencyCollection,
     RawCommonMessageInfo,
@@ -85,5 +86,6 @@ export {
     RawActionPhase,
     RawBouncePhase,
     RawTransactionDescription,
-    RawTransaction
+    RawTransaction,
+    RawTickTock
 } from './block/parseTransaction';
