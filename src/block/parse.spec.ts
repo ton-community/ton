@@ -1,7 +1,7 @@
 import { Address, Cell } from "..";
-import { parseTransaction } from "./parseTransaction";
+import { parseTransaction } from "./parse";
 
-describe('parseTransaction', () => {
+describe('parse', () => {
     it('should parse transaction correctly', () => {
 
         // Source: https://explorer.toncoin.org/transaction?account=EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N&lt=22901965000001&hash=E9FB666FD65E2D70479C5A2C2EC412AD08D68FCDF57676B3BAA34AADA3C95DB8

@@ -677,3 +677,86 @@ export function parseTransaction(workchain: number, slice: Slice): RawTransactio
         }
     };
 }
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L222
+// storage_used$_ cells:(VarUInteger 7) bits:(VarUInteger 7) 
+//  public_cells:(VarUInteger 7) = StorageUsed;
+export type RawStorageUsed = {
+    cells: number,
+    bits: number,
+    publicCells: number
+};
+export function parseStorageUsed(cs: Slice): RawStorageUsed {
+    return {
+        cells: cs.readVarUIntNumber(3),
+        bits: cs.readVarUIntNumber(3),
+        publicCells: cs.readVarUIntNumber(3),
+    }
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L228
+// storage_info$_ used:StorageUsed last_paid:uint32
+//  due_payment:(Maybe Grams) = StorageInfo;
+export type RawStorageInfo = {
+    used: RawStorageUsed,
+    lastPaid: number,
+    duePayment: BN | null
+};
+export function parseStorageInfo(cs: Slice): RawStorageInfo {
+    return {
+        used: parseStorageUsed(cs),
+        lastPaid: cs.readUintNumber(32),
+        duePayment: cs.readBit() ? cs.readCoins() : null
+    };
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L239
+// account_uninit$00 = AccountState;
+// account_active$1 _:StateInit = AccountState;
+// account_frozen$01 state_hash:bits256 = AccountState;
+export type RawAccountState =
+    | { type: 'uninit' }
+    | { type: 'active', state: RawStateInit }
+    | { type: 'frozen', stateHash: Buffer };
+export function parseAccountState(cs: Slice): RawAccountState {
+    if (cs.readBit()) {
+        return { type: 'active', state: parseStateInit(cs) };
+    } else if (cs.readBit()) {
+        return { type: 'frozen', stateHash: cs.readBuffer(32) };
+    } else {
+        return { type: 'uninit' };
+    }
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L235
+// account_storage$_ last_trans_lt:uint64 balance:CurrencyCollection state:AccountState 
+//   = AccountStorage;
+export type RawAccountStorage = {
+    lastTransLt: BN,
+    balance: RawCurrencyCollection
+    state: RawAccountState
+}
+export function parseAccountStorage(cs: Slice): RawAccountStorage {
+    return { lastTransLt: cs.readUint(64), balance: parseCurrencyCollection(cs), state: parseAccountState(cs) };
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L231
+// account_none$0 = Account;
+// account$1 addr:MsgAddressInt storage_stat:StorageInfo
+//  storage:AccountStorage = Account;
+export type RawAccount = {
+    addr: Address | null,
+    storageStat: RawStorageInfo,
+    storage: RawAccountStorage
+}
+export function parseAccount(cs: Slice) {
+    if (cs.readBit()) {
+        return {
+            address: cs.readAddress(),
+            storageStat: parseStorageInfo(cs),
+            storage: parseAccountStorage(cs)
+        }
+    } else {
+        return null;
+    }
+}
