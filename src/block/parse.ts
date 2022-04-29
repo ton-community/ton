@@ -787,6 +787,23 @@ export function parseShardIdent(cs: Slice) {
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L256
 // account_descr$_ account:^Account last_trans_hash:bits256 
 //  last_trans_lt:uint64 = ShardAccount;
+export type RawShardAccount = {
+    address: Address | null;
+    lastTransHash: Buffer;
+    lastTransLt: BN;
+};
+export function parseShardAccount(cs: Slice): RawShardAccount {
+    let accountCell = cs.readCell();
+    let address: Address | null = null;
+    if (!accountCell.isExotic) {
+        address = accountCell.beginParse().readAddress();
+    }
+    return {
+        address,
+        lastTransHash: cs.readBuffer(32),
+        lastTransLt: cs.readUint(64)
+    }
+}
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L259
 // depth_balance$_ split_depth:(#<= 30) balance:CurrencyCollection = DepthBalanceInfo;
@@ -804,17 +821,19 @@ export function parseDepthBalanceInfo(cs: Slice): RawDepthBalanceInfo {
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L261
 // _ (HashmapAugE 256 ShardAccount DepthBalanceInfo) = ShardAccounts;
 export type RawShardAccountRef = {
+    shardAccount: RawShardAccount
     depthBalanceInfo: RawDepthBalanceInfo
 };
 export function parseShardAccounts(cs: Slice): Map<string, RawShardAccountRef> {
-    // if (!cs.readBit()) {
-    //     return new Map();
-    // }
-    // console.warn(cs.toCell().toString());
-    return parseDict(cs, 256, (cs2) => {
+    if (!cs.readBit()) {
+        return new Map();
+    }
+    return parseDict(cs.readRef(), 256, (cs2) => {
         let depthBalanceInfo = parseDepthBalanceInfo(cs2);
+        let shardAccount = parseShardAccount(cs2);
         return {
-            depthBalanceInfo
+            depthBalanceInfo,
+            shardAccount
         }
     });
 }
@@ -843,7 +862,9 @@ export type RawShardStateUnsplit = {
     genUtime: number,
     genLt: BN,
     minRefSeqno: number,
-    beforeSplit: boolean
+    beforeSplit: boolean,
+    accounts: Map<string, RawShardAccountRef>,
+    custom: Cell | null
 }
 export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
     if (cs.readUintNumber(32) !== 0x9023afe2) {
@@ -858,17 +879,15 @@ export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
     let minRefSeqno = cs.readUintNumber(32);
 
     // Skip OutMsgQueueInfo
-    cs.readRef();
+    cs.readCell();
 
     let beforeSplit = cs.readBit();
+    let accounts = parseShardAccounts(cs.readRef());
+
+    // Skip
+    cs.readCell();
     let mcStateExtra = cs.readBit();
-    console.warn(cs.remaining);
-    console.warn(cs.remainingRefs);
-    console.warn(mcStateExtra);
-    // cs.readCell();
-    console.warn(cs.readCell().toString());
-    // let shardAccounts = parseShardAccounts(cs.readRef());
-    // console.warn(shardAccounts);
+    let custom = mcStateExtra ? cs.readCell() : null;
 
     return {
         globalId,
@@ -878,6 +897,8 @@ export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
         genUtime,
         genLt,
         minRefSeqno,
-        beforeSplit
+        beforeSplit,
+        accounts,
+        custom
     }
 }

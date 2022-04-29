@@ -79,6 +79,11 @@ export {
     parseAccountState,
     parseAccountStorage,
     parseAccount,
+    parseShardIdent,
+    parseShardAccount,
+    parseDepthBalanceInfo,
+    parseShardAccounts,
+    parseShardStateUnsplit,
     RawAccountStatus,
     RawCurrencyCollection,
     RawCommonMessageInfo,
@@ -98,5 +103,10 @@ export {
     RawStorageInfo,
     RawAccountState,
     RawAccountStorage,
-    RawAccount
+    RawAccount,
+    RawShardIdent,
+    RawShardAccount,
+    RawDepthBalanceInfo,
+    RawShardAccountRef,
+    RawShardStateUnsplit
 } from './block/parse';
