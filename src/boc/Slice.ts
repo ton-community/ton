@@ -3,6 +3,9 @@ import { BitString, BitStringReader, Cell, parseDict } from "..";
 export class Slice {
 
     static fromCell(cell: Cell) {
+        if (cell.isExotic) {
+            throw Error('Unable to create slice from exotic')
+        }
         return new Slice(cell.bits, cell.refs);
     }
 
@@ -138,7 +141,7 @@ export class Slice {
         reader.skip(this.bits.currentOffset);
         const remaining = reader.readRemaining();
 
-        let cell = new Cell(false, remaining);
+        let cell = new Cell('ordinary', remaining);
         for (let r of this.refs) {
             cell.refs.push(r);
         }

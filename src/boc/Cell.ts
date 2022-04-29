@@ -3,6 +3,7 @@ import { BitString } from './BitString';
 import { deserializeBoc, hashCell, serializeToBoc } from './boc';
 import inspectSymbol from 'symbol.inspect';
 import { Slice } from '..';
+import { CellType } from './CellType';
 
 export class Cell {
 
@@ -12,14 +13,20 @@ export class Cell {
 
     readonly bits: BitString;
     readonly refs: Cell[] = [];
-    readonly isExotic: boolean;
+    readonly kind: CellType;
+    get isExotic() {
+        return this.kind !== 'ordinary';
+    }
 
-    constructor(isExotic: boolean = false, bits = BitString.alloc(1023)) {
-        this.isExotic = isExotic;
+    constructor(kind: CellType = 'ordinary', bits = BitString.alloc(1023)) {
+        this.kind = kind;
         this.bits = bits;
     }
 
     beginParse() {
+        if (this.isExotic) {
+            throw Error('Unable to parse exotic cell');
+        }
         return Slice.fromCell(this);
     }
 

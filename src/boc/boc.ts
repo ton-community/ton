@@ -1,5 +1,6 @@
 import { sha256, sha256_sync } from "ton-crypto";
 import { BitString, Cell } from "..";
+import { CellType } from "./CellType";
 import { crc32c } from "./utils/crc32c";
 import { topologicalSort } from "./utils/topologicalSort";
 
@@ -233,18 +234,35 @@ export function deserializeCellData(cellData: Buffer, referenceIndexSize: number
     // const level = Math.floor(d1 / 32);
     const isExotic = !!(d1 & 8);
     const refNum = d1 % 8;
-    const dataBytesize = Math.ceil(d2 / 2);
+    let dataBytesize = Math.ceil(d2 / 2);
     const fullfilledBytes = !(d2 % 2);
 
     // Build Cell
-    let cell = new Cell(isExotic);
+    let bits = BitString.alloc(1023);
     let refs: number[] = [];
     if (cellData.length < dataBytesize + referenceIndexSize * refNum) {
         throw new Error('Not enough bytes to encode cell data');
     }
 
     // Cell data
-    cell.bits.setTopUppedArray(cellData.slice(0, dataBytesize), fullfilledBytes);
+    let kind: CellType = 'ordinary';
+    if (isExotic) {
+        let k = cellData.readUInt8();
+        if (k === 1) {
+            kind = 'pruned';
+        } else if (k === 2) {
+            kind = 'library_reference';
+        } else if (k === 3) {
+            kind = 'merkle_proof';
+        } else if (k === 4) {
+            kind = 'merkle_update';
+        } else {
+            throw Error('Invalid cell type');
+        }
+        cellData = cellData.slice(1);
+        dataBytesize--;
+    }
+    bits.setTopUppedArray(cellData.slice(0, dataBytesize), fullfilledBytes);
     cellData = cellData.slice(dataBytesize);
 
     // References
@@ -252,6 +270,10 @@ export function deserializeCellData(cellData: Buffer, referenceIndexSize: number
         refs.push(readNBytesUIntFromArray(referenceIndexSize, cellData));
         cellData = cellData.slice(referenceIndexSize);
     }
+
+    // Resolve kind
+    let cell = new Cell(kind, bits);
+
     return { cell, refs, residue: cellData };
 }
 

@@ -40,11 +40,15 @@ function doParse<T>(prefix: string, slice: Slice, n: number, res: Map<string, T>
     if (n - prefixLength === 0) {
         res.set(new BN(pp, 2).toString(10), extractor(slice));
     } else {
-        let left = slice.readRef();
-        let right = slice.readRef();
+        let left = slice.readCell();
+        let right = slice.readCell();
         // NOTE: Left and right branches are implicitly contain prefixes '0' and '1'
-        doParse(pp + '0', left, n - prefixLength - 1, res, extractor);
-        doParse(pp + '1', right, n - prefixLength - 1, res, extractor);
+        if (!left.isExotic) {
+            doParse(pp + '0', left.beginParse(), n - prefixLength - 1, res, extractor);
+        }
+        if (!right.isExotic) {
+            doParse(pp + '1', right.beginParse(), n - prefixLength - 1, res, extractor);
+        }
     }
 }
 

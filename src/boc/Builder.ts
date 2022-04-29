@@ -110,7 +110,7 @@ export class Builder {
             throw Error('Already ended')
         }
         this.ended = true;
-        let res = new Cell(false, this.bits);
+        let res = new Cell('ordinary', this.bits);
         for (let r of this.refs) {
             res.refs.push(r);
         }

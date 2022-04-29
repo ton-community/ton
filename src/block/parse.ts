@@ -1,5 +1,6 @@
 import BN from "bn.js";
 import { Address, Cell, Slice } from "..";
+import { parseDict } from "../boc/dict/parseDict";
 
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L243
@@ -22,7 +23,7 @@ export function parseAccountStatus(slice: Slice): RawAccountStatus {
     if (status === 0x03) {
         return 'non-existing';
     }
-    throw Error('Unreachable');
+    throw Error('Invalid data');
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L120
@@ -195,7 +196,7 @@ export function parseMessage(slice: Slice): RawMessage {
 export type RawHashUpdate = { oldHash: Buffer, newHash: Buffer };
 export function parseHashUpdate(slice: Slice): RawHashUpdate {
     if (slice.readUintNumber(8) !== 0x72) {
-        throw Error('Invalid transaction');
+        throw Error('Invalid data');
     }
     const oldHash = slice.readBuffer(32);
     const newHash = slice.readBuffer(32);
@@ -604,7 +605,7 @@ export type RawTransaction = {
 };
 export function parseTransaction(workchain: number, slice: Slice): RawTransaction {
     if (slice.readUintNumber(4) !== 0x07) {
-        throw Error('Invalid transaction');
+        throw Error('Invalid data');
     }
 
     // Read address
@@ -758,5 +759,125 @@ export function parseAccount(cs: Slice) {
         }
     } else {
         return null;
+    }
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L384
+// shard_ident$00 shard_pfx_bits:(#<= 60) 
+//  workchain_id:int32 shard_prefix:uint64 = ShardIdent;
+export type RawShardIdent = {
+    shardPrefixBits: number,
+    workchainId: number,
+    shardPrefix: BN
+}
+export function parseShardIdent(cs: Slice) {
+    if (cs.readUintNumber(2) !== 0) {
+        throw Error('Invalid data')
+    }
+    let shardPrefixBits = cs.readUintNumber(6);
+    let workchainId = cs.readIntNumber(32);
+    let shardPrefix = cs.readUint(64);
+    return {
+        shardPrefixBits,
+        workchainId,
+        shardPrefix
+    }
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L256
+// account_descr$_ account:^Account last_trans_hash:bits256 
+//  last_trans_lt:uint64 = ShardAccount;
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L259
+// depth_balance$_ split_depth:(#<= 30) balance:CurrencyCollection = DepthBalanceInfo;
+export type RawDepthBalanceInfo = {
+    splitDepth: number,
+    balance: RawCurrencyCollection
+}
+export function parseDepthBalanceInfo(cs: Slice): RawDepthBalanceInfo {
+    return {
+        splitDepth: cs.readUintNumber(5),
+        balance: parseCurrencyCollection(cs)
+    }
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L261
+// _ (HashmapAugE 256 ShardAccount DepthBalanceInfo) = ShardAccounts;
+export type RawShardAccountRef = {
+    depthBalanceInfo: RawDepthBalanceInfo
+};
+export function parseShardAccounts(cs: Slice): Map<string, RawShardAccountRef> {
+    // if (!cs.readBit()) {
+    //     return new Map();
+    // }
+    // console.warn(cs.toCell().toString());
+    return parseDict(cs, 256, (cs2) => {
+        let depthBalanceInfo = parseDepthBalanceInfo(cs2);
+        return {
+            depthBalanceInfo
+        }
+    });
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L396
+// shard_state#9023afe2 global_id:int32
+//  shard_id:ShardIdent 
+//  seq_no:uint32 vert_seq_no:#
+//  gen_utime:uint32 gen_lt:uint64
+//  min_ref_mc_seqno:uint32
+//  out_msg_queue_info:^OutMsgQueueInfo
+//  before_split:(## 1)
+//  accounts:^ShardAccounts
+//  ^[ overload_history:uint64 underload_history:uint64
+//  total_balance:CurrencyCollection
+//  total_validator_fees:CurrencyCollection
+//  libraries:(HashmapE 256 LibDescr)
+//  master_ref:(Maybe BlkMasterInfo) ]
+//  custom:(Maybe ^McStateExtra)
+//  = ShardStateUnsplit;
+export type RawShardStateUnsplit = {
+    globalId: number,
+    shardId: RawShardIdent,
+    seqno: number,
+    vertSeqNo: number,
+    genUtime: number,
+    genLt: BN,
+    minRefSeqno: number,
+    beforeSplit: boolean
+}
+export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
+    if (cs.readUintNumber(32) !== 0x9023afe2) {
+        throw Error('Invalid data');
+    }
+    let globalId = cs.readIntNumber(32);
+    let shardId = parseShardIdent(cs);
+    let seqno = cs.readUintNumber(32);
+    let vertSeqNo = cs.readUintNumber(32);
+    let genUtime = cs.readUintNumber(32);
+    let genLt = cs.readUint(64);
+    let minRefSeqno = cs.readUintNumber(32);
+
+    // Skip OutMsgQueueInfo
+    cs.readRef();
+
+    let beforeSplit = cs.readBit();
+    let mcStateExtra = cs.readBit();
+    console.warn(cs.remaining);
+    console.warn(cs.remainingRefs);
+    console.warn(mcStateExtra);
+    // cs.readCell();
+    console.warn(cs.readCell().toString());
+    // let shardAccounts = parseShardAccounts(cs.readRef());
+    // console.warn(shardAccounts);
+
+    return {
+        globalId,
+        shardId,
+        seqno,
+        vertSeqNo,
+        genUtime,
+        genLt,
+        minRefSeqno,
+        beforeSplit
     }
 }

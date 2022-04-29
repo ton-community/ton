@@ -1,6 +1,7 @@
 export { BitString } from './boc/BitString';
 export { BitStringReader } from './boc/BitStringReader';
 export { Cell } from './boc/Cell';
+export { CellType } from './boc/CellType';
 export { TonClient } from './client/TonClient';
 export { Wallet, validateWalletType, WalletContractType } from './client/Wallet';
 export { Address } from './address/Address';
