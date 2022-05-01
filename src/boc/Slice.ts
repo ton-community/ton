@@ -86,6 +86,10 @@ export class Slice {
         return this.bits.readUnaryLength();
     }
 
+    readBitString = (n: number) => {
+        return this.bits.readBitString(n);
+    }
+
     readOptDict = <T>(keySize: number, extractor: (slice: Slice) => T) => {
         if (this.readBit()) {
             return this.readDict(keySize, extractor);
