@@ -110,3 +110,17 @@ export {
     RawShardAccountRef,
     RawShardStateUnsplit
 } from './block/parse';
+
+// VM Stack
+export {
+    StackNull,
+    StackInt,
+    StackNaN,
+    StackCell,
+    StackSlice,
+    StackBuilder,
+    StackTuple,
+    StackItem,
+    serializeStack,
+    parseStack
+} from './block/stack';
