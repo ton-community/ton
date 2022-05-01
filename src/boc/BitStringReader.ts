@@ -137,6 +137,14 @@ export class BitStringReader {
         return new Address(wc, hash);
     }
 
+    readBitString(n: number) {
+        let res = BitString.alloc(1023);
+        for (let i = 0; i < n; i++) {
+            res.writeBit(this.readBit());
+        }
+        return res;
+    }
+
     private getBit(n: number) {
         if (n >= this.length || n < 0) {
             throw Error('Out of range');
