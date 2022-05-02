@@ -124,3 +124,9 @@ export {
     serializeStack,
     parseStack
 } from './block/stack';
+
+// Client 4
+export {
+    TonClient4,
+    TonClient4Parameters
+} from './client/TonClient4';
