@@ -119,6 +119,25 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
     return null;
 }
 
+function parseJettonWallet(op: number, sc: Slice): SupportedMessage | null {
+
+    if (op === 0xd53276db /* excesses */) {
+        let queryId = sc.readUint(64);
+        return {
+            type: 'jetton::excesses',
+            data: {
+                'query_id': queryId
+            }
+        };
+    }
+
+    return null;
+}
+
+function parseJettonMaster(op: number, sc: Slice): SupportedMessage | null {
+    return null;
+}
+
 export function parseSupportedMessage(knownInteface: KnownInterface, message: Cell): SupportedMessage | null {
     try {
 
@@ -135,6 +154,14 @@ export function parseSupportedMessage(knownInteface: KnownInterface, message: Ce
         // Nominators parsing
         if (knownInteface === 'com.tonwhales.nominators:v0') {
             return parseNominatorsMessage(op, sc);
+        }
+
+        // Jettons
+        if (knownInteface === 'org.ton.jetton.wallet.v1') {
+            return parseJettonWallet(op, sc);
+        }
+        if (knownInteface === 'org.ton.jetton.master.v1') {
+            return parseJettonMaster(op, sc);
         }
 
     } catch (e) {

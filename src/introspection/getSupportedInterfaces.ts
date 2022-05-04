@@ -8,11 +8,15 @@ import { TonClient } from "../client/TonClient";
 
 export type KnownInterface =
     | 'org.ton.introspection.v0'
-    | 'com.tonwhales.nominators:v0';
+    | 'com.tonwhales.nominators:v0'
+    | 'org.ton.jetton.master.v1'
+    | 'org.ton.jetton.wallet.v1';
 
 const known: { [key: string]: KnownInterface } = {
     ['123515602279859691144772641439386770278']: 'org.ton.introspection.v0',
-    ['256184278959413194623484780286929323492']: 'com.tonwhales.nominators:v0'
+    ['256184278959413194623484780286929323492']: 'com.tonwhales.nominators:v0',
+    ['242422353946785872806511191513850808027']: 'org.ton.jetton.master.v1',
+    ['311736387032003861293477945447179662681']: 'org.ton.jetton.wallet.v1',
 }
 
 //
