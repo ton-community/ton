@@ -1,5 +1,5 @@
 import { Address, Cell } from "..";
-import { parseAccountState, parseShardStateUnsplit, parseTransaction } from "./parse";
+import { parseAccount, parseAccountState, parseShardStateUnsplit, parseTransaction } from "./parse";
 
 describe('parse', () => {
     it('should parse transaction correctly', () => {
@@ -32,6 +32,6 @@ describe('parse', () => {
     it('should parse account state with exotic cells', () => {
         const state = 'te6ccgEBBAEAvwADb8AHLZ17WF9YMMz6rkRVUhzi0cOYteH7l+BZW9ybRSzYHaIIgRIC9I0foAAAEg6NNnsJHad80bNAAQIDAA2gAAAA7wqEAKL/ACDdIIIBTJe6lzDtRNDXCx/gpPJggQIA1xgg1wsf7UTQ0x/T/9FRErryoSL5AVQQRPkQ8qL4AAHTHzEg10qW0wfUAvsA3tGkyMsfy//J7VQASAAAAAILXgY0fNeWQMlsiKiA5yU8EEFCoKA5GZXLKMVp/5+6ug==';
         const cell = Cell.fromBoc(Buffer.from(state, 'base64'))[0];
-        parseAccountState(cell.beginParse());
+        parseAccount(cell.beginParse());
     })
 });

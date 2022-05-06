@@ -31,13 +31,21 @@ export function parseAccountStatus(slice: Slice): RawAccountStatus {
 //  = ExtraCurrencyCollection;
 //  currencies$_ grams:Grams other:ExtraCurrencyCollection 
 //            = CurrencyCollection;
-export type RawCurrencyCollection = { coins: BN };
+export type RawCurrencyCollection = { extraCurrencies: Map<number, number> | null, coins: BN };
 export function parseCurrencyCollection(slice: Slice): RawCurrencyCollection {
     const coins = slice.readCoins();
-    if (slice.readBit()) {
-        throw Error('Currency collctions are not supported yet');
+
+    // Read extra currencies
+    const extraCurrencies = slice.readOptDict(32, (s) => s.readVarUIntNumber(5));
+    let extraCurrenciesConverted: Map<number, number> | null = null;
+    if (extraCurrencies) {
+        extraCurrenciesConverted = new Map();
+        for (let e of extraCurrencies) {
+            extraCurrenciesConverted.set(parseInt(e[0], 10), e[1]);
+        }
     }
-    return { coins };
+    
+    return { extraCurrencies: extraCurrenciesConverted, coins };
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L123
