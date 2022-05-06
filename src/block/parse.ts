@@ -36,16 +36,19 @@ export function parseCurrencyCollection(slice: Slice): RawCurrencyCollection {
     const coins = slice.readCoins();
 
     // Read extra currencies
-    const extraCurrencies = slice.readOptDict(32, (s) => s.readVarUIntNumber(5));
-    let extraCurrenciesConverted: Map<number, number> | null = null;
-    if (extraCurrencies) {
-        extraCurrenciesConverted = new Map();
-        for (let e of extraCurrencies) {
-            extraCurrenciesConverted.set(parseInt(e[0], 10), e[1]);
+    let extraCurrencies: Map<number, number> | null = null;
+    if (slice.readBit()) {
+        let dc = slice.readCell();
+        if (!dc.isExotic) {
+            let pd = parseDict(dc.beginParse(), 32, (s) => s.readVarUIntNumber(5));
+            extraCurrencies = new Map();
+            for (let e of pd) {
+                extraCurrencies.set(parseInt(e[0], 10), e[1]);
+            }
         }
     }
-    
-    return { extraCurrencies: extraCurrenciesConverted, coins };
+
+    return { extraCurrencies, coins };
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L123

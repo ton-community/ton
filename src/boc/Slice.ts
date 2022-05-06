@@ -125,6 +125,15 @@ export class Slice {
         }
     }
 
+    preloadCell = () => {
+        let first = this.refs[0];
+        if (first) {
+            return first;
+        } else {
+            throw Error('No ref');
+        }
+    }
+
     clone = () => {
 
         // Copy remaining
