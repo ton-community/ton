@@ -144,10 +144,11 @@ export function parseRawTickTock(slice: Slice): RawTickTock {
 // _ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
 //  code:(Maybe ^Cell) data:(Maybe ^Cell)
 //  library:(HashmapE 256 SimpleLib) = StateInit;
-export type RawStateInit = { code: Cell | null, data: Cell | null, special: RawTickTock | null };
-export function parseStateInit(slice: Slice) {
+export type RawStateInit = { splitDepth: number | null, code: Cell | null, data: Cell | null, special: RawTickTock | null };
+export function parseStateInit(slice: Slice): RawStateInit {
+    let splitDepth: number | null = null;
     if (slice.readBit()) {
-        throw Error('Unsupported');
+        splitDepth = slice.readUintNumber(5);
     }
     const special = slice.readBit() ? parseRawTickTock(slice) : null;
     const hasCode = slice.readBit();
@@ -158,7 +159,7 @@ export function parseStateInit(slice: Slice) {
         throw Error('Unsupported');
     }
 
-    return { data, code, special };
+    return { splitDepth, data, code, special };
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L147

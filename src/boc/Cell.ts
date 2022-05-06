@@ -61,6 +61,19 @@ export class Cell {
         return s;
     }
 
+    toDebugString(indent?: string): string {
+        let id = indent || '';
+        if (this.isExotic) {
+            id += '(exotic)'
+        }
+        let s = id + 'x{' + this.bits.toFiftHex() + '}\n';
+        for (let k in this.refs) {
+            const i = this.refs[k];
+            s += i.toString(id + ' ');
+        }
+        return s;
+    }
+
     withReference(cell: Cell) {
         this.refs.push(cell);
         return this;
