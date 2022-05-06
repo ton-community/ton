@@ -1,4 +1,4 @@
-import { sha256, sha256_sync } from "ton-crypto";
+import { sha256_sync } from "ton-crypto";
 import { BitString, Cell } from "..";
 import { CellType } from "./CellType";
 import { crc32c } from "./utils/crc32c";
@@ -7,23 +7,63 @@ import { topologicalSort } from "./utils/topologicalSort";
 const reachBocMagicPrefix = Buffer.from('B5EE9C72', 'hex');
 const leanBocMagicPrefix = Buffer.from('68ff65f3', 'hex');
 const leanBocMagicPrefixCRC = Buffer.from('acc3a728', 'hex');
+let cacheContext: symbol | null = null;
+
+type CellCache = {
+    hash: Buffer | null;
+    maxDepth: number | null;
+}
+function getCellCache(src: Cell): CellCache {
+    if (!cacheContext) {
+        throw Error('No cache context');
+    }
+    let ex = (src as any)[cacheContext] as CellCache;
+    if (!ex) {
+        ex = { hash: null, maxDepth: null };
+        (src as any)[cacheContext] = ex;
+    }
+    return ex;
+}
+
+function inCache<T>(cell: Cell, handler: (cache: CellCache) => T): T {
+    let wasCreated = false;
+    if (!cacheContext) {
+        wasCreated = true;
+        cacheContext = Symbol();
+    }
+    let cache = getCellCache(cell);
+    try {
+        return handler(cache);
+    } finally {
+        if (wasCreated) {
+            cacheContext = null;
+        }
+    }
+}
+
 
 //
 // Hash Content
 //
 
-function getMaxDepth(cell: Cell) {
-    let maxDepth = 0;
-    if (cell.refs.length > 0) {
-        for (let k in cell.refs) {
-            const i = cell.refs[k];
-            if (getMaxDepth(i) > maxDepth) {
-                maxDepth = getMaxDepth(i);
-            }
+function getMaxDepth(cell: Cell): number {
+    return inCache(cell, (cache) => {
+        if (cache.maxDepth !== null) {
+            return cache.maxDepth;
         }
-        maxDepth = maxDepth + 1;
-    }
-    return maxDepth;
+        let maxDepth = 0;
+        if (cell.refs.length > 0) {
+            for (let k in cell.refs) {
+                const i = cell.refs[k];
+                if (getMaxDepth(i) > maxDepth) {
+                    maxDepth = getMaxDepth(i);
+                }
+            }
+            maxDepth = maxDepth + 1;
+        }
+        cache.maxDepth = maxDepth;
+        return maxDepth;
+    })
 }
 
 function getMaxDepthAsArray(cell: Cell) {
@@ -90,8 +130,15 @@ function getRepr(cell: Cell) {
     return x;
 }
 
-export function hashCell(cell: Cell) {
-    return sha256_sync(getRepr(cell));
+export function hashCell(cell: Cell): Buffer {
+    return inCache(cell, (cache) => {
+        if (cache.hash) {
+            return cache.hash;
+        }
+        let r = sha256_sync(getRepr(cell));
+        cache.hash = r;
+        return r;
+    });
 }
 
 //
@@ -335,48 +382,49 @@ function serializeForBoc(cell: Cell, refs: number[], sSize: number) {
 }
 
 export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, has_cache_bits = false, flags = 0) {
-    const root_cell = cell;
+   return inCache(cell, () => {
+        const root_cell = cell;
+        const allCells = topologicalSort(root_cell);
 
-    const allCells = topologicalSort(root_cell);
+        const cells_num = allCells.length;
+        const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
+        const s_bytes = Math.max(Math.ceil(s / 8), 1);
+        let full_size = 0;
+        let sizeIndex: number[] = [];
+        for (let cell_info of allCells) {
+            //TODO it should be async map or async for
+            sizeIndex.push(full_size);
+            full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs, s_bytes)).length;
+        }
+        const offset_bits = full_size.toString(2).length; // Minimal number of bits to offset/len (unused?)
+        const offset_bytes = Math.max(Math.ceil(offset_bits / 8), 1);
 
-    const cells_num = allCells.length;
-    const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
-    const s_bytes = Math.max(Math.ceil(s / 8), 1);
-    let full_size = 0;
-    let sizeIndex: number[] = [];
-    for (let cell_info of allCells) {
-        //TODO it should be async map or async for
-        sizeIndex.push(full_size);
-        full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs, s_bytes)).length;
-    }
-    const offset_bits = full_size.toString(2).length; // Minimal number of bits to offset/len (unused?)
-    const offset_bytes = Math.max(Math.ceil(offset_bits / 8), 1);
+        const serialization = BitString.alloc((1023 + 32 * 4 + 32 * 3) * allCells.length);
+        serialization.writeBuffer(reachBocMagicPrefix);
+        serialization.writeBitArray([has_idx, hash_crc32, has_cache_bits]);
+        serialization.writeUint(flags, 2);
+        serialization.writeUint(s_bytes, 3);
+        serialization.writeUint8(offset_bytes);
+        serialization.writeUint(cells_num, s_bytes * 8);
+        serialization.writeUint(1, s_bytes * 8); // One root for now
+        serialization.writeUint(0, s_bytes * 8); // Complete BOCs only
+        serialization.writeUint(full_size, offset_bytes * 8);
+        serialization.writeUint(0, s_bytes * 8); // Root shoulh have index 0
+        if (has_idx) {
+            allCells.forEach(
+                (cell_data, index) =>
+                    serialization.writeUint(sizeIndex[index], offset_bytes * 8));
+        }
+        for (let cell_info of allCells) {
+            //TODO it should be async map or async for
+            const refcell_ser = serializeForBoc(cell_info.cell, cell_info.refs, s_bytes);
+            serialization.writeBuffer(refcell_ser);
+        }
+        let ser_arr = serialization.getTopUppedArray();
+        if (hash_crc32) {
+            ser_arr = Buffer.concat([ser_arr, crc32c(ser_arr)]);
+        }
 
-    const serialization = BitString.alloc((1023 + 32 * 4 + 32 * 3) * allCells.length);
-    serialization.writeBuffer(reachBocMagicPrefix);
-    serialization.writeBitArray([has_idx, hash_crc32, has_cache_bits]);
-    serialization.writeUint(flags, 2);
-    serialization.writeUint(s_bytes, 3);
-    serialization.writeUint8(offset_bytes);
-    serialization.writeUint(cells_num, s_bytes * 8);
-    serialization.writeUint(1, s_bytes * 8); // One root for now
-    serialization.writeUint(0, s_bytes * 8); // Complete BOCs only
-    serialization.writeUint(full_size, offset_bytes * 8);
-    serialization.writeUint(0, s_bytes * 8); // Root shoulh have index 0
-    if (has_idx) {
-        allCells.forEach(
-            (cell_data, index) =>
-                serialization.writeUint(sizeIndex[index], offset_bytes * 8));
-    }
-    for (let cell_info of allCells) {
-        //TODO it should be async map or async for
-        const refcell_ser = serializeForBoc(cell_info.cell, cell_info.refs, s_bytes);
-        serialization.writeBuffer(refcell_ser);
-    }
-    let ser_arr = serialization.getTopUppedArray();
-    if (hash_crc32) {
-        ser_arr = Buffer.concat([ser_arr, crc32c(ser_arr)]);
-    }
-
-    return ser_arr;
+        return ser_arr;
+    });
 }
