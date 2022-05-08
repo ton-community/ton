@@ -108,7 +108,8 @@ export {
     RawShardAccount,
     RawDepthBalanceInfo,
     RawShardAccountRef,
-    RawShardStateUnsplit
+    RawShardStateUnsplit,
+    RawCreditPhase
 } from './block/parse';
 
 // VM Stack
