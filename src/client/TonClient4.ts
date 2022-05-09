@@ -48,12 +48,23 @@ export class TonClient4 {
         if (!blockCodec.is(res.data)) {
             throw Error('Mailformed response');
         }
-        return res.data;
+        if (!res.data.exist) {
+            throw Error('Block is out of scope');
+        }
+        return res.data.block;
     }
 
     async getAccount(seqno: number, address: Address) {
         let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }), { adapter: this.#adapter, timeout: this.#timeout });
         if (!accountCodec.is(res.data)) {
+            throw Error('Mailformed response');
+        }
+        return res.data;
+    }
+
+    async getConfig(seqno: number) {
+        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/config', { adapter: this.#adapter, timeout: this.#timeout });
+        if (!configCodec.is(res.data)) {
             throw Error('Mailformed response');
         }
         return res.data;
@@ -159,5 +170,15 @@ const runMethodCodec = t.type({
         shard: t.string,
         rootHash: t.string,
         fileHash: t.string
+    })
+});
+
+const configCodec = t.type({
+    config: t.type({
+        cell: t.string,
+        address: t.string,
+        globalBalance: t.type({
+            coins: t.string
+        })
     })
 });
