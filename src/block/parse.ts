@@ -850,6 +850,52 @@ export function parseShardAccounts(cs: Slice): Map<string, RawShardAccountRef> {
     });
 }
 
+// Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/block.tlb#L509
+// _ config_addr:bits256 config:^(Hashmap 32 ^Cell) 
+//  = ConfigParams;
+// Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/block.tlb#L534
+// masterchain_state_extra#cc26
+//  shard_hashes:ShardHashes
+//  config:ConfigParams
+//  ^[ flags:(## 16) { flags <= 1 }
+//     validator_info:ValidatorInfo
+//     prev_blocks:OldMcBlocksInfo
+//     after_key_block:Bool
+//     last_key_block:(Maybe ExtBlkRef)
+//     block_create_stats:(flags . 0)?BlockCreateStats ]
+//  global_balance:CurrencyCollection
+// = McStateExtra;
+export type RawMasterChainStateExtra = {
+    configAddress: Address;
+    config: Cell;
+    globalBalance: RawCurrencyCollection
+};
+export function parseMasterchainStateExtra(cs: Slice): RawMasterChainStateExtra {
+
+    // Check magic
+    if (cs.readUintNumber(16) !== 0xcc26) {
+        throw Error('Invalid data');
+    }
+
+    // Skip shard_hashes
+    if (cs.readBit()) {
+        cs.readCell();
+    }
+
+    // Read config
+    let configAddress = new Address(-1, cs.readBuffer(32));
+    let config = cs.readCell();
+
+    // Rad global balance
+    const globalBalance = parseCurrencyCollection(cs);
+
+    return {
+        config,
+        configAddress,
+        globalBalance
+    };
+}
+
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L396
 // shard_state#9023afe2 global_id:int32
 //  shard_id:ShardIdent 
@@ -876,7 +922,7 @@ export type RawShardStateUnsplit = {
     minRefSeqno: number,
     beforeSplit: boolean,
     accounts: Map<string, RawShardAccountRef>,
-    custom: Cell | null
+    extras: RawMasterChainStateExtra | null
 }
 export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
     if (cs.readUintNumber(32) !== 0x9023afe2) {
@@ -890,16 +936,32 @@ export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
     let genLt = cs.readUint(64);
     let minRefSeqno = cs.readUintNumber(32);
 
-    // Skip OutMsgQueueInfo
+    // Skip OutMsgQueueInfo: usually exotic
     cs.readCell();
 
     let beforeSplit = cs.readBit();
-    let accounts = parseShardAccounts(cs.readRef());
 
-    // Skip
+    // Parse accounts
+    let accounts: Map<string, RawShardAccountRef>;
+    let accountsCell = cs.readCell();
+    if (accountsCell.isExotic) {
+        accounts = new Map();
+    } else {
+        accounts = parseShardAccounts(accountsCell.beginParse());
+    }
+
+    // Skip (not used by apps)
     cs.readCell();
+
+    // Parse extras
     let mcStateExtra = cs.readBit();
-    let custom = mcStateExtra ? cs.readCell() : null;
+    let extras: RawMasterChainStateExtra | null = null;
+    if (mcStateExtra) {
+        let cell = cs.readCell();
+        if (!cell.isExotic) {
+            extras = parseMasterchainStateExtra(cell.beginParse());
+        }
+    };
 
     return {
         globalId,
@@ -911,6 +973,6 @@ export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
         minRefSeqno,
         beforeSplit,
         accounts,
-        custom
+        extras
     }
 }

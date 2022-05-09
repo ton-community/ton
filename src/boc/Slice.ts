@@ -117,7 +117,7 @@ export class Slice {
     }
 
     readCell = () => {
-        let first = this.refs.shift()
+        let first = this.refs.shift();
         if (first) {
             return first;
         } else {

@@ -85,6 +85,7 @@ export {
     parseDepthBalanceInfo,
     parseShardAccounts,
     parseShardStateUnsplit,
+    parseMasterchainStateExtra,
     RawAccountStatus,
     RawCurrencyCollection,
     RawCommonMessageInfo,
@@ -110,7 +111,8 @@ export {
     RawDepthBalanceInfo,
     RawShardAccountRef,
     RawShardStateUnsplit,
-    RawCreditPhase
+    RawCreditPhase,
+    RawMasterChainStateExtra
 } from './block/parse';
 
 // VM Stack
