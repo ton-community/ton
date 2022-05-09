@@ -1,4 +1,5 @@
 import axios, { AxiosAdapter } from "axios";
+import BN from "bn.js";
 import * as t from 'io-ts';
 import { Address } from "../address/Address";
 import { parseStack, serializeStack, StackItem } from "../block/stack";
@@ -57,6 +58,22 @@ export class TonClient4 {
     async getAccount(seqno: number, address: Address) {
         let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }), { adapter: this.#adapter, timeout: this.#timeout });
         if (!accountCodec.is(res.data)) {
+            throw Error('Mailformed response');
+        }
+        return res.data;
+    }
+
+    async getAccountLite(seqno: number, address: Address) {
+        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }) + '/lite', { adapter: this.#adapter, timeout: this.#timeout });
+        if (!accountLiteCodec.is(res.data)) {
+            throw Error('Mailformed response');
+        }
+        return res.data;
+    }
+
+    async isAccountChanged(seqno: number, address: Address, lt: BN) {
+        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }) + '/changed/' + lt.toString(10), { adapter: this.#adapter, timeout: this.#timeout });
+        if (!changedCodec.is(res.data)) {
             throw Error('Mailformed response');
         }
         return res.data;
@@ -145,6 +162,37 @@ const accountCodec = t.type({
             })
         ])
     }),
+    block: t.type({
+        workchain: t.number,
+        seqno: t.number,
+        shard: t.string,
+        rootHash: t.string,
+        fileHash: t.string
+    })
+});
+
+const accountLiteCodec = t.type({
+    account: t.type({
+        state: t.union([
+            t.type({ type: t.literal('uninit') }),
+            t.type({ type: t.literal('active'), codeHash: t.string, dataHash: t.string }),
+            t.type({ type: t.literal('frozen'), stateHash: t.string })
+        ]),
+        balance: t.type({
+            coins: t.string
+        }),
+        last: t.union([
+            t.null,
+            t.type({
+                lt: t.string,
+                hash: t.string
+            })
+        ])
+    })
+});
+
+const changedCodec = t.type({
+    changed: t.boolean,
     block: t.type({
         workchain: t.number,
         seqno: t.number,
