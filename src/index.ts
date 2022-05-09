@@ -18,6 +18,7 @@ export { Builder, beginCell } from './boc/Builder';
 export { DictBuilder, beginDict } from './boc/DictBuilder';
 export { bnToAddress } from './utils/bnToAddress';
 export { TupleSlice } from './boc/TupleSlice';
+export { TupleSlice4 } from './boc/TupleSlice4';
 export { getSupportedInterfaces, resolveKnownInterface, getSupportedInterfacesRaw, KnownInterface, SupportedInterface } from './introspection/getSupportedInterfaces';
 export { SupportedMessage, parseSupportedMessage } from './introspection/parseSupportedMessage';
 
