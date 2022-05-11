@@ -143,6 +143,8 @@ export class BitString implements Iterable<boolean> {
             while (h.length % 2 !== 0) {
                 h = '0' + h;
             }
+            const l = Math.ceil((h.length) / 2);
+            this.writeUint(l, headerBits);
             this.writeBuffer(Buffer.from(h, 'hex'));
         }
     }
