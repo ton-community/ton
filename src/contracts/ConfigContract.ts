@@ -39,7 +39,7 @@ export class ConfigContract implements Contract {
         return {
             configAddress: configParseMasterAddressRequired(configs.get('0')),
             electorAddress: configParseMasterAddressRequired(configs.get('1')),
-            minterAddress: configParseMasterAddressRequired(configs.get('2')),
+            minterAddress: configParseMasterAddress(configs.get('2')),
             feeCollectorAddress: configParseMasterAddress(configs.get('3')),
             dnsRootAddress: configParseMasterAddress(configs.get('4')),
             globalVersion: configParse8(configs.get('8')),
