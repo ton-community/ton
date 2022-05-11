@@ -56,6 +56,14 @@ export class Builder {
         return this;
     }
 
+    storeVarUint = (value: number | BN, bitLength: number) => {
+        if (this.ended) {
+            throw Error('Already ended')
+        }
+        this.bits.writeVarUInt(value, bitLength);
+        return this;
+    }
+
     storeBuffer = (buffer: Buffer) => {
         if (this.ended) {
             throw Error('Already ended')

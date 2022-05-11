@@ -134,6 +134,19 @@ export class BitString implements Iterable<boolean> {
         this.writeUint(value, 8);
     }
 
+    writeVarUInt(value: BN | number, headerBits: number) {
+        let v = new BN(value);
+        if (v.eq(new BN(0))) {
+            this.writeUint(0, headerBits);
+        } else {
+            let h = v.toString('hex');
+            while (h.length % 2 !== 0) {
+                h = '0' + h;
+            }
+            this.writeBuffer(Buffer.from(h, 'hex'));
+        }
+    }
+
     writeBuffer = (buffer: Buffer) => {
         for (let i = 0; i < buffer.length; i++) {
             this.writeUint8(buffer[i]);
