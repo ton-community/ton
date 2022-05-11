@@ -76,14 +76,15 @@ function getMaxDepthAsArray(cell: Cell) {
 
 function getMaxLevel(cell: Cell) {
     //TODO level calculation differ for exotic cells
-    let maxLevel = 0;
-    for (let k in cell.refs) {
-        const i = cell.refs[k];
-        if (getMaxLevel(i) > maxLevel) {
-            maxLevel = getMaxLevel(i);
-        }
-    }
-    return maxLevel;
+    // let maxLevel = 0;
+    // for (let k in cell.refs) {
+    //     const i = cell.refs[k];
+    //     if (getMaxLevel(i) > maxLevel) {
+    //         maxLevel = getMaxLevel(i);
+    //     }
+    // }
+    // return maxLevel;
+    return 0;
 }
 
 function getRefsDescriptor(cell: Cell) {
@@ -382,7 +383,7 @@ function serializeForBoc(cell: Cell, refs: number[], sSize: number) {
 }
 
 export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, has_cache_bits = false, flags = 0) {
-   return inCache(cell, () => {
+    return inCache(cell, () => {
         const root_cell = cell;
         const allCells = topologicalSort(root_cell);
 

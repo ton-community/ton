@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { deserializeBoc, deserializeCellData, parseBocHeader, serializeToBoc } from "./boc";
+import { Cell } from './Cell';
 import { topologicalSort } from "./utils/topologicalSort";
 
 describe('boc-serialize', () => {
@@ -48,5 +49,12 @@ describe('boc-serialize', () => {
         const dataBuffer = Buffer.from(data, 'base64');
         let boc = deserializeBoc(dataBuffer);
         boc = deserializeBoc(boc[0].toBoc());
+    })
+
+    it('should serialize boc with many refs', async () => {
+        const data = await readFile(path.resolve(__dirname, '__testdata__', 'manyCells.txt'), { encoding: 'utf-8' });
+        const dataBuffer = Buffer.from(data, 'base64');
+        const state = Cell.fromBoc(dataBuffer)[0];
+        state.toBoc({ idx: false }).toString('base64');
     })
 });
