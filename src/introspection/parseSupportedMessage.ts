@@ -1,10 +1,11 @@
 import BN from "bn.js";
+import { Address } from "../address/Address";
 import { Cell } from "../boc/Cell";
 import { Slice } from "../boc/Slice";
 import { crc32str } from "../utils/crc32";
 import { KnownInterface } from "./getSupportedInterfaces";
 
-export type SupportedMessage = { type: string, data: { [key: string]: BN | string | number | boolean | Buffer | Cell } };
+export type SupportedMessage = { type: string, data: { [key: string]: BN | string | number | boolean | Buffer | Cell | Address | null } };
 
 function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null {
     // Deposit
@@ -121,12 +122,58 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
 
 function parseJettonWallet(op: number, sc: Slice): SupportedMessage | null {
 
-    if (op === 0xd53276db /* excesses */) {
+    // excesses#d53276db query_id:uint64 = InternalMsgBody;
+    if (op === 0xd53276db) {
         let queryId = sc.readUint(64);
         return {
             type: 'jetton::excesses',
             data: {
                 'query_id': queryId
+            }
+        };
+    }
+
+    // transfer#f8a7ea5 query_id:uint64 amount:(VarUInteger 16) destination:MsgAddress
+    //              response_destination:MsgAddress custom_payload:(Maybe ^Cell)
+    //              forward_ton_amount:(VarUInteger 16) forward_payload:(Either Cell ^Cell)
+    //              = InternalMsgBody;
+    if (op === 0xf8a7ea5) {
+        let queryId = sc.readUint(64);
+        let amount = sc.readCoins();
+        let destination = sc.readAddress();
+        let responseDestination = sc.readAddress();
+        let customPayload = sc.readBit() ? sc.readCell() : null;
+        let forwardTonAmount = sc.readCoins();
+        let forwardPayload = sc.readBit() ? sc.readCell() : sc.toCell();
+        return {
+            type: 'jetton::transfer',
+            data: {
+                'query_id': queryId,
+                'amount': amount,
+                'destination': destination,
+                'response_destination': responseDestination,
+                'custom_payload': customPayload,
+                'forward_ton': forwardTonAmount,
+                'payload': forwardPayload
+            }
+        };
+    }
+
+    // transfer_notification#7362d09c query_id:uint64 amount:(VarUInteger 16)
+    //        sender:MsgAddress forward_payload:(Either Cell ^Cell)
+    //        = InternalMsgBody;
+    if (op === 0x7362d09c) {
+        let queryId = sc.readUint(64);
+        let amount = sc.readCoins();
+        let sender = sc.readAddress();
+        let forwardPayload = sc.readBit() ? sc.readCell() : sc.toCell();
+        return {
+            type: 'jetton::transfer_notification',
+            data: {
+                'query_id': queryId,
+                'amount': amount,
+                'sender': sender,
+                'payload': forwardPayload
             }
         };
     }
