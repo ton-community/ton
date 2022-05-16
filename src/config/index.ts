@@ -43,6 +43,8 @@ export class Config {
         if (!slice) {
             throw new Error(`Config param ${param} not found`);
         }
+        slice = slice.readRef();
+        
         let limits = parseGasLimitsPrices(slice);
         if (limits.type === 'flat_pfx') {
             flatGasLimit = limits.flatGasLimit;
@@ -60,7 +62,7 @@ export class Config {
         freezeDueLimit = limits.freezeDueLimit;
         deleteDueLimit = limits.deleteDueLimit;
         specialGasLimit = limits.type === 'ext' ? limits.specialGasLimit : limits.gasLimit;
-        
+
         return {
             gasPrice,
             gasLimit,
@@ -72,5 +74,47 @@ export class Config {
             flatGasLimit,
             flatGasPrice
         }
+    }
+
+    getStoragePrices() {
+        let data = this.getParam(18);
+        if (!data) {
+            throw new Error(`Config param 18 not found`);
+        }
+        return data?.readDict(32, (slice) => {
+            let magic = slice.readUintNumber(8);
+            if (magic !== 0xcc) {
+                throw new Error('Invalid storage prices hashmap');
+            }
+            return {
+                utimeSince: slice.readUint(32),
+                bitPricePs: slice.readUint(64),
+                cellPricePs: slice.readUint(64),
+                mcBitPricePs: slice.readUint(64),
+                mcCellPricePs: slice.readUint(64),
+            }
+        })
+    }
+
+    getMsgPrices(isMasterchain: boolean) {
+        let param = isMasterchain ? 24 : 25;
+        let slice = this.getParam(param);
+        if (!slice) {
+            throw new Error(`Config param ${param} not found`);
+        }
+        slice = slice.readRef();
+
+        let magic = slice.readUintNumber(8);
+        if (magic !== 0xea) {
+            throw new Error('Invalid msg prices param');
+        }
+        return {
+            lumpPrice: slice.readUint(64),
+            bitPrice: slice.readUint(64),
+            cellPrice: slice.readUint(64),
+            ihrPriceFactor: slice.readUint(32),
+            firstFrac: slice.readUint(16),
+            nextFrac: slice.readUint(16)
+        };
     }
 }
