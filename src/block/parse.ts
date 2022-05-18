@@ -167,7 +167,7 @@ export function parseStateInit(slice: Slice): RawStateInit {
     const hasData = slice.readBit();
     const data = hasData ? slice.readCell() : null;
     if (slice.readBit()) {
-        throw Error('Unsupported');
+        slice.readCell(); // Skip libraries for now
     }
 
     return { splitDepth, data, code, special };
