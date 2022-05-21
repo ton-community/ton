@@ -195,6 +195,10 @@ export function configParse18(slice: Slice | null | undefined): StoragePrices[] 
 
     let result: StoragePrices[] = [];
     parseDict(slice, 32, (slice) => {
+        let header = slice.readUintNumber(8);
+        if (header !== 0xcc) {
+            throw Error('Invalid config');
+        }
         let utime_since = slice.readUint(32);
         let bit_price_ps = slice.readUint(64);
         let cell_price_ps = slice.readUint(64);

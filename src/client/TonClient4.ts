@@ -144,6 +144,18 @@ const blockCodec = t.union([t.type({
     })
 })]);
 
+// {"lastPaid":1653099243,"duePayment":null,"used":{"bits":119,"cells":1,"publicCells":0}}
+
+const storageStatCodec = t.type({
+    lastPaid: t.number,
+    duePayment: t.union([t.null, t.string]),
+    used: t.type({
+        bits: t.number,
+        cells: t.number,
+        publicCells: t.number
+    })
+});
+
 const accountCodec = t.type({
     account: t.type({
         state: t.union([
@@ -160,7 +172,8 @@ const accountCodec = t.type({
                 lt: t.string,
                 hash: t.string
             })
-        ])
+        ]),
+        storageStat: t.union([t.null, storageStatCodec])
     }),
     block: t.type({
         workchain: t.number,
@@ -187,7 +200,8 @@ const accountLiteCodec = t.type({
                 lt: t.string,
                 hash: t.string
             })
-        ])
+        ]),
+        storageStat: t.union([t.null, storageStatCodec])
     })
 });
 
