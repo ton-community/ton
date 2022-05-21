@@ -1,6 +1,7 @@
 import BN from 'bn.js';
 import { Cell } from '../boc/Cell';
 import { MsgPrices, StoragePrices } from '../contracts/configs/configParsing';
+import { parseMessage } from './parse';
 
 //
 // Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L425
@@ -40,13 +41,7 @@ export function computeStorageFees(data: {
         total = total.add(payment);
     }
 
-    // Round up
-    let rem = total.mod(new BN(65536));
-    total = total.shrn(16);
-    if (!rem.eqn(0)){
-        total = total.addn(1);
-    }
-    return total;
+    return shr16ceil(total);
 }
 
 //
@@ -54,11 +49,8 @@ export function computeStorageFees(data: {
 //
 
 export function computeFwdFees(msgPrices: MsgPrices, cells: BN, bits: BN) {
-    return msgPrices.lumpPrice.add(
-        msgPrices.bitPrice.mul(bits)
-            .add(msgPrices.cellPrice.mul(cells))
-            .add(new BN(0xffff))
-            .shrn(16)
+    return msgPrices.lumpPrice.add(shr16ceil(msgPrices.bitPrice.mul(bits)
+        .add(msgPrices.cellPrice.mul(cells)))
     );
 }
 
@@ -90,7 +82,26 @@ export function computeExternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
 }
 
 export function computeInternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
+    let msg = parseMessage(cell.beginParse());
+    let storageStats: { bits: number, cells: number } = { bits: 0, cells: 0 };
 
+    if (msg.info.type === 'internal') {
+
+    } else if (msg.info.type === 'external-out') {
+
+    } else {
+        throw Error('Invalid message');
+    }
+
+    let fees = computeFwdFees(msgPrices, new BN(storageStats.cells), new BN(storageStats.bits));
+    return fees.mul(msgPrices.firstFrac).shrn(16);
+    // vm::CellStorageStat sstat;  // for message size
+    // // preliminary storage estimation of the resulting message
+    // sstat.add_used_storage(msg.init, true, 3);  // message init
+    // sstat.add_used_storage(msg.body, true, 3);  // message body (the root cell itself is not counted)
+    // if (!ext_msg) {
+    //   sstat.add_used_storage(info.value->prefetch_ref());
+    // }
 }
 
 function collectCellStats(cell: Cell): { bits: number, cells: number } {
@@ -102,4 +113,13 @@ function collectCellStats(cell: Cell): { bits: number, cells: number } {
         bits += r.bits;
     }
     return { bits, cells };
+}
+
+function shr16ceil(src: BN) {
+    let rem = src.mod(new BN(65536));
+    let res = src.shrn(16);
+    if (!rem.eqn(0)) {
+        res = res.addn(1);
+    }
+    return res;
 }

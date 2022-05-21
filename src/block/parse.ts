@@ -155,8 +155,9 @@ export function parseRawTickTock(slice: Slice): RawTickTock {
 // _ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
 //  code:(Maybe ^Cell) data:(Maybe ^Cell)
 //  library:(HashmapE 256 SimpleLib) = StateInit;
-export type RawStateInit = { splitDepth: number | null, code: Cell | null, data: Cell | null, special: RawTickTock | null };
+export type RawStateInit = { splitDepth: number | null, code: Cell | null, data: Cell | null, special: RawTickTock | null, raw: Cell };
 export function parseStateInit(slice: Slice): RawStateInit {
+    let raw = slice.toCell();
     let splitDepth: number | null = null;
     if (slice.readBit()) {
         splitDepth = slice.readUintNumber(5);
@@ -170,7 +171,7 @@ export function parseStateInit(slice: Slice): RawStateInit {
         slice.readCell(); // Skip libraries for now
     }
 
-    return { splitDepth, data, code, special };
+    return { splitDepth, data, code, special, raw };
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L147
