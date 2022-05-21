@@ -1,4 +1,4 @@
-import { BN } from "bn.js";
+import BN from "bn.js";
 import { Address, Slice } from "../..";
 import { parseDict } from "../../boc/dict/parseDict";
 
@@ -181,12 +181,20 @@ export function configParse17(slice: Slice | null | undefined) {
     };
 }
 
-export function configParse18(slice: Slice | null | undefined) {
+export type StoragePrices = {
+    utime_since: BN,
+    bit_price_ps: BN,
+    cell_price_ps: BN,
+    mc_bit_price_ps: BN,
+    mc_cell_price_ps: BN
+}
+export function configParse18(slice: Slice | null | undefined): StoragePrices[] {
     if (!slice) {
         throw Error('Invalid config');
     }
 
-    return parseDict(slice, 32, (slice) => {
+    let result: StoragePrices[] = [];
+    parseDict(slice, 32, (slice) => {
         let utime_since = slice.readUint(32);
         let bit_price_ps = slice.readUint(64);
         let cell_price_ps = slice.readUint(64);
@@ -199,7 +207,10 @@ export function configParse18(slice: Slice | null | undefined) {
             mc_bit_price_ps,
             mc_cell_price_ps
         };
+    }).forEach(a => {
+        result.push(a);
     });
+    return result;
 }
 
 export function configParse8(slice: Slice | null | undefined) {
@@ -318,7 +329,8 @@ function parseGasLimitsInternal(slice: Slice) {
     }
 }
 
-export function configParseGasLImitsPrices(slice: Slice | null | undefined) {
+export type GasLimitsPrices = ReturnType<typeof configParseGasLimitsPrices>;
+export function configParseGasLimitsPrices(slice: Slice | null | undefined) {
     if (!slice) {
         throw Error('Invalid config');
     }
@@ -335,4 +347,72 @@ export function configParseGasLImitsPrices(slice: Slice | null | undefined) {
     } else {
         throw Error('Invalid config');
     }
+}
+
+export type MsgPrices = ReturnType<typeof configParseMsgPrices>
+export function configParseMsgPrices(slice: Slice | null | undefined) {
+    if (!slice) {
+        throw new Error('Invalid config');
+    }
+    slice = slice.readRef();
+
+    let magic = slice.readUintNumber(8);
+    if (magic !== 0xea) {
+        throw new Error('Invalid msg prices param');
+    }
+    return {
+        lumpPrice: slice.readUint(64),
+        bitPrice: slice.readUint(64),
+        cellPrice: slice.readUint(64),
+        ihrPriceFactor: slice.readUint(32),
+        firstFrac: slice.readUint(16),
+        nextFrac: slice.readUint(16)
+    };
+}
+
+export function parseFullConfig(configs: Map<string, Slice>) {
+    return {
+        configAddress: configParseMasterAddressRequired(configs.get('0')),
+        electorAddress: configParseMasterAddressRequired(configs.get('1')),
+        minterAddress: configParseMasterAddress(configs.get('2')),
+        feeCollectorAddress: configParseMasterAddress(configs.get('3')),
+        dnsRootAddress: configParseMasterAddress(configs.get('4')),
+        globalVersion: configParse8(configs.get('8')),
+        workchains: configParse12(configs.get('12')),
+        validators: {
+            ...configParse15(configs.get('15')),
+            ...configParse16(configs.get('16')),
+            ...configParse17(configs.get('17'))
+        },
+        storagePrices: configParse18(configs.get('18')),
+        gasPrices: {
+            masterchain: configParseGasLimitsPrices(configs.get('20')),
+            workchain: configParseGasLimitsPrices(configs.get('21')),
+        },
+        msgPrices: {
+            masterchain: configParseMsgPrices(configs.get('24')),
+            workchain: configParseMsgPrices(configs.get('25')),
+        },
+        validatorSets: {
+            prevValidators: configParseValidatorSet(configs.get('32')),
+            prevTempValidators: configParseValidatorSet(configs.get('33')),
+            currentValidators: configParseValidatorSet(configs.get('34')),
+            currentTempValidators: configParseValidatorSet(configs.get('35')),
+            nextValidators: configParseValidatorSet(configs.get('36')),
+            nextTempValidators: configParseValidatorSet(configs.get('37'))
+        },
+        validatorsPunish: configParse40(configs.get('40')),
+        bridges: {
+            ethereum: configParseBridge(configs.get('71')),
+            binance: configParseBridge(configs.get('72')),
+            polygon: configParseBridge(configs.get('73'))
+        },
+        // TODO: mint_new_price:Grams mint_add_price:Grams = ConfigParam 6;
+        // TODO: to_mint:ExtraCurrencyCollection = ConfigParam 7
+        // TODO: mandatory_params:(Hashmap 32 True) = ConfigParam 9
+        // TODO: critical_params:(Hashmap 32 True) = ConfigParam 10
+        // TODO: ConfigVotingSetup = ConfigParam 11
+        // TODO: ComplaintPricing = ConfigParam 13
+        // TODO: BlockCreateFees = ConfigParam 14
+    };
 }
