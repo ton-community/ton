@@ -178,11 +178,13 @@ export function parseStateInit(slice: Slice): RawStateInit {
 //  init:(Maybe (Either StateInit ^StateInit))
 //  body:(Either X ^X) = Message X;
 export type RawMessage = {
+    raw: Cell;
     info: RawCommonMessageInfo,
     init: RawStateInit | null,
     body: Cell
 };
 export function parseMessage(slice: Slice): RawMessage {
+    const raw = slice.toCell();
     const info = parseCommonMsgInfo(slice);
     const hasInit = slice.readBit();
     let init: RawStateInit | null = null;
@@ -198,7 +200,8 @@ export function parseMessage(slice: Slice): RawMessage {
     return {
         info,
         init,
-        body
+        body,
+        raw
     };
 }
 

@@ -358,8 +358,6 @@ export function configParseMsgPrices(slice: Slice | null | undefined) {
     if (!slice) {
         throw new Error('Invalid config');
     }
-    slice = slice.readRef();
-
     let magic = slice.readUintNumber(8);
     if (magic !== 0xea) {
         throw new Error('Invalid msg prices param');

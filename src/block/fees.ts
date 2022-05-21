@@ -1,5 +1,6 @@
 import BN from 'bn.js';
-import { GasLimitsPrices, MsgPrices, StoragePrices } from '../contracts/configs/configParsing';
+import { Cell } from '../boc/Cell';
+import { MsgPrices, StoragePrices } from '../contracts/configs/configParsing';
 
 //
 // Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L425
@@ -9,7 +10,7 @@ export function computeStorageFees(data: {
     now: number
     lastPaid: number
     storagePrices: StoragePrices[]
-    storageStat: { cells: BN, bits: BN, publicCells: BN }
+    storageStat: { cells: number, bits: number, publicCells: number }
     special: boolean
     masterchain: boolean
 }) {
@@ -31,16 +32,26 @@ export function computeStorageFees(data: {
         let payment = new BN(0);
         if (upto < valid_until) {
             let delta = valid_until - upto;
-            payment = payment.add(storageStat.cells.mul(masterchain ? storagePrices[i].mc_cell_price_ps : storagePrices[i].mc_cell_price_ps));
-            payment = payment.add(storageStat.bits.mul(masterchain ? storagePrices[i].mc_bit_price_ps : storagePrices[i].bit_price_ps));
+            payment = payment.add(new BN(storageStat.cells).mul(masterchain ? storagePrices[i].mc_cell_price_ps : storagePrices[i].cell_price_ps));
+            payment = payment.add(new BN(storageStat.bits).mul(masterchain ? storagePrices[i].mc_bit_price_ps : storagePrices[i].bit_price_ps));
             payment = payment.mul(new BN(delta));
         }
         upto = valid_until;
         total = total.add(payment);
     }
-    
-    return total.shrn(16);
+
+    // Round up
+    let rem = total.mod(new BN(65536));
+    total = total.shrn(16);
+    if (!rem.eqn(0)){
+        total = total.addn(1);
+    }
+    return total;
 }
+
+//
+// Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L1218
+//
 
 export function computeFwdFees(msgPrices: MsgPrices, cells: BN, bits: BN) {
     return msgPrices.lumpPrice.add(
@@ -51,11 +62,44 @@ export function computeFwdFees(msgPrices: MsgPrices, cells: BN, bits: BN) {
     );
 }
 
-export function computeGasPrices(gasUsed: BN, gasLimitsPrices: GasLimitsPrices) {
-    if (gasUsed.lte(gasLimitsPrices.flatLimit)) {
-        return gasLimitsPrices.flatGasPrice;
+//
+// Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L761
+//
+
+export function computeGasPrices(gasUsed: BN, prices: { flatLimit: BN, flatPrice: BN, price: BN }) {
+    if (gasUsed.lte(prices.flatLimit)) {
+        return prices.flatPrice;
     } else {
         //  td::rshift(gas_price256 * (gas_used - cfg.flat_gas_limit), 16, 1) + cfg.flat_gas_price
-        return gasLimitsPrices.flatGasPrice.add(gasLimitsPrices.other.gasPrice.mul(gasUsed.sub(gasLimitsPrices.flatLimit)).shrn(16))
+        return prices.flatPrice.add(prices.price.mul(gasUsed.sub(prices.flatLimit)).shrn(16));
     }
+}
+
+//
+// Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L530
+//
+
+export function computeExternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
+
+    // Collect stats
+    let storageStats = collectCellStats(cell);
+    storageStats.bits -= cell.bits.cursor;
+    storageStats.cells -= 1;
+
+    return computeFwdFees(msgPrices, new BN(storageStats.cells), new BN(storageStats.bits));
+}
+
+export function computeInternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
+
+}
+
+function collectCellStats(cell: Cell): { bits: number, cells: number } {
+    let bits = cell.bits.cursor;
+    let cells = 1;
+    for (let ref of cell.refs) {
+        let r = collectCellStats(ref);
+        cells += r.cells;
+        bits += r.bits;
+    }
+    return { bits, cells };
 }
