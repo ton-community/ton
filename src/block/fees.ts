@@ -81,27 +81,32 @@ export function computeExternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
     return computeFwdFees(msgPrices, new BN(storageStats.cells), new BN(storageStats.bits));
 }
 
-export function computeInternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
+export function computeMessageForwardFees(msgPrices: MsgPrices, cell: Cell) {
     let msg = parseMessage(cell.beginParse());
     let storageStats: { bits: number, cells: number } = { bits: 0, cells: 0 };
 
-    if (msg.info.type === 'internal') {
-
-    } else if (msg.info.type === 'external-out') {
-
-    } else {
-        throw Error('Invalid message');
+    // Init
+    if (msg.init) {
+        let c = collectCellStats(msg.body);
+        c.bits -= msg.body.bits.cursor;
+        c.cells -= 1;
+        storageStats.bits += c.bits;
+        storageStats.cells += c.cells;
     }
 
+    // Body
+    let bc = collectCellStats(msg.body);
+    bc.bits -= msg.body.bits.cursor;
+    bc.cells -= 1;
+    storageStats.bits += bc.bits;
+    storageStats.cells += bc.cells;
+
+    // NOTE: Extra currencies are ignored for now
+
     let fees = computeFwdFees(msgPrices, new BN(storageStats.cells), new BN(storageStats.bits));
-    return fees.mul(msgPrices.firstFrac).shrn(16);
-    // vm::CellStorageStat sstat;  // for message size
-    // // preliminary storage estimation of the resulting message
-    // sstat.add_used_storage(msg.init, true, 3);  // message init
-    // sstat.add_used_storage(msg.body, true, 3);  // message body (the root cell itself is not counted)
-    // if (!ext_msg) {
-    //   sstat.add_used_storage(info.value->prefetch_ref());
-    // }
+    let res = fees.mul(msgPrices.firstFrac).shrn(16);
+    let remaining = fees.sub(res);
+    return { fees: res, remaining };
 }
 
 function collectCellStats(cell: Cell): { bits: number, cells: number } {

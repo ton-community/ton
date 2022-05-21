@@ -134,3 +134,36 @@ export {
     TonClient4,
     TonClient4Parameters
 } from './client/TonClient4';
+
+// Fees
+export {
+    computeStorageFees,
+    computeFwdFees,
+    computeGasPrices,
+    computeExternalMessageFees,
+    computeMessageForwardFees,
+} from './block/fees';
+
+// Config
+export {
+    configParseMasterAddress,
+    configParseWorkchainDescriptor,
+    parseValidatorDescr,
+    parseValidatorSet,
+    parseBridge,
+    configParseMasterAddressRequired,
+    configParse15,
+    configParse16,
+    configParse17,
+    configParse18,
+    configParse8,
+    configParse40,
+    configParse12,
+    configParseValidatorSet,
+    configParseBridge,
+    configParseGasLimitsPrices,
+    GasLimitsPrices,
+    configParseMsgPrices,
+    MsgPrices,
+    parseFullConfig
+} from './contracts/configs/configParsing';

@@ -5,7 +5,7 @@ import { parseDictRefs } from '../boc/dict/parseDict';
 import { TonClient4 } from '../client/TonClient4';
 import { configParse18, configParseGasLimitsPrices, configParseMsgPrices } from '../contracts/configs/configParsing';
 import { fromNano, toNano } from '../utils/convert';
-import { computeExternalMessageFees, computeFwdFees, computeGasPrices, computeInternalMessageFees, computeStorageFees } from './fees'
+import { computeExternalMessageFees, computeFwdFees, computeGasPrices, computeMessageForwardFees, computeStorageFees } from './fees'
 import { parseTransaction } from './parse';
 
 const client = new TonClient4({ endpoint: 'https://mainnet-v4.tonhubapi.com' });
@@ -85,6 +85,7 @@ describe('fees', () => {
         // Example transaction
         // https://tonwhales.com/explorer/address/EQChB6mHV_t4zwS6av_c4Nbx66HVi-fEsAAa_UOnN5RxIoif/28067508000001_edfdd1a45e64d45bb1ded64326f4093ac781f8eef1aa68b24f9ba9ae9c5307f1
         // https://explorer.toncoin.org/transaction?account=EQChB6mHV_t4zwS6av_c4Nbx66HVi-fEsAAa_UOnN5RxIoif&lt=28067508000001&hash=EDFDD1A45E64D45BB1DED64326F4093AC781F8EEF1AA68B24F9BA9AE9C5307F1
+        // Receiving transaction: https://tonwhales.com/explorer/address/EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales/28067508000003_40ea176ca034aee63565b99fd5c73c78f422ad9cc8e94e9351612d4401ac4388
         let seqno = 20694322;
         let now = 1653046307;
         const tx = parseTransaction(
@@ -131,14 +132,14 @@ describe('fees', () => {
             }
         });
 
-        expect(fromNano(storageFees)).toMatch('0.000000009');
+        expect(fromNano(storageFees)).toEqual('0.000000009');
 
         //
         // Import fees
         //
 
         let importFees = computeExternalMessageFees(msgPrices, tx.inMessage!.raw);
-        expect(fromNano(importFees)).toMatch('0.00164');
+        expect(fromNano(importFees)).toEqual('0.00164');
 
         //
         // Compute gas fees
@@ -151,14 +152,14 @@ describe('fees', () => {
             throw Error();
         }
         let gasFees = computeGasPrices(tx.description.computePhase.gasUsed, { flatLimit: gasPrices.flatLimit, flatPrice: gasPrices.flatGasPrice, price: gasPrices.other.gasPrice });
-        expect(fromNano(gasFees)).toMatch('0.003308'); // Verified via blockchain
+        expect(fromNano(gasFees)).toEqual('0.003308'); // Verified via blockchain
 
         //
         // Forward fees
         //
 
-        let fwdFees = computeInternalMessageFees(msgPrices, tx.outMessages[0].raw);
-        expect(fromNano(fwdFees)).toMatch('0.000333328'); // Verified via blockchain "All action fees"
+        let fwdFees = computeMessageForwardFees(msgPrices, tx.outMessages[0].raw);
+        expect(fromNano(fwdFees.fees)).toEqual('0.000333328'); // Verified via blockchain "All action fees"
 
         //
         // Total fees
@@ -168,8 +169,8 @@ describe('fees', () => {
         fees = fees.add(storageFees);
         fees = fees.add(importFees);
         fees = fees.add(gasFees);
-        fees = fees.add(fwdFees);
-        expect(fromNano(fees)).toMatch('0.005281337'); // Value from blockchain
+        fees = fees.add(fwdFees.fees);
+        expect(fromNano(fees)).toEqual('0.005281337'); // Value from blockchain
     })
 
     // it('should compute storage fees', () => {
