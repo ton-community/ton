@@ -29,7 +29,6 @@ describe('fees', () => {
 
         const config = await client.getConfig(seqno);
         const dict = parseDictRefs(Cell.fromBoc(Buffer.from(config.config.cell, 'base64'))[0].beginParse(), 32);
-        console.warn(dict.get('18')!.toCell().toString());
         const storagePrices = configParse18(dict.get('18'));
         for (let p of storagePrices) {
             console.warn({
@@ -40,7 +39,6 @@ describe('fees', () => {
                 mc_cell_price_ps: p.mc_cell_price_ps.toString(10),
             });
         }
-        console.warn(storagePrices);
 
         //
         // Fetch profile
@@ -52,9 +50,6 @@ describe('fees', () => {
         //
         // Calculate fees
         //
-        console.warn(now);
-        console.warn(now - storageStat.lastPaid);
-        console.warn(storagePrices[0].utime_since.toNumber());
         let fees = computeStorageFees({
             lastPaid: storageStat.lastPaid,
             masterchain: false,
@@ -70,8 +65,7 @@ describe('fees', () => {
 
         // Fee
         let resultFee = fromNano(fees);
-        console.warn(fees);
-        console.warn(resultFee);
+        expect(resultFee).toMatch('0.000117978');
 
         //
         // Order

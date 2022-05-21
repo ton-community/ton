@@ -1,6 +1,10 @@
 import BN from 'bn.js';
 import { GasLimitsPrices, MsgPrices, StoragePrices } from '../contracts/configs/configParsing';
 
+//
+// Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L425
+//
+
 export function computeStorageFees(data: {
     now: number
     lastPaid: number
@@ -34,7 +38,8 @@ export function computeStorageFees(data: {
         upto = valid_until;
         total = total.add(payment);
     }
-    return total;
+    
+    return total.shrn(16);
 }
 
 export function computeFwdFees(msgPrices: MsgPrices, cells: BN, bits: BN) {
