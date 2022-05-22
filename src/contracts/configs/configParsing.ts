@@ -372,6 +372,144 @@ export function configParseMsgPrices(slice: Slice | null | undefined) {
     };
 }
 
+// catchain_config#c1 mc_catchain_lifetime:uint32 shard_catchain_lifetime:uint32 
+//   shard_validators_lifetime:uint32 shard_validators_num:uint32 = CatchainConfig;
+
+// catchain_config_new#c2 flags:(## 7) { flags = 0 } shuffle_mc_validators:Bool
+//   mc_catchain_lifetime:uint32 shard_catchain_lifetime:uint32
+//   shard_validators_lifetime:uint32 shard_validators_num:uint32 = CatchainConfig;
+
+
+export function configParse28(slice: Slice | null | undefined) {
+    if (!slice) {
+        throw new Error('Invalid config');
+    }
+    let magic = slice.readUintNumber(8);
+    if (magic === 0xc1) {
+        let masterCatchainLifetime = slice.readUintNumber(32);
+        let shardCatchainLifetime = slice.readUintNumber(32);
+        let shardValidatorsLifetime = slice.readUintNumber(32);
+        let shardValidatorsCount = slice.readUintNumber(32);
+        return {
+            masterCatchainLifetime,
+            shardCatchainLifetime,
+            shardValidatorsLifetime,
+            shardValidatorsCount
+        };
+    }
+    if (magic === 0xc2) {
+        let flags = slice.readUintNumber(7);
+        let suffleMasterValidators = slice.readBit();
+        let masterCatchainLifetime = slice.readUintNumber(32);
+        let shardCatchainLifetime = slice.readUintNumber(32);
+        let shardValidatorsLifetime = slice.readUintNumber(32);
+        let shardValidatorsCount = slice.readUintNumber(32);
+        return {
+            flags,
+            suffleMasterValidators,
+            masterCatchainLifetime,
+            shardCatchainLifetime,
+            shardValidatorsLifetime,
+            shardValidatorsCount
+        }
+    }
+    throw new Error('Invalid config');
+}
+
+// consensus_config#d6 round_candidates:# { round_candidates >= 1 }
+//   next_candidate_delay_ms:uint32 consensus_timeout_ms:uint32
+//   fast_attempts:uint32 attempt_duration:uint32 catchain_max_deps:uint32
+//   max_block_bytes:uint32 max_collated_bytes:uint32 = ConsensusConfig;
+
+// consensus_config_new#d7 flags:(## 7) { flags = 0 } new_catchain_ids:Bool
+//   round_candidates:(## 8) { round_candidates >= 1 }
+//   next_candidate_delay_ms:uint32 consensus_timeout_ms:uint32
+//   fast_attempts:uint32 attempt_duration:uint32 catchain_max_deps:uint32
+//   max_block_bytes:uint32 max_collated_bytes:uint32 = ConsensusConfig;
+
+// consensus_config_v3#d8 flags:(## 7) { flags = 0 } new_catchain_ids:Bool
+//   round_candidates:(## 8) { round_candidates >= 1 }
+//   next_candidate_delay_ms:uint32 consensus_timeout_ms:uint32
+//   fast_attempts:uint32 attempt_duration:uint32 catchain_max_deps:uint32
+//   max_block_bytes:uint32 max_collated_bytes:uint32 
+//   proto_version:uint16 = ConsensusConfig;
+
+export function configParse29(slice: Slice | null | undefined) {
+    if (!slice) {
+        throw new Error('Invalid config');
+    }
+    let magic = slice.readUintNumber(8);
+    if (magic === 0xd6) {
+        let roundCandidates = slice.readUintNumber(32);
+        let nextCandidateDelay = slice.readUintNumber(32);
+        let consensusTimeout = slice.readUintNumber(32);
+        let fastAttempts = slice.readUintNumber(32);
+        let attemptDuration = slice.readUintNumber(32);
+        let catchainMaxDeps = slice.readUintNumber(32);
+        let maxBlockBytes = slice.readUintNumber(32);
+        let maxColaltedBytes = slice.readUintNumber(32);
+        return {
+            roundCandidates,
+            nextCandidateDelay,
+            consensusTimeout,
+            fastAttempts,
+            attemptDuration,
+            catchainMaxDeps,
+            maxBlockBytes,
+            maxColaltedBytes
+        }
+    } else if (magic === 0xd7) {
+        let flags = slice.readUintNumber(7);
+        let newCatchainIds = slice.readBit();
+        let roundCandidates = slice.readUintNumber(8);
+        let nextCandidateDelay = slice.readUintNumber(32);
+        let consensusTimeout = slice.readUintNumber(32);
+        let fastAttempts = slice.readUintNumber(32);
+        let attemptDuration = slice.readUintNumber(32);
+        let catchainMaxDeps = slice.readUintNumber(32);
+        let maxBlockBytes = slice.readUintNumber(32);
+        let maxColaltedBytes = slice.readUintNumber(32);
+        return {
+            flags,
+            newCatchainIds,
+            roundCandidates,
+            nextCandidateDelay,
+            consensusTimeout,
+            fastAttempts,
+            attemptDuration,
+            catchainMaxDeps,
+            maxBlockBytes,
+            maxColaltedBytes
+        }
+    } else if (magic === 0xd8) {
+        let flags = slice.readUintNumber(7);
+        let newCatchainIds = slice.readBit();
+        let roundCandidates = slice.readUintNumber(8);
+        let nextCandidateDelay = slice.readUintNumber(32);
+        let consensusTimeout = slice.readUintNumber(32);
+        let fastAttempts = slice.readUintNumber(32);
+        let attemptDuration = slice.readUintNumber(32);
+        let catchainMaxDeps = slice.readUintNumber(32);
+        let maxBlockBytes = slice.readUintNumber(32);
+        let maxColaltedBytes = slice.readUintNumber(32);
+        let protoVersion = slice.readUintNumber(16);
+        return {
+            flags,
+            newCatchainIds,
+            roundCandidates,
+            nextCandidateDelay,
+            consensusTimeout,
+            fastAttempts,
+            attemptDuration,
+            catchainMaxDeps,
+            maxBlockBytes,
+            maxColaltedBytes,
+            protoVersion
+        }
+    }
+    throw new Error('Invalid config');
+}
+
 export function parseFullConfig(configs: Map<string, Slice>) {
     return {
         configAddress: configParseMasterAddressRequired(configs.get('0')),
@@ -409,6 +547,8 @@ export function parseFullConfig(configs: Map<string, Slice>) {
             binance: configParseBridge(configs.get('72')),
             polygon: configParseBridge(configs.get('73'))
         },
+        catchain: configParse28(configs.get('28')),
+        consensus: configParse29(configs.get('29'))
         // TODO: mint_new_price:Grams mint_add_price:Grams = ConfigParam 6;
         // TODO: to_mint:ExtraCurrencyCollection = ConfigParam 7
         // TODO: mandatory_params:(Hashmap 32 True) = ConfigParam 9

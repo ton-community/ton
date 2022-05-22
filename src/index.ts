@@ -165,5 +165,7 @@ export {
     GasLimitsPrices,
     configParseMsgPrices,
     MsgPrices,
-    parseFullConfig
+    parseFullConfig,
+    configParse28,
+    configParse29
 } from './contracts/configs/configParsing';
