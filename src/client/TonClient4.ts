@@ -106,6 +106,14 @@ export class TonClient4 {
             shardBlock: res.data.shardBlock,
         };
     }
+
+    async sendMessage(message: Buffer) {
+        let res = await axios.post(this.#endpoint + '/send', { boc: message.toString('base64') }, { adapter: this.#adapter, timeout: this.#timeout });
+        if (!sendCodec.is(res.data)) {
+            throw Error('Mailformed response');
+        }
+        return { status: res.data.status };
+    }
 }
 
 //
@@ -247,4 +255,8 @@ const configCodec = t.type({
             coins: t.string
         })
     })
+});
+
+const sendCodec = t.type({
+    status: t.number
 });
