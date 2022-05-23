@@ -193,7 +193,7 @@ export class Wallet {
         bounce: boolean,
         sendMode?: Maybe<SendMode>,
         timeout?: Maybe<number>,
-        payload?: Maybe<string | Buffer>
+        payload?: Maybe<string | Buffer | Cell>
     }) {
         const contract = this.#contract;
         if (!contract) {
@@ -207,6 +207,8 @@ export class Wallet {
                 payload = new CommentMessage(args.payload);
             } else if (Buffer.isBuffer(args.payload)) {
                 payload = new BinaryMessage(args.payload);
+            } else if (args.payload instanceof Cell) {
+                payload = new CellMessage(args.payload);
             }
         }
 
@@ -239,7 +241,7 @@ export class Wallet {
         seqno: number,
         value: BN,
         secretKey: Buffer,
-        payload?: Maybe<string | Buffer>,
+        payload?: Maybe<string | Buffer | Cell>
         timeout?: Maybe<number>,
         sendMode?: Maybe<SendMode>
     }) {
@@ -255,6 +257,8 @@ export class Wallet {
                 payload = new CommentMessage(args.payload);
             } else if (Buffer.isBuffer(args.payload)) {
                 payload = new BinaryMessage(args.payload);
+            } else if (args.payload instanceof Cell) {
+                payload = new CellMessage(args.payload);
             }
         }
 
