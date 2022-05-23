@@ -79,6 +79,32 @@ export class TonClient4 {
         return res.data;
     }
 
+    async getAccountTransactions(address: Address, lt: BN, hash: Buffer) {
+        let res = await axios.get(this.#endpoint + '/account/' + address.toFriendly({ urlSafe: true }) + '/tx/' + lt.toString(10) + '/' + toUrlSafe(hash.toString('base64')), { adapter: this.#adapter, timeout: this.#timeout });
+        if (!transactionsCodec.is(res.data)) {
+            throw Error('Mailformed response');
+        }
+        let data = res.data;
+        let tx: {
+            block: {
+                workchain: number;
+                seqno: number;
+                shard: string;
+                rootHash: string;
+                fileHash: string;
+            },
+            tx: Cell
+        }[] = [];
+        let cells = Cell.fromBoc(Buffer.from(data.boc, 'base64'));
+        for (let i = 0; i < data.blocks.length; i++) {
+            tx.push({
+                block: data.blocks[i],
+                tx: cells[i]
+            });
+        }
+        return tx;
+    }
+
     async getConfig(seqno: number, ids?: number[]) {
         let tail = '';
         if (ids && ids.length > 0) {
@@ -259,4 +285,15 @@ const configCodec = t.type({
 
 const sendCodec = t.type({
     status: t.number
+});
+
+const transactionsCodec = t.type({
+    blocks: t.array(t.type({
+        workchain: t.number,
+        seqno: t.number,
+        shard: t.string,
+        rootHash: t.string,
+        fileHash: t.string
+    })),
+    boc: t.string
 });

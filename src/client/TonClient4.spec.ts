@@ -41,4 +41,7 @@ describe('TonClient4', () => {
 
         await client.runMethod(20241422, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), 'get_member', [{ type: 'slice', cell: beginCell().storeAddress(Address.parse('EQAeDrSEHEaKWFGWbuhLMnPQzMR0au7js3Ef0QeOXATF-ukl')).endCell() }]);
     });
+    it('should account transactions', async () => {
+        await client.getAccountTransactions(Address.parse('EQCo6VT63H1vKJTiUo6W4M8RrTURCyk5MdbosuL5auEqpz-C'), new BN(27668319000001), Buffer.from('x2/3cqpuYzOC0CZU9bNMfGG84FT/huceZpcrcr2Bvgc=', 'base64'));
+    })
 });
