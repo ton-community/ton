@@ -79,8 +79,12 @@ export class TonClient4 {
         return res.data;
     }
 
-    async getConfig(seqno: number) {
-        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/config', { adapter: this.#adapter, timeout: this.#timeout });
+    async getConfig(seqno: number, ids?: number[]) {
+        let tail = '';
+        if (ids && ids.length > 0) {
+            tail = '/' + [...ids].sort().join(',');
+        }
+        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/config' + tail, { adapter: this.#adapter, timeout: this.#timeout });
         if (!configCodec.is(res.data)) {
             throw Error('Mailformed response');
         }

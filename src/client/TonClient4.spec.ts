@@ -16,6 +16,7 @@ describe('TonClient4', () => {
         await client.getConfig(1000);
         await client.getConfig(100000);
         await client.getConfig(20241422);
+        await client.getConfig(20241422, [1, 2, 3]);
     });
     it('should get accounts', async () => {
         await client.getAccount(1000, Address.parse('EQAAFhjXzKuQ5N0c96nsdZQWATcJm909LYSaCAvWFxVJP80D'));
