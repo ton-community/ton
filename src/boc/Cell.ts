@@ -1,6 +1,6 @@
 import { Maybe } from '../types';
 import { BitString } from './BitString';
-import { deserializeBoc, hashCell, serializeToBoc } from './boc';
+import { deserializeBoc, getMaxDepth, getMaxLevel, hashCell, serializeToBoc } from './boc';
 import inspectSymbol from 'symbol.inspect';
 import { Slice } from '..';
 import { CellType } from './CellType';
@@ -101,5 +101,13 @@ export class Cell {
             }
         }
         return this.bits.equals(src.bits);
+    }
+
+    getMaxLevel() {
+        return getMaxLevel(this);
+    }
+
+    getMaxDepth() {
+        return getMaxDepth(this);
     }
 }

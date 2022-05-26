@@ -46,7 +46,7 @@ function inCache<T>(cell: Cell, handler: (cache: CellCache) => T): T {
 // Hash Content
 //
 
-function getMaxDepth(cell: Cell): number {
+export function getMaxDepth(cell: Cell): number {
     return inCache(cell, (cache) => {
         if (cache.maxDepth !== null) {
             return cache.maxDepth;
@@ -74,7 +74,7 @@ function getMaxDepthAsArray(cell: Cell) {
     return Buffer.from(d);
 }
 
-function getMaxLevel(cell: Cell) {
+export function getMaxLevel(cell: Cell) {
     //TODO level calculation differ for exotic cells
     // let maxLevel = 0;
     // for (let k in cell.refs) {
@@ -93,18 +93,12 @@ function getRefsDescriptor(cell: Cell) {
     return Buffer.from(d1);
 }
 
-/**
- * @return {Uint8Array}
- */
 function getBitsDescriptor(cell: Cell) {
     const d2 = Uint8Array.from({ length: 1 }, () => 0);
     d2[0] = Math.ceil(cell.bits.cursor / 8) + Math.floor(cell.bits.cursor / 8);
     return Buffer.from(d2);
 }
 
-/**
- * @return {Uint8Array}
- */
 function getDataWithDescriptors(cell: Cell) {
     const d1 = getRefsDescriptor(cell);
     const d2 = getBitsDescriptor(cell);
