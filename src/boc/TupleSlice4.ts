@@ -37,6 +37,10 @@ export class TupleSlice4 {
         return res === 0 ? false : true;
     }
 
+    readAddress() {
+        return this.readCell().beginParse().readAddress();
+    }
+
     readCell() {
         let popped = this.pop();
         if (popped.type !== 'cell' && popped.type !== 'slice' && popped.type !== 'builder') {

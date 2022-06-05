@@ -169,3 +169,6 @@ export {
     configParse28,
     configParse29
 } from './contracts/configs/configParsing';
+
+// Traits
+export { Traits } from './traits/index';
