@@ -1,5 +1,6 @@
 import { BN } from "bn.js";
 import { inspect } from "util";
+import { Address } from "../address/Address";
 import { beginCell } from "../boc/Builder";
 import { Cell } from "../boc/Cell";
 import { parseStack, serializeStack } from "./stack";
@@ -39,6 +40,26 @@ describe('stack', () => {
         let serialized = serializeStack([
             {
                 "type": "slice", "cell": beginCell().storeCoins(new BN("123123123123123234211234123123123")).endCell()
+            }
+        ]);
+        expect(serialized.toBoc({ idx: false, crc32: false }).toString('base64')).toEqual(golden);
+    });
+
+    it('should serialize address', () => {
+        const golden = 'te6ccgEBAwEAMgACDwAAAQQAELAgAgEAQ5_5N0I0swMbwhQMZdlgFyGLyjnRvwQ_TZTRvL8db8NQtNAAAA';
+        let serialized = serializeStack([
+            {
+                "type": "slice", "cell": beginCell().storeAddress(Address.parse('kf_JuhGlmBjeEKBjLssAuQxeUc6N-CH6bKaN5fjrfhqFpqVQ')).endCell()
+            }
+        ]);
+        expect(serialized.toBoc({ idx: false, crc32: false }).toString('base64url')).toEqual(golden);
+    });
+
+    it('should serialize int', () => {
+        const golden = 'te6ccgEBAgEAKgABSgAAAQIAyboRpZgY3hCgYy7LALkMXlHOjfgh+mymjeX4634ahaYBAAA=';
+        let serialized = serializeStack([
+            {
+                "type": "int", "value": new BN('91243637913382117273357363328745502088904016167292989471764554225637796775334', 10)
             }
         ]);
         expect(serialized.toBoc({ idx: false, crc32: false }).toString('base64')).toEqual(golden);
