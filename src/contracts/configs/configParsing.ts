@@ -172,11 +172,13 @@ export function configParse17(slice: Slice | null | undefined) {
 
     let minStake = slice.readCoins();
     let maxStake = slice.readCoins();
+    let minTotalStake = slice.readCoins();
     let maxStakeFactor = slice.readUintNumber(32);
 
     return {
         minStake,
         maxStake,
+        minTotalStake,
         maxStakeFactor
     };
 }
@@ -510,6 +512,37 @@ export function configParse29(slice: Slice | null | undefined) {
     throw new Error('Invalid config');
 }
 
+// cfg_vote_cfg#36 min_tot_rounds:uint8 max_tot_rounds:uint8 min_wins:uint8 max_losses:uint8 min_store_sec:uint32 max_store_sec:uint32 bit_price:uint32 cell_price:uint32 = ConfigProposalSetup;
+export function parseProposalSetup(slice: Slice) {
+    let magic = slice.readUintNumber(8);
+    if (magic !== 0x36) {
+        throw new Error('Invalid config');
+    }
+    let minTotalRounds = slice.readUintNumber(8);
+    let maxTotalRounds = slice.readUintNumber(8);
+    let minWins = slice.readUintNumber(8);
+    let maxLoses = slice.readUintNumber(8);
+    let minStoreSec = slice.readUintNumber(32);
+    let maxStoreSec = slice.readUintNumber(32);
+    let bitPrice = slice.readUintNumber(32);
+    let cellPrice = slice.readUintNumber(32);
+    return { minTotalRounds, maxTotalRounds, minWins, maxLoses, minStoreSec, maxStoreSec, bitPrice, cellPrice };
+}
+
+// cfg_vote_setup#91 normal_params:^ConfigProposalSetup critical_params:^ConfigProposalSetup = ConfigVotingSetup;
+export function parseVotingSetup(slice: Slice | null | undefined) {
+    if (!slice) {
+        throw new Error('Invalid config');
+    }
+    let magic = slice.readUintNumber(8);
+    if (magic !== 0x91) {
+        throw new Error('Invalid config');
+    }
+    let normalParams = parseProposalSetup(slice.readRef());
+    let criticalParams = parseProposalSetup(slice.readRef());
+    return { normalParams, criticalParams };
+}
+
 export function parseFullConfig(configs: Map<string, Slice>) {
     return {
         configAddress: configParseMasterAddressRequired(configs.get('0')),
@@ -519,6 +552,7 @@ export function parseFullConfig(configs: Map<string, Slice>) {
         dnsRootAddress: configParseMasterAddress(configs.get('4')),
         globalVersion: configParse8(configs.get('8')),
         workchains: configParse12(configs.get('12')),
+        voting: parseVotingSetup(configs.get('11')),
         validators: {
             ...configParse15(configs.get('15')),
             ...configParse16(configs.get('16')),
