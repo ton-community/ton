@@ -121,11 +121,15 @@ function parseStackItem(cs: Slice): StackItem {
         rs.skip(startBits);
         let dt = rs.readBitString(endBits - startBits);
         let cell = new Cell('ordinary', dt);
-        for (let i = 0; i < startRefs; i++) {
-            cs.readCell();
-        }
-        for (let i = 0; i < endRefs - startRefs; i++) {
-            cell.refs.push(cs.readCell());
+
+        // Copy refs if exist
+        if (startRefs < endRefs) {
+            for (let i = 0; i < startRefs; i++) {
+                cs.readCell();
+            }
+            for (let i = 0; i < endRefs - startRefs; i++) {
+                cell.refs.push(cs.readCell());
+            }
         }
 
         return { type: 'slice', cell };
