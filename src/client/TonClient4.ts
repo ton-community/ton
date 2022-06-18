@@ -198,7 +198,7 @@ const accountCodec = t.type({
     account: t.type({
         state: t.union([
             t.type({ type: t.literal('uninit') }),
-            t.type({ type: t.literal('active'), code: t.string, data: t.string }),
+            t.type({ type: t.literal('active'), code: t.union([t.string, t.null]), data: t.union([t.string, t.null]) }),
             t.type({ type: t.literal('frozen'), stateHash: t.string })
         ]),
         balance: t.type({
