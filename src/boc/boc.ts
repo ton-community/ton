@@ -399,7 +399,6 @@ export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, ha
     return inCache(cell, () => {
         const root_cell = cell;
         const allCells = topologicalSort(root_cell);
-        console.warn(allCells.length);
         const cells_num = allCells.length;
         const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
         const s_bytes = Math.max(Math.ceil(s / 8), 1);
