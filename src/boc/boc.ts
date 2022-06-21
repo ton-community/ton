@@ -95,7 +95,11 @@ function getRefsDescriptor(cell: Cell) {
 
 function getBitsDescriptor(cell: Cell) {
     const d2 = Uint8Array.from({ length: 1 }, () => 0);
-    d2[0] = Math.ceil(cell.bits.cursor / 8) + Math.floor(cell.bits.cursor / 8);
+    let len = cell.bits.cursor;
+    if (cell.isExotic) {
+        len += 8;
+    }
+    d2[0] = Math.ceil(len / 8) + Math.floor(len / 8);
     return Buffer.from(d2);
 }
 
@@ -299,7 +303,7 @@ export function deserializeCellData(cellData: Buffer, referenceIndexSize: number
         } else if (k === 4) {
             kind = 'merkle_update';
         } else {
-            throw Error('Invalid cell type');
+            throw Error('Invalid cell type: ' + k);
         }
         cellData = cellData.slice(1);
         dataBytesize--;
@@ -354,16 +358,31 @@ export function deserializeBoc(serializedBoc: Buffer) {
 function serializeForBoc(cell: Cell, refs: number[], sSize: number) {
     const reprArray: Buffer[] = [];
 
-    reprArray.push(getDataWithDescriptors(cell));
+    reprArray.push(getRefsDescriptor(cell));
+    reprArray.push(getBitsDescriptor(cell));
+    if (cell.isExotic) {
+        if (cell.kind === 'pruned') {
+            reprArray.push(Buffer.from([1]));
+        } else if (cell.kind === 'library_reference') {
+            reprArray.push(Buffer.from([2]));
+        } else if (cell.kind === 'merkle_proof') {
+            reprArray.push(Buffer.from([3]));
+        } else if (cell.kind === 'merkle_update') {
+            reprArray.push(Buffer.from([4]));
+        } else {
+            throw Error('Invalid cell type');
+        }
+    }
+    reprArray.push(cell.bits.getTopUppedArray());
     for (let refIndexInt of refs) {
         // const i = cell.refs[k];
         // const refHash = (await i.hash()).toString('hex');
         // const refIndexInt = cellsIndex[refHash];
         // refIndexInt
         let refIndexHex = refIndexInt.toString(16);
-        if (refIndexHex.length < sSize * 2) {
+        while (refIndexHex.length < sSize * 2) {
             // Add leading zeros
-            refIndexHex = new Array(sSize * 2 - refIndexHex.length).fill("0").join('') + refIndexHex;
+            refIndexHex = '0' + refIndexHex;
         }
         const reference = Buffer.from(refIndexHex, 'hex');
         reprArray.push(reference);
@@ -380,14 +399,13 @@ export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, ha
     return inCache(cell, () => {
         const root_cell = cell;
         const allCells = topologicalSort(root_cell);
-
+        console.warn(allCells.length);
         const cells_num = allCells.length;
         const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
         const s_bytes = Math.max(Math.ceil(s / 8), 1);
         let full_size = 0;
         let sizeIndex: number[] = [];
         for (let cell_info of allCells) {
-            //TODO it should be async map or async for
             sizeIndex.push(full_size);
             full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs, s_bytes)).length;
         }

@@ -56,5 +56,13 @@ describe('boc-serialize', () => {
         const dataBuffer = Buffer.from(data, 'base64');
         const state = Cell.fromBoc(dataBuffer)[0];
         state.toBoc({ idx: false }).toString('base64');
-    })
+    });
+
+    it('should serialize and parse exotics', async () => {
+        const cell = new Cell('pruned');
+        cell.refs.push(new Cell('merkle_proof'));
+        cell.refs.push(new Cell('merkle_update'));
+        let res = cell.toBoc({ idx: false });
+        let p = Cell.fromBoc(res);
+    });
 });
