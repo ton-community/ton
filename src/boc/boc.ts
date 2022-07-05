@@ -405,8 +405,8 @@ export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, ha
         let full_size = 0;
         let sizeIndex: number[] = [];
         for (let cell_info of allCells) {
-            sizeIndex.push(full_size);
             full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs, s_bytes)).length;
+            sizeIndex.push(full_size);
         }
         const offset_bits = full_size.toString(2).length; // Minimal number of bits to offset/len (unused?)
         const offset_bytes = Math.max(Math.ceil(offset_bits / 8), 1);
