@@ -11,5 +11,9 @@ export type WalletSource =
         {
             readonly walletVersion: 'v3';
             readonly walletId: number;
+        } |
+        {
+            readonly walletVersion: 'v4';
+            readonly walletId: number;
         }
     )

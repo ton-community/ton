@@ -18,6 +18,7 @@ import { WalletV2R1Source } from "./sources/WalletV2R1Source";
 import { WalletV2R2Source } from "./sources/WalletV2R2Source";
 import { WalletV3R1Source } from "./sources/WalletV3R1Source";
 import { WalletV3R2Source } from "./sources/WalletV3R2Source";
+import { WalletV4Source } from "./sources/WalletV4Source";
 import { WalletContract } from "./WalletContract";
 
 async function testSource(secretKey: Buffer, source: WalletSource) {
@@ -100,5 +101,12 @@ describe('WalletContract', () => {
         let key = await mnemonicToWalletKey(mnemonic);
         await testSource(key.secretKey, WalletV3R2Source.create({ publicKey: key.publicKey, workchain: 0 }));
         await testSource(key.secretKey, WalletV3R2Source.create({ publicKey: key.publicKey, workchain: -1 }));
+    }, 120000);
+
+    it('should work for v4 contract', async () => {
+        let mnemonic = await mnemonicNew(24);
+        let key = await mnemonicToWalletKey(mnemonic);
+        await testSource(key.secretKey, WalletV4Source.create({ publicKey: key.publicKey, workchain: 0 }));
+        await testSource(key.secretKey, WalletV4Source.create({ publicKey: key.publicKey, workchain: -1 }));
     }, 120000);
 });

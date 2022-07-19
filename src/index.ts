@@ -3,7 +3,7 @@ export { BitStringReader } from './boc/BitStringReader';
 export { Cell } from './boc/Cell';
 export { CellType } from './boc/CellType';
 export { TonClient } from './client/TonClient';
-export { Wallet, validateWalletType, WalletContractType } from './client/Wallet';
+export { Wallet, validateWalletType, WalletContractType, allTypes as AllWalletContractTypes } from './client/Wallet';
 export { Address } from './address/Address';
 export { toNano, fromNano } from './utils/convert';
 export { KeyStore, KeyRecord } from './keystore/KeyStore';

@@ -8,6 +8,7 @@ import { WalletV2R1Source } from "../contracts/sources/WalletV2R1Source";
 import { WalletV2R2Source } from "../contracts/sources/WalletV2R2Source";
 import { WalletV3R1Source } from "../contracts/sources/WalletV3R1Source";
 import { WalletV3R2Source } from "../contracts/sources/WalletV3R2Source";
+import { WalletV4Source } from "../contracts/sources/WalletV4Source";
 import { WalletContract } from "../contracts/WalletContract";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { InternalMessage } from "../messages/InternalMessage";
@@ -21,14 +22,16 @@ export type WalletContractType =
     | 'org.ton.wallets.v2'
     | 'org.ton.wallets.v2.r2'
     | 'org.ton.wallets.v3'
-    | 'org.ton.wallets.v3.r2';
+    | 'org.ton.wallets.v3.r2'
+    | 'org.ton.wallets.v4';
 
 // Wallet Contract Priority
-const allTypes: WalletContractType[] = [
+export const allTypes: WalletContractType[] = [
     'org.ton.wallets.simple.r2',
     'org.ton.wallets.simple.r3',
     'org.ton.wallets.v2',
     'org.ton.wallets.v2.r2',
+    'org.ton.wallets.v4',
     'org.ton.wallets.v3.r2', // We prefer r1 instead of r2
     'org.ton.wallets.v3'
 ];
@@ -40,7 +43,8 @@ export function validateWalletType(src: string): WalletContractType | null {
         || src === 'org.ton.wallets.v2'
         || src === 'org.ton.wallets.v2.r2'
         || src === 'org.ton.wallets.v3'
-        || src === 'org.ton.wallets.v3.r2') {
+        || src === 'org.ton.wallets.v3.r2'
+        || src === 'org.ton.wallets.v4') {
         return src;
     }
 
@@ -62,6 +66,8 @@ function createContract(client: TonClient, type: WalletContractType, publicKey: 
         return WalletContract.create(client, WalletV3R1Source.create({ publicKey, workchain }));
     } else if (type === 'org.ton.wallets.v3.r2') {
         return WalletContract.create(client, WalletV3R2Source.create({ publicKey, workchain }));
+    } else if (type === 'org.ton.wallets.v4') {
+        return WalletContract.create(client, WalletV4Source.create({ publicKey, workchain }));
     } else {
         throw Error('Unknown wallet type: ' + type);
     }
