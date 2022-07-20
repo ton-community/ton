@@ -1,7 +1,7 @@
 import { Address, TonClient } from "..";
 import { InternalMessage } from "../messages/InternalMessage";
 import { Contract } from "./Contract";
-import { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3 } from "./messages/createWalletTransfer";
+import { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3, createWalletTransferV4 } from "./messages/createWalletTransfer";
 import { WalletSource } from "./sources/WalletSource";
 import { Maybe } from "../types";
 import { contractAddress } from "./contractAddress";
@@ -40,6 +40,8 @@ export class WalletContract implements Contract {
                 return createWalletTransferV2({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, timeout: args.timeout });
             case 'v3':
                 return createWalletTransferV3({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId, timeout: args.timeout });
+            case 'v4':
+                return createWalletTransferV4({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order, walletId: this.source.walletId, timeout: args.timeout });
             default:
                 throw Error('Unknown contract type: ' + (this.source as any).type);
         }
