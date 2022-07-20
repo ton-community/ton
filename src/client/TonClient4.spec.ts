@@ -11,6 +11,7 @@ describe('TonClient4', () => {
         await client.getBlock(1000);
         await client.getBlock(100000);
         await client.getBlock(20241422);
+        await client.getBlockByUtime(1658337258);
     });
     it('should fetch config', async () => {
         await client.getConfig(1000);

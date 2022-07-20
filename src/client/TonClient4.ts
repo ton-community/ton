@@ -55,6 +55,17 @@ export class TonClient4 {
         return res.data.block;
     }
 
+    async getBlockByUtime(ts: number) {
+        let res = await axios.get(this.#endpoint + '/block/utime/' + ts, { adapter: this.#adapter, timeout: this.#timeout });
+        if (!blockCodec.is(res.data)) {
+            throw Error('Mailformed response');
+        }
+        if (!res.data.exist) {
+            throw Error('Block is out of scope');
+        }
+        return res.data.block;
+    }
+
     async getAccount(seqno: number, address: Address) {
         let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }), { adapter: this.#adapter, timeout: this.#timeout });
         if (!accountCodec.is(res.data)) {
