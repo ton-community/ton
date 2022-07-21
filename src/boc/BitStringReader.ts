@@ -1,5 +1,6 @@
 import { BN } from "bn.js";
 import { Address, BitString } from "..";
+import { AddressExternal } from "../address/AddressExternal";
 
 export class BitStringReader {
 
@@ -128,13 +129,62 @@ export class BitStringReader {
         if (type !== 2) {
             throw Error('Only STD address supported')
         }
-        if (this.readUintNumber(1) !== 0) {
-            throw Error('Only STD address supported')
-        }
+        return this.readAddressSTD();
+    }
 
-        const wc = this.readIntNumber(8);
-        const hash = this.readBuffer(32);
-        return new Address(wc, hash);
+    readAddressInternal() {
+        let type = this.readUintNumber(2);
+        if (type === 2) {
+            return this.readAddressSTD();
+        } else {
+            throw Error('Invalid data');
+        }
+    }
+
+    readAddressExternal() {
+        let type = this.readUintNumber(2);
+        if (type === 0) {
+            return null;
+        } else if (type === 1) {
+            return this.readAddressExternalInt();
+        } else {
+            throw Error('Invalid data');
+        }
+    }
+
+    readAddressAny() {
+        let type = this.readUintNumber(2);
+        if (type === 0) {
+            return null;
+        } else if (type === 2) {
+            return this.readAddressSTD();
+        } else if (type === 1) {
+            return this.readAddressExternal();
+        } else if (type === 3) {
+            throw Error('Unsupported');
+        } else {
+            throw Error('Unreachable');
+        }
+    }
+
+    private readAddressExternalInt() {
+        let len = this.readUintNumber(9);
+        let result = this.readBitString(len);
+        return new AddressExternal(result);
+    }
+
+    private readAddressSTD() {
+        if (this.readUintNumber(1) === 0) {
+            const wc = this.readIntNumber(8);
+            const hash = this.readBuffer(32);
+            return new Address(wc, hash);
+        } else {
+            // let addrLen = this.readUintNumber(9);
+            // const wc = this.readIntNumber(32);
+            // // addr_len:(## 9) 
+            // // workchain_id:int32 address:(bits addr_len)
+            throw Error('Var Length address not supported');
+        }
     }
 
     readBitString(n: number) {

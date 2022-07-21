@@ -1,5 +1,6 @@
 import BN from "bn.js";
 import { Address, Cell, Slice } from "..";
+import { AddressExternal } from "../address/AddressExternal";
 import { parseDict } from "../boc/dict/parseDict";
 
 
@@ -66,8 +67,8 @@ export type RawCommonMessageInfo =
         ihrDisabled: boolean,
         bounce: boolean,
         bounced: boolean,
-        src: Address | null,
-        dest: Address | null,
+        src: Address,
+        dest: Address,
         value: RawCurrencyCollection,
         ihrFee: BN,
         fwdFee: BN,
@@ -76,15 +77,15 @@ export type RawCommonMessageInfo =
     }
     | {
         type: 'external-out',
-        src: Address | null,
-        dest: Address | null,
+        src: Address,
+        dest: AddressExternal | null,
         createdLt: BN,
         createdAt: number
     }
     | {
         type: 'external-in',
-        src: Address | null,
-        dest: Address | null,
+        src: AddressExternal | null,
+        dest: Address,
         importFee: BN
     };
 export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
@@ -94,8 +95,8 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
         let ihrDisabled = slice.readBit();
         let bounce = slice.readBit();
         let bounced = slice.readBit();
-        let src = slice.readAddress();
-        let dest = slice.readAddress();
+        let src = slice.readAddressInternal();
+        let dest = slice.readAddressInternal();
         let value = parseCurrencyCollection(slice);
         let ihrFee = slice.readCoins();
         let fwdFee = slice.readCoins();
@@ -116,8 +117,8 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
         }
     } else if (slice.readBit()) {
         // Outgoing external
-        let src = slice.readAddress();
-        let dest = slice.readAddress();
+        let src = slice.readAddressInternal();
+        let dest = slice.readAddressExternal();
         let createdLt = slice.readUint(64);
         let createdAt = slice.readUintNumber(32);
         return {
@@ -129,8 +130,8 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
         }
     } else {
         // Incoming external
-        let src = slice.readAddress();
-        let dest = slice.readAddress();
+        let src = slice.readAddressExternal();
+        let dest = slice.readAddressInternal();
         let importFee = slice.readCoins()
         return {
             type: 'external-in',
@@ -762,14 +763,14 @@ export function parseAccountStorage(cs: Slice): RawAccountStorage {
 // account$1 addr:MsgAddressInt storage_stat:StorageInfo
 //  storage:AccountStorage = Account;
 export type RawAccount = {
-    addr: Address | null,
+    addr: Address,
     storageStat: RawStorageInfo,
     storage: RawAccountStorage
 }
 export function parseAccount(cs: Slice) {
     if (cs.readBit()) {
         return {
-            address: cs.readAddress(),
+            address: cs.readAddressInternal(),
             storageStat: parseStorageInfo(cs),
             storage: parseAccountStorage(cs)
         }

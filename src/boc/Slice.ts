@@ -82,6 +82,14 @@ export class Slice {
         return this.bits.readAddress();
     }
 
+    readAddressInternal = () => {
+        return this.bits.readAddressInternal();
+    }
+
+    readAddressExternal = () => {
+        return this.bits.readAddressExternal();
+    }
+
     readUnaryLength = () => {
         return this.bits.readUnaryLength();
     }

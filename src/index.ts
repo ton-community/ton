@@ -5,6 +5,7 @@ export { CellType } from './boc/CellType';
 export { TonClient } from './client/TonClient';
 export { Wallet, validateWalletType, WalletContractType, allTypes as AllWalletContractTypes } from './client/Wallet';
 export { Address } from './address/Address';
+export { AddressExternal } from './address/AddressExternal';
 export { toNano, fromNano } from './utils/convert';
 export { KeyStore, KeyRecord } from './keystore/KeyStore';
 export { TonTransaction, TonMessage, TonMessageData } from './client/TonTransaction';

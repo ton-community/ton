@@ -49,6 +49,10 @@ function parseFriendlyAddress(src: string | Buffer) {
 
 export class Address {
 
+    static isAddress(src: any): src is Address {
+        return src instanceof Address;
+    }
+
     static isFriendly(source: String) {
         return source.indexOf(':') < 0;
     }
