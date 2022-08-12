@@ -508,6 +508,33 @@ export function configParse29(slice: Slice | null | undefined) {
             maxColaltedBytes,
             protoVersion
         }
+    } else if (magic === 0xd9) {
+        let flags = slice.readUintNumber(7);
+        let newCatchainIds = slice.readBit();
+        let roundCandidates = slice.readUintNumber(8);
+        let nextCandidateDelay = slice.readUintNumber(32);
+        let consensusTimeout = slice.readUintNumber(32);
+        let fastAttempts = slice.readUintNumber(32);
+        let attemptDuration = slice.readUintNumber(32);
+        let catchainMaxDeps = slice.readUintNumber(32);
+        let maxBlockBytes = slice.readUintNumber(32);
+        let maxColaltedBytes = slice.readUintNumber(32);
+        let protoVersion = slice.readUintNumber(16);
+        let catchainMaxBlocksCoeff = slice.readUintNumber(32);
+        return {
+            flags,
+            newCatchainIds,
+            roundCandidates,
+            nextCandidateDelay,
+            consensusTimeout,
+            fastAttempts,
+            attemptDuration,
+            catchainMaxDeps,
+            maxBlockBytes,
+            maxColaltedBytes,
+            protoVersion,
+            catchainMaxBlocksCoeff
+        }
     }
     throw new Error('Invalid config');
 }
