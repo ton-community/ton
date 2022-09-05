@@ -67,7 +67,7 @@ export type RawCommonMessageInfo =
         ihrDisabled: boolean,
         bounce: boolean,
         bounced: boolean,
-        src: Address,
+        src: Address | null,
         dest: Address,
         value: RawCurrencyCollection,
         ihrFee: BN,
@@ -95,7 +95,7 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
         let ihrDisabled = slice.readBit();
         let bounce = slice.readBit();
         let bounced = slice.readBit();
-        let src = slice.readAddressInternal();
+        let src = slice.readAddress();
         let dest = slice.readAddressInternal();
         let value = parseCurrencyCollection(slice);
         let ihrFee = slice.readCoins();
