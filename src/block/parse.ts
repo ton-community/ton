@@ -67,7 +67,7 @@ export type RawCommonMessageInfo =
         ihrDisabled: boolean,
         bounce: boolean,
         bounced: boolean,
-        src: Address | null,
+        src: Address,
         dest: Address,
         value: RawCurrencyCollection,
         ihrFee: BN,
@@ -95,7 +95,7 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
         let ihrDisabled = slice.readBit();
         let bounce = slice.readBit();
         let bounced = slice.readBit();
-        let src = slice.readAddress();
+        let src = slice.readAddressInternal();
         let dest = slice.readAddressInternal();
         let value = parseCurrencyCollection(slice);
         let ihrFee = slice.readCoins();
@@ -140,6 +140,77 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
             importFee
         }
     }
+}
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L132
+// int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
+//   src:MsgAddress dest:MsgAddressInt 
+//   value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
+//   created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
+// ext_out_msg_info$11 src:MsgAddress dest:MsgAddressExt
+//   created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
+export type RawCommonMessageInfoRelaxed =
+    | {
+        type: 'internal',
+        ihrDisabled: boolean,
+        bounce: boolean,
+        bounced: boolean,
+        src: Address | null,
+        dest: Address,
+        value: RawCurrencyCollection,
+        ihrFee: BN,
+        fwdFee: BN,
+        createdLt: BN,
+        createdAt: number
+    }
+    | {
+        type: 'external-out',
+        src: Address,
+        dest: AddressExternal | null,
+        createdLt: BN,
+        createdAt: number
+    };
+export function parseCommonMsgInfoRelaxed(slice: Slice): RawCommonMessageInfoRelaxed {
+    if (!slice.readBit()) {
+        // Internal
+        let ihrDisabled = slice.readBit();
+        let bounce = slice.readBit();
+        let bounced = slice.readBit();
+        let src = slice.readAddress();
+        let dest = slice.readAddressInternal();
+        let value = parseCurrencyCollection(slice);
+        let ihrFee = slice.readCoins();
+        let fwdFee = slice.readCoins();
+        let createdLt = slice.readUint(64);
+        let createdAt = slice.readUintNumber(32);
+        return {
+            type: 'internal',
+            ihrDisabled,
+            bounce,
+            bounced,
+            src,
+            dest,
+            value,
+            ihrFee,
+            fwdFee,
+            createdLt,
+            createdAt
+        }
+    } else if (slice.readBit()) {
+        // Outgoing external
+        let src = slice.readAddressInternal();
+        let dest = slice.readAddressExternal();
+        let createdLt = slice.readUint(64);
+        let createdAt = slice.readUintNumber(32);
+        return {
+            type: 'external-out',
+            src,
+            dest,
+            createdLt,
+            createdAt
+        }
+    }
+    throw new Error('Invalid message info');
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L139
@@ -206,6 +277,39 @@ export function parseMessage(slice: Slice): RawMessage {
         raw
     };
 }
+
+
+// Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L151
+// message$_ {X:Type} info:CommonMsgInfoRelaxed
+//  init:(Maybe (Either StateInit ^StateInit))
+//  body:(Either X ^X) = MessageRelaxed X;
+export type RawMessageRelaxed = {
+    raw: Cell;
+    info: RawCommonMessageInfoRelaxed,
+    init: RawStateInit | null,
+    body: Cell
+};
+export function parseMessageRelaxed(slice: Slice): RawMessageRelaxed {
+    const raw = slice.toCell();
+    const info = parseCommonMsgInfoRelaxed(slice);
+    const hasInit = slice.readBit();
+    let init: RawStateInit | null = null;
+    if (hasInit) {
+        if (!slice.readBit()) {
+            init = parseStateInit(slice);
+        } else {
+            init = parseStateInit(slice.readRef());
+        }
+    }
+    const body = slice.readBit() ? slice.readRef().toCell() : slice.toCell();
+    return {
+        info,
+        init,
+        body,
+        raw
+    };
+}
+
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L273
 // update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256

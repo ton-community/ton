@@ -1,5 +1,5 @@
 import { Address, Cell } from "..";
-import { parseAccount, parseMessage, parseShardStateUnsplit, parseTransaction } from "./parse";
+import { parseAccount, parseMessage, parseMessageRelaxed, parseShardStateUnsplit, parseTransaction } from "./parse";
 
 describe('parse', () => {
     it('should parse transaction correctly', () => {
@@ -42,10 +42,10 @@ describe('parse', () => {
         parseTransaction(-1, cell.beginParse());
     });
 
-    it('should parse internal message with null src', () => {
+    it('should parse message relaxed', () => {
         const state = 'te6ccsEBAgEAkQA3kQFoYgBgSQkXjXbkhpC1sju4zUJsLIAoavunKbfNsPFbk9jXL6BfXhAAAAAAAAAAAAAAAAAAAQEAsA+KfqUAAAAAAAAAAEO5rKAIAboVCXedy2J0RCseg4yfdNFtU8/BfiaHVEPkH/ze1W+fABicYUqh1j9Lnqv9ZhECm0XNPaB7/HcwoBb3AJnYYfqByAvrwgCqR2XE';
         const cell = Cell.fromBoc(Buffer.from(state, 'base64'))[0];
 
-        parseMessage(cell.beginParse());
+        parseMessageRelaxed(cell.beginParse());
     })
 });
