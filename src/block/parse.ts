@@ -165,7 +165,7 @@ export type RawCommonMessageInfoRelaxed =
     }
     | {
         type: 'external-out',
-        src: Address,
+        src: Address | null,
         dest: AddressExternal | null,
         createdLt: BN,
         createdAt: number
@@ -198,7 +198,7 @@ export function parseCommonMsgInfoRelaxed(slice: Slice): RawCommonMessageInfoRel
         }
     } else if (slice.readBit()) {
         // Outgoing external
-        let src = slice.readAddressInternal();
+        let src = slice.readAddress();
         let dest = slice.readAddressExternal();
         let createdLt = slice.readUint(64);
         let createdAt = slice.readUintNumber(32);
