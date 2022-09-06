@@ -1,5 +1,5 @@
 import { Address, Cell } from "..";
-import { parseAccount, parseAccountState, parseShardStateUnsplit, parseTransaction } from "./parse";
+import { parseAccount, parseMessage, parseMessageRelaxed, parseShardStateUnsplit, parseTransaction } from "./parse";
 
 describe('parse', () => {
     it('should parse transaction correctly', () => {
@@ -40,5 +40,12 @@ describe('parse', () => {
         const state = 'te6cckECCgEAAkUAA7d6SR1j8Hun7vtMufaFSEzpCJ1auuyXwVhYIi8EylkqmsAAAU2eO41UEeRJr6vFqCcKIH/At25aJERfuKnnFNvEUGZfZXngcMFgAAFNniDZZBYY3z6QADSAmSAlCAUEAQITDJIthiAa0nSEQAMCAG/JzEtATMtyiAAAAAAAAgAAAAAAA5JB3YvT7VrkPXxN485b+s1ZzT6izdF5jCfNCmC9DSz0QFAWTACdQr8jE4gAAAAAAAAAACDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIACCciw0bvSHQSzpSCq6INjDyTZ0z/6sSWYTMKFYrSQ9Wna3V4riNEWKRC5izQTxkFRpyfO/HYX80uSsctpuApvP8ucCAeAIBgEB3wcAs0n/SSOsfg90/d9plz7QqQmdIROrV12S+CsLBEXgmUslU1kAMKD3eVRXGaUISSzmQvyNMVyqDyUSV8CLx1J57yPaMUMUXSHboAAGy3O8AAAps8dxqoTDG+fSQAFKkFAbP+kkdY/B7p+77TLn2hUhM6QidWrrsl8FYWCIvBMpZKprAQkA8k1pbmUAYY33HsKD3eVRXGaUISSzmQvyNMVyqDyUSV8CLx1J57yPaMUMXlJVe7JQw1jSHC/5YUf/q2idXQh6cYVEjRYxL1YGO0JsibseRbOvoYvImYC6fmv2XlJVe7JQw1jSHC/5YUf/q2idXQh6cYVEjRYxL1YGO0KwLxvj';
         const cell = Cell.fromBoc(Buffer.from(state, 'base64'))[0];
         parseTransaction(-1, cell.beginParse());
+    });
+
+    it('should parse message relaxed', () => {
+        const state = 'te6ccsEBAgEAkQA3kQFoYgBgSQkXjXbkhpC1sju4zUJsLIAoavunKbfNsPFbk9jXL6BfXhAAAAAAAAAAAAAAAAAAAQEAsA+KfqUAAAAAAAAAAEO5rKAIAboVCXedy2J0RCseg4yfdNFtU8/BfiaHVEPkH/ze1W+fABicYUqh1j9Lnqv9ZhECm0XNPaB7/HcwoBb3AJnYYfqByAvrwgCqR2XE';
+        const cell = Cell.fromBoc(Buffer.from(state, 'base64'))[0];
+
+        parseMessageRelaxed(cell.beginParse());
     })
 });
