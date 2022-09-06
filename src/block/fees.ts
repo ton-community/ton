@@ -87,9 +87,8 @@ export function computeMessageForwardFees(msgPrices: MsgPrices, cell: Cell) {
 
     // Init
     if (msg.init) {
-        const initCell = msg.init.raw;
-        let c = collectCellStats(initCell);
-        c.bits -= initCell.bits.cursor;
+        let c = collectCellStats(msg.init.raw);
+        c.bits -= msg.init.raw.bits.cursor;
         c.cells -= 1;
         storageStats.bits += c.bits;
         storageStats.cells += c.cells;
