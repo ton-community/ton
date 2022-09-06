@@ -171,7 +171,27 @@ describe('fees', () => {
         fees = fees.add(gasFees);
         fees = fees.add(fwdFees.fees);
         expect(fromNano(fees)).toEqual('0.005281337'); // Value from blockchain
-    })
+    });
+
+    it('should estimate forward fees', () => {
+        const props = {
+            config: {
+                workchain: {
+                    message: {
+                        lumpPrice: toNano("0.001"),
+                        bitPrice: toNano("0.065536"),
+                        cellPrice: toNano("6.5536"),
+                        firstFrac: toNano("0.000021845")
+                    }
+                },
+            },
+            outMsg: Cell.fromBoc(Buffer.from("te6cckEBAQEAMgAAYEIALbtiC8uT7KtHvEy+HRkhOmXeqLGAzipIZQfHIpiBISgAAAAAAAAAAAAAAAAAAJE8Ikw=", 'base64'))[0]
+        }
+
+        let fwdFees = computeMessageForwardFees(props.config.workchain.message as any, props.outMsg);
+        
+        expect(fromNano(fwdFees.fees.add(fwdFees.remaining))).toEqual('0.001');
+    });
 
     // it('should compute storage fees', () => {
     //     let fees = computeStorageFees({
