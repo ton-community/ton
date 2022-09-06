@@ -1,7 +1,7 @@
 import BN from 'bn.js';
 import { Cell } from '../boc/Cell';
 import { MsgPrices, StoragePrices } from '../contracts/configs/configParsing';
-import { parseMessage } from './parse';
+import { parseMessage, parseMessageRelaxed } from './parse';
 
 //
 // Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L425
@@ -82,7 +82,7 @@ export function computeExternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
 }
 
 export function computeMessageForwardFees(msgPrices: MsgPrices, cell: Cell) {
-    let msg = parseMessage(cell.beginParse());
+    let msg = parseMessageRelaxed(cell.beginParse());
     let storageStats: { bits: number, cells: number } = { bits: 0, cells: 0 };
 
     // Init
