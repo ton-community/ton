@@ -1,5 +1,6 @@
 import { BN } from "bn.js";
-import { toNano } from "..";
+import { fromNano } from "..";
+import { awaitBalance } from "./awaitBalance";
 import { createTestClient } from "./createTestClient";
 import { createTestWallet } from "./createTestWallet";
 
@@ -7,6 +8,8 @@ describe('createTestWallet', () => {
     it('should create test wallet', async () => {
         const client = createTestClient();
         let testWallet = await createTestWallet(client, 0.001);
-        expect((await client.getBalance(testWallet.wallet.address)).gte(toNano(0.001))).toBe(true);
-    }, 20000);
+        await awaitBalance(client, testWallet.wallet.address, new BN(0));
+        const balance = await client.getBalance(testWallet.wallet.address);
+        expect(fromNano(balance)).toEqual('0.001');
+    }, 60000);
 });
