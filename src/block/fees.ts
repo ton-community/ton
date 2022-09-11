@@ -1,7 +1,7 @@
 import BN from 'bn.js';
 import { Cell } from '../boc/Cell';
 import { MsgPrices, StoragePrices } from '../contracts/configs/configParsing';
-import { parseStateInit, RawStateInit } from './parse';
+import { parseMessageRelaxed } from './parse';
 
 //
 // Source: https://github.com/ton-foundation/ton/blob/ae5c0720143e231c32c3d2034cfe4e533a16d969/crypto/block/transaction.cpp#L425
@@ -82,31 +82,21 @@ export function computeExternalMessageFees(msgPrices: MsgPrices, cell: Cell) {
 }
 
 export function computeMessageForwardFees(msgPrices: MsgPrices, cell: Cell) {
-    let msgSlice = cell.beginParse();
+    let msg = parseMessageRelaxed(cell.beginParse());
     let storageStats: { bits: number, cells: number } = { bits: 0, cells: 0 };
 
-    const hasInit = msgSlice.readBit();
-    let init: RawStateInit | null = null;
-    if (hasInit) {
-        if (!msgSlice.readBit()) {
-            init = parseStateInit(msgSlice);
-        } else {
-            init = parseStateInit(msgSlice.readRef());
-        }
-    }
-
     // Init
-    if (init) {
-        let c = collectCellStats(cell);
-        c.bits -= cell.bits.cursor;
+    if (msg.init) {
+        let c = collectCellStats(msg.init.raw);
+        c.bits -= msg.init.raw.bits.cursor;
         c.cells -= 1;
         storageStats.bits += c.bits;
         storageStats.cells += c.cells;
     }
 
     // Body
-    let bc = collectCellStats(cell);
-    bc.bits -= cell.bits.cursor;
+    let bc = collectCellStats(msg.body);
+    bc.bits -= msg.body.bits.cursor;
     bc.cells -= 1;
     storageStats.bits += bc.bits;
     storageStats.cells += bc.cells;
