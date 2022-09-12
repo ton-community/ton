@@ -66,6 +66,7 @@ export {
     parseCommonMsgInfo,
     parseStateInit,
     parseMessage,
+    parseMessageRelaxed,
     parseHashUpdate,
     parseAccountChange,
     parseStorageUsedShort,
