@@ -113,6 +113,13 @@ export class Builder {
         return this.storeDict(src);
     }
 
+    storeCellCopy = (src: Cell) => {
+        this.storeBitString(src.bits);
+        for (let r of src.refs) {
+            this.storeRef(r);
+        }
+    }
+
     endCell() {
         if (this.ended) {
             throw Error('Already ended')
