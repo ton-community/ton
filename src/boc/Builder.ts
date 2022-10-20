@@ -118,6 +118,7 @@ export class Builder {
         for (let r of src.refs) {
             this.storeRef(r);
         }
+        return this;
     }
 
     endCell() {
