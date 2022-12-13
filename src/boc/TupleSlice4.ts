@@ -28,8 +28,28 @@ export class TupleSlice4 {
         return popped.value;
     }
 
+    readBigNumberOpt() {
+        let popped = this.pop();
+        if (popped.type === 'null') {
+            return null;
+        }
+        if (popped.type !== 'int') {
+            throw Error('Not a number');
+        }
+        return popped.value;
+    }
+
     readNumber() {
         return this.readBigNumber().toNumber();
+    }
+
+    readNumberOpt() {
+        let r = this.readBigNumberOpt();
+        if (r) {
+            return r.toNumber();
+        } else {
+            return null;
+        }
     }
 
     readBoolean() {
@@ -37,8 +57,31 @@ export class TupleSlice4 {
         return res === 0 ? false : true;
     }
 
+    readBooleanOpt() {
+        let res = this.readNumberOpt();
+        if (res) {
+            return res === 0 ? false : true;
+        } else {
+            return null;
+        }
+    }
+
     readAddress() {
-        return this.readCell().beginParse().readAddress();
+        let r = this.readCell().beginParse().readAddress();
+        if (r) {
+            return r;
+        } else {
+            throw Error('Not an address');
+        }
+    }
+
+    readAddressOpt() {
+        let r = this.readCellOpt();
+        if (r) {
+            return r.beginParse().readAddress();
+        } else {
+            return null;
+        }
     }
 
     readCell() {
@@ -49,8 +92,30 @@ export class TupleSlice4 {
         return popped.cell;
     }
 
+    readCellOpt() {
+        let popped = this.pop();
+        if (popped.type === 'null') {
+            return null;
+        }
+        if (popped.type !== 'cell' && popped.type !== 'slice' && popped.type !== 'builder') {
+            throw Error('Not a cell');
+        }
+        return popped.cell;
+    }
+
     readTuple() {
         let popped = this.pop();
+        if (popped.type !== 'tuple') {
+            throw Error('Not a number');
+        }
+        return new TupleSlice4(popped.items);
+    }
+
+    readTupleOpt() {
+        let popped = this.pop();
+        if (popped.type === 'null') {
+            return null;
+        }
         if (popped.type !== 'tuple') {
             throw Error('Not a number');
         }
