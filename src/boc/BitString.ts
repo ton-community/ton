@@ -265,9 +265,6 @@ export class BitString implements Iterable<boolean> {
         if (src.cursor !== this.cursor) {
             return false;
         }
-        if (src.length !== this.length) {
-            return false;
-        }
         let sr = new BitStringReader(src);
         let tr = new BitStringReader(this);
         for (let i = 0; i < src.cursor; i++) {
