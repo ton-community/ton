@@ -45,7 +45,7 @@ export class TupleSlice4 {
 
     readNumberOpt() {
         let r = this.readBigNumberOpt();
-        if (r) {
+        if (r !== null) {
             return r.toNumber();
         } else {
             return null;
@@ -59,7 +59,7 @@ export class TupleSlice4 {
 
     readBooleanOpt() {
         let res = this.readNumberOpt();
-        if (res) {
+        if (res !== null) {
             return res === 0 ? false : true;
         } else {
             return null;
@@ -68,7 +68,7 @@ export class TupleSlice4 {
 
     readAddress() {
         let r = this.readCell().beginParse().readAddress();
-        if (r) {
+        if (r !== null) {
             return r;
         } else {
             throw Error('Not an address');
@@ -77,7 +77,7 @@ export class TupleSlice4 {
 
     readAddressOpt() {
         let r = this.readCellOpt();
-        if (r) {
+        if (r !== null) {
             return r.beginParse().readAddress();
         } else {
             return null;
