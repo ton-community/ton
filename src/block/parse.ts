@@ -429,8 +429,8 @@ export type ComputedComputePhase = {
     vmSteps: number,
     vmInitStateHash: Buffer,
     vmFinalStateHash: Buffer
-}
-;
+};
+
 export function parseComputePhase(slice: Slice): RawComputePhase {
     if (!slice.readBit()) {
         const skipReason = slice.readUintNumber(2);
