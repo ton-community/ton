@@ -610,30 +610,37 @@ export function parseBouncePhase(slice: Slice): RawBouncePhase {
 //   aborted:Bool destroyed:Bool
 //   = TransactionDescr;
 export type RawTransactionDescription =
-    | {
-        type: 'generic',
-        creditFirst: boolean,
-        storagePhase: RawStoragePhase | null,
-        creditPhase: RawCreditPhase | null,
-        computePhase: RawComputePhase,
-        actionPhase: RawActionPhase | null,
-        bouncePhase: RawBouncePhase | null,
-        aborted: boolean,
-        destroyed: boolean
-    }
-    | {
-        type: 'storage',
-        storagePhase: RawStoragePhase
-    }
-    | {
-        type: 'tick-tock',
-        isTock: boolean,
-        storagePhase: RawStoragePhase,
-        computePhase: RawComputePhase,
-        actionPhase: RawActionPhase | null,
-        aborted: boolean,
-        destroyed: boolean
-    };
+  | GenericTransactionDescription
+  | StorageTransactionDescription
+  | TickTockTransactionDescription
+
+export type GenericTransactionDescription = {
+  type: "generic";
+  creditFirst: boolean;
+  storagePhase: RawStoragePhase | null;
+  creditPhase: RawCreditPhase | null;
+  computePhase: RawComputePhase;
+  actionPhase: RawActionPhase | null;
+  bouncePhase: RawBouncePhase | null;
+  aborted: boolean;
+  destroyed: boolean;
+};
+
+export type StorageTransactionDescription = {
+  type: "storage";
+  storagePhase: RawStoragePhase;
+};
+
+export type TickTockTransactionDescription = {
+    type: "tick-tock";
+    isTock: boolean;
+    storagePhase: RawStoragePhase;
+    computePhase: RawComputePhase;
+    actionPhase: RawActionPhase | null;
+    aborted: boolean;
+    destroyed: boolean;
+}
+
 export function parseTransactionDescription(slice: Slice): RawTransactionDescription {
     const type = slice.readUintNumber(4);
     if (type === 0x00) {

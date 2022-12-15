@@ -115,7 +115,10 @@ export {
     RawShardAccountRef,
     RawShardStateUnsplit,
     RawCreditPhase,
-    RawMasterChainStateExtra
+    RawMasterChainStateExtra,
+    GenericTransactionDescription,
+    StorageTransactionDescription,
+    TickTockTransactionDescription
 } from './block/parse';
 
 // VM Stack

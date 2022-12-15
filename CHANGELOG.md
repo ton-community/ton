@@ -69,3 +69,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - RawBouncePhase
     - RawTransactionDescription
     - RawTransaction
+
+# [6.0.1]
+- Added subtypes for TransactionDescription: GenericTransactionDescription, StorageTransactionDescription, TickTockTransactionDescription
