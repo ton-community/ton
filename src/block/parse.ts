@@ -62,32 +62,39 @@ export function parseCurrencyCollection(slice: Slice): RawCurrencyCollection {
 // ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
 //  created_lt:uint64 created_at:uint32 = CommonMsgInfo;
 export type RawCommonMessageInfo =
-    | {
-        type: 'internal',
-        ihrDisabled: boolean,
-        bounce: boolean,
-        bounced: boolean,
-        src: Address,
-        dest: Address,
-        value: RawCurrencyCollection,
-        ihrFee: BN,
-        fwdFee: BN,
-        createdLt: BN,
-        createdAt: number
-    }
-    | {
-        type: 'external-out',
-        src: Address,
-        dest: AddressExternal | null,
-        createdLt: BN,
-        createdAt: number
-    }
-    | {
-        type: 'external-in',
-        src: AddressExternal | null,
-        dest: Address,
-        importFee: BN
-    };
+    | InternalCommonMessageInfo
+    | ExternalOutCommonMessageInfo
+    | ExternalInCommonMessageInfo;
+
+export type InternalCommonMessageInfo = {
+    type: 'internal',
+    ihrDisabled: boolean,
+    bounce: boolean,
+    bounced: boolean,
+    src: Address,
+    dest: Address,
+    value: RawCurrencyCollection,
+    ihrFee: BN,
+    fwdFee: BN,
+    createdLt: BN,
+    createdAt: number
+};
+
+export type ExternalOutCommonMessageInfo = {
+    type: 'external-out',
+    src: Address,
+    dest: AddressExternal | null,
+    createdLt: BN,
+    createdAt: number
+};
+
+export type ExternalInCommonMessageInfo = {
+    type: 'external-in',
+    src: AddressExternal | null,
+    dest: Address,
+    importFee: BN 
+};
+
 export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
 
     if (!slice.readBit()) {
@@ -150,26 +157,31 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
 // ext_out_msg_info$11 src:MsgAddress dest:MsgAddressExt
 //   created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
 export type RawCommonMessageInfoRelaxed =
-    | {
-        type: 'internal',
-        ihrDisabled: boolean,
-        bounce: boolean,
-        bounced: boolean,
-        src: Address | null,
-        dest: Address,
-        value: RawCurrencyCollection,
-        ihrFee: BN,
-        fwdFee: BN,
-        createdLt: BN,
-        createdAt: number
-    }
-    | {
-        type: 'external-out',
-        src: Address | null,
-        dest: AddressExternal | null,
-        createdLt: BN,
-        createdAt: number
-    };
+    | InternalCommonMessageInfoRelaxed
+    | ExternalOutCommonMessageInfoRelaxed;
+
+export type InternalCommonMessageInfoRelaxed = {
+    type: 'internal',
+    ihrDisabled: boolean,
+    bounce: boolean,
+    bounced: boolean,
+    src: Address | null,
+    dest: Address,
+    value: RawCurrencyCollection,
+    ihrFee: BN,
+    fwdFee: BN,
+    createdLt: BN,
+    createdAt: number
+};
+
+export type ExternalOutCommonMessageInfoRelaxed = {
+    type: 'external-out',
+    src: Address | null,
+    dest: AddressExternal | null,
+    createdLt: BN,
+    createdAt: number
+};
+
 export function parseCommonMsgInfoRelaxed(slice: Slice): RawCommonMessageInfoRelaxed {
     if (!slice.readBit()) {
         // Internal
@@ -395,26 +407,30 @@ export function parseCreditPhase(slice: Slice): RawCreditPhase {
 //  cskip_bad_state$01 = ComputeSkipReason;
 //  cskip_no_gas$10 = ComputeSkipReason;
 export type RawComputePhase =
-    | {
-        type: 'skipped',
-        reason: 'no-state' | 'bad-state' | 'no-gas'
-    }
-    | {
-        type: 'computed',
-        success: boolean,
-        messageStateUsed: boolean,
-        accountActivated: boolean,
-        gasFees: BN,
-        gasUsed: BN,
-        gasLimit: BN,
-        gasCredit: BN | null,
-        mode: number,
-        exitCode: number,
-        exitArg: number | null,
-        vmSteps: number,
-        vmInitStateHash: Buffer,
-        vmFinalStateHash: Buffer
-    };
+    | SkippedComputePhase
+    | ComputedComputePhase;
+
+export type SkippedComputePhase = {
+    type: 'skipped',
+    reason: 'no-state' | 'bad-state' | 'no-gas'
+};
+export type ComputedComputePhase = {
+    type: 'computed',
+    success: boolean,
+    messageStateUsed: boolean,
+    accountActivated: boolean,
+    gasFees: BN,
+    gasUsed: BN,
+    gasLimit: BN,
+    gasCredit: BN | null,
+    mode: number,
+    exitCode: number,
+    exitArg: number | null,
+    vmSteps: number,
+    vmInitStateHash: Buffer,
+    vmFinalStateHash: Buffer
+}
+;
 export function parseComputePhase(slice: Slice): RawComputePhase {
     if (!slice.readBit()) {
         const skipReason = slice.readUintNumber(2);
@@ -534,9 +550,14 @@ export function parseActionPhase(slice: Slice): RawActionPhase {
 // tr_phase_bounce_nofunds$01 msg_size:StorageUsedShort req_fwd_fees:Grams = TrBouncePhase;
 // tr_phase_bounce_ok$1 msg_size:StorageUsedShort msg_fees:Grams fwd_fees:Grams = TrBouncePhase;
 export type RawBouncePhase =
-    | { type: 'ok', msgSize: RawStorageUsedShort, msgFees: BN, fwdFees: BN }
-    | { type: 'no-funds', msgSize: RawStorageUsedShort, fwdFees: BN }
-    | { type: 'negative-funds' };
+    | OkBouncePhase
+    | NoFundsBouncePhase
+    | NegativeFundsBouncePhase;
+
+export type OkBouncePhase = { type: 'ok', msgSize: RawStorageUsedShort, msgFees: BN, fwdFees: BN };
+export type NoFundsBouncePhase = { type: 'no-funds', msgSize: RawStorageUsedShort, fwdFees: BN };
+export type NegativeFundsBouncePhase = { type: 'negative-funds' };
+
 export function parseBouncePhase(slice: Slice): RawBouncePhase {
 
     // Is OK
@@ -844,9 +865,14 @@ export function parseStorageInfo(cs: Slice): RawStorageInfo {
 // account_active$1 _:StateInit = AccountState;
 // account_frozen$01 state_hash:bits256 = AccountState;
 export type RawAccountState =
-    | { type: 'uninit' }
-    | { type: 'active', state: RawStateInit }
-    | { type: 'frozen', stateHash: Buffer };
+    | UninitAccountState
+    | ActiveAccountState
+    | FrozenAccountState;
+
+export type UninitAccountState = { type: 'uninit' };
+export type ActiveAccountState = { type: 'active', state: RawStateInit };
+export type FrozenAccountState = { type: 'frozen', stateHash: Buffer };
+
 export function parseAccountState(cs: Slice): RawAccountState {
     if (cs.readBit()) {
         return { type: 'active', state: parseStateInit(cs) };

@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [12.2.9]
-- Added subtypes for TransactionDescription: GenericTransactionDescription, StorageTransactionDescription, TickTockTransactionDescription
+- Added explicit types to enable typescript casting
 - 
 # [10.4.0]
 - `TonClient4` - client for new API
