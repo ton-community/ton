@@ -70,5 +70,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - RawTransactionDescription
     - RawTransaction
 
-# [6.0.1]
+# [12.2.9]
 - Added subtypes for TransactionDescription: GenericTransactionDescription, StorageTransactionDescription, TickTockTransactionDescription
