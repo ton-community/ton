@@ -2,8 +2,7 @@ import { beginCell } from "../boc/Builder";
 import { Cell } from "../boc/Cell";
 import { Slice } from "../boc/Slice";
 
-export function readString(slice: Slice) {
-
+function readBuffer(slice: Slice) {
     // Check consistency
     if (slice.remaining % 8 !== 0) {
         throw new Error(`Invalid string length: ${slice.remaining}`);
@@ -11,19 +10,23 @@ export function readString(slice: Slice) {
     if (slice.remainingRefs !== 0 && slice.remainingRefs !== 1) {
         throw new Error(`invalid number of refs: ${slice.remainingRefs}`);
     }
-    if (slice.remainingRefs === 1 && slice.remaining > 7) {
-        throw new Error(`invalid string length: ${slice.remaining}`);
+    if (slice.remainingRefs === 1 && (1023 - slice.remaining) > 7) {
+        throw new Error(`invalid string length: ${slice.remaining / 8}`);
     }
 
     // Read string
-    let res = slice.readBuffer(slice.remaining / 8).toString();
+    let res = slice.readBuffer(slice.remaining / 8);
 
     // Read tail
     if (slice.remainingRefs === 1) {
-        res += readString(slice.readRef());
+        res = Buffer.concat([res, readBuffer(slice.readRef())]);
     }
 
     return res;
+}
+
+export function readString(slice: Slice) {
+    return readBuffer(slice).toString();
 }
 
 function bufferToCell(src: Buffer): Cell {
@@ -32,10 +35,10 @@ function bufferToCell(src: Buffer): Cell {
         if (src.length > 127) {
             let a = src.slice(0, 127);
             let t = src.slice(127);
-            builder.storeBuffer(a);
-            builder.storeRef(bufferToCell(t));
+            builder = builder.storeBuffer(a);
+            builder = builder.storeRef(bufferToCell(t));
         } else {
-            builder.storeBuffer(src);
+            builder = builder.storeBuffer(src);
         }
     }
     return builder.endCell();
