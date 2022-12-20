@@ -26,17 +26,21 @@ export function readString(slice: Slice) {
     return res;
 }
 
-export function stringToCell(src: string): Cell {
+function bufferToCell(src: Buffer): Cell {
     let builder = beginCell();
     if (src.length > 0) {
         if (src.length > 127) {
             let a = src.slice(0, 127);
             let t = src.slice(127);
-            builder.storeBuffer(Buffer.from(a));
-            builder.storeRef(stringToCell(t));
+            builder.storeBuffer(a);
+            builder.storeRef(bufferToCell(t));
         } else {
-            builder.storeBuffer(Buffer.from(src));
+            builder.storeBuffer(src);
         }
     }
     return builder.endCell();
+}
+
+export function stringToCell(src: string): Cell {
+    return bufferToCell(Buffer.from(src));
 }
