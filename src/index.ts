@@ -175,3 +175,5 @@ export {
 
 // Traits
 export { Traits } from './traits/index';
+
+export { readString, stringToCell } from './utils/strings';
