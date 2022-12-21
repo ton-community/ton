@@ -17,7 +17,7 @@ describe('Cell', () => {
         nativeCell.bits.writeBit(0);
         cell.bits.writeBit(1);
         nativeCell.bits.writeBit(1);
-        expect(await cell.hash()).toEqual(Buffer.from(await nativeCell.hash()));
+        expect(cell.hash()).toEqual(Buffer.from(await nativeCell.hash()));
     });
 
     it('should correctly load cell', async () => {
