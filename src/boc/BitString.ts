@@ -245,20 +245,27 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    getTopUppedArray() {
-        const ret = this.clone();
+    getTopUppedLength() {
+        return Math.ceil(this.cursor / 8);
+    }
 
-        let tu = Math.ceil(ret.cursor / 8) * 8 - ret.cursor;
+    writeTopUppedArray(b: Buffer, start: number = 0) {
+        this.#buffer.copy(b, start);
+
+        const len = this.getTopUppedLength();
+        const tu = len * 8 - this.cursor;
         if (tu > 0) {
-            tu = tu - 1;
-            ret.writeBit(true);
-            while (tu > 0) {
-                tu = tu - 1;
-                ret.writeBit(false);
-            }
+            const bit = 1 << (tu - 1);
+            b[start+len-1] = (b[start+len-1] | bit) & (~(bit - 1));
         }
-        ret.#buffer = ret.#buffer.slice(0, Math.ceil(ret.cursor / 8));
-        return ret.#buffer;
+    }
+
+    getTopUppedArray() {
+        const ret = Buffer.alloc(this.getTopUppedLength());
+
+        this.writeTopUppedArray(ret);
+
+        return ret;
     }
 
     equals(src: BitString) {

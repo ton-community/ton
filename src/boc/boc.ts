@@ -66,14 +66,6 @@ export function getMaxDepth(cell: Cell): number {
     })
 }
 
-function getMaxDepthAsArray(cell: Cell) {
-    const maxDepth = getMaxDepth(cell);
-    const d = Uint8Array.from({ length: 2 }, () => 0);
-    d[1] = maxDepth % 256;
-    d[0] = Math.floor(maxDepth / 256);
-    return Buffer.from(d);
-}
-
 export function getMaxLevel(cell: Cell) {
     //TODO level calculation differ for exotic cells
     // let maxLevel = 0;
@@ -88,45 +80,35 @@ export function getMaxLevel(cell: Cell) {
 }
 
 function getRefsDescriptor(cell: Cell) {
-    const d1 = Uint8Array.from({ length: 1 }, () => 0);
-    d1[0] = cell.refs.length + (cell.isExotic ? 1 : 0) * 8 + getMaxLevel(cell) * 32;
-    return Buffer.from(d1);
+    return cell.refs.length + (cell.isExotic ? 1 : 0) * 8 + getMaxLevel(cell) * 32;
 }
 
 function getBitsDescriptor(cell: Cell) {
-    const d2 = Uint8Array.from({ length: 1 }, () => 0);
     let len = cell.bits.cursor;
     if (cell.isExotic) {
         len += 8;
     }
-    d2[0] = Math.ceil(len / 8) + Math.floor(len / 8);
-    return Buffer.from(d2);
-}
-
-function getDataWithDescriptors(cell: Cell) {
-    const d1 = getRefsDescriptor(cell);
-    const d2 = getBitsDescriptor(cell);
-    const tuBits = cell.bits.getTopUppedArray();
-    return Buffer.concat([d1, d2, tuBits]);
+    return Math.ceil(len / 8) + Math.floor(len / 8);
 }
 
 function getRepr(cell: Cell) {
-    const reprArray: Buffer[] = [];
-    reprArray.push(getDataWithDescriptors(cell));
-    for (let k in cell.refs) {
-        const i = cell.refs[k];
-        reprArray.push(getMaxDepthAsArray(i));
+    const tuLen = cell.bits.getTopUppedLength();
+    const repr = Buffer.alloc(2 + tuLen + (2 + 32) * cell.refs.length);
+    let reprCursor = 0;
+    repr[reprCursor++] = getRefsDescriptor(cell);
+    repr[reprCursor++] = getBitsDescriptor(cell);
+    cell.bits.writeTopUppedArray(repr, reprCursor);
+    reprCursor += tuLen;
+    for (const c of cell.refs) {
+        const md = getMaxDepth(c);
+        repr[reprCursor++] = Math.floor(md / 256);
+        repr[reprCursor++] = md % 256;
     }
-    for (let k in cell.refs) {
-        const i = cell.refs[k];
-        reprArray.push(i.hash());
+    for (const c of cell.refs) {
+        c.hash().copy(repr, reprCursor);
+        reprCursor += 32;
     }
-    let x = Buffer.alloc(0);
-    for (let k in reprArray) {
-        const i = reprArray[k];
-        x = Buffer.concat([x, i]);
-    }
-    return x;
+    return repr;
 }
 
 export function hashCell(cell: Cell): Buffer {
@@ -355,44 +337,44 @@ export function deserializeBoc(serializedBoc: Buffer) {
 // Serialize
 //
 
-function serializeForBoc(cell: Cell, refs: number[], sSize: number) {
-    const reprArray: Buffer[] = [];
+function calcCellSerializedSize(cell: Cell, sSize: number) {
+    return (
+        2 + // descriptors
+        (cell.isExotic ? 1 : 0) +
+        cell.bits.getTopUppedLength() +
+        cell.refs.length * sSize
+    );
+}
 
-    reprArray.push(getRefsDescriptor(cell));
-    reprArray.push(getBitsDescriptor(cell));
+function serializeForBoc(cell: Cell, refs: number[], sSize: number, repr: Buffer, reprCursor: number) {
+    repr[reprCursor++] = getRefsDescriptor(cell);
+    repr[reprCursor++] = getBitsDescriptor(cell);
+
     if (cell.isExotic) {
         if (cell.kind === 'pruned') {
-            reprArray.push(Buffer.from([1]));
+            repr[reprCursor++] = 1;
         } else if (cell.kind === 'library_reference') {
-            reprArray.push(Buffer.from([2]));
+            repr[reprCursor++] = 2;
         } else if (cell.kind === 'merkle_proof') {
-            reprArray.push(Buffer.from([3]));
+            repr[reprCursor++] = 3;
         } else if (cell.kind === 'merkle_update') {
-            reprArray.push(Buffer.from([4]));
+            repr[reprCursor++] = 4;
         } else {
             throw Error('Invalid cell type');
         }
     }
-    reprArray.push(cell.bits.getTopUppedArray());
+    cell.bits.writeTopUppedArray(repr, reprCursor);
+    reprCursor += cell.bits.getTopUppedLength();
     for (let refIndexInt of refs) {
-        // const i = cell.refs[k];
-        // const refHash = (await i.hash()).toString('hex');
-        // const refIndexInt = cellsIndex[refHash];
-        // refIndexInt
-        let refIndexHex = refIndexInt.toString(16);
-        while (refIndexHex.length < sSize * 2) {
-            // Add leading zeros
-            refIndexHex = '0' + refIndexHex;
-        }
-        const reference = Buffer.from(refIndexHex, 'hex');
-        reprArray.push(reference);
+        writeNumber(repr, reprCursor, refIndexInt, sSize);
+        reprCursor += sSize;
     }
-    let x = Buffer.alloc(0);
-    for (let k in reprArray) {
-        const i = reprArray[k];
-        x = Buffer.concat([x, i]);
+}
+
+function writeNumber(b: Buffer, start: number, n: number, bytes: number) {
+    for (let i = bytes - 1; i >= 0; i--) {
+        b[start++] = (n >> (i * 8)) & 0xff;
     }
-    return x;
 }
 
 export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, has_cache_bits = false, flags = 0) {
@@ -402,41 +384,62 @@ export function serializeToBoc(cell: Cell, has_idx = true, hash_crc32 = true, ha
         const cells_num = allCells.length;
         const s = cells_num.toString(2).length; // Minimal number of bits to represent reference (unused?)
         const s_bytes = Math.max(Math.ceil(s / 8), 1);
+        const sizes = allCells.map((c, i) => calcCellSerializedSize(c.cell, s_bytes));
         let full_size = 0;
         let sizeIndex: number[] = [];
-        for (let cell_info of allCells) {
-            full_size = full_size + (serializeForBoc(cell_info.cell, cell_info.refs, s_bytes)).length;
+        for (let i = 0; i < sizes.length; i++) {
+            full_size += sizes[i];
             sizeIndex.push(full_size);
         }
         const offset_bits = full_size.toString(2).length; // Minimal number of bits to offset/len (unused?)
         const offset_bytes = Math.max(Math.ceil(offset_bits / 8), 1);
 
-        const serialization = BitString.alloc((1023 + 32 * 4 + 32 * 3) * allCells.length);
-        serialization.writeBuffer(reachBocMagicPrefix);
-        serialization.writeBitArray([has_idx, hash_crc32, has_cache_bits]);
-        serialization.writeUint(flags, 2);
-        serialization.writeUint(s_bytes, 3);
-        serialization.writeUint8(offset_bytes);
-        serialization.writeUint(cells_num, s_bytes * 8);
-        serialization.writeUint(1, s_bytes * 8); // One root for now
-        serialization.writeUint(0, s_bytes * 8); // Complete BOCs only
-        serialization.writeUint(full_size, offset_bytes * 8);
-        serialization.writeUint(0, s_bytes * 8); // Root shoulh have index 0
+        const serialization = Buffer.alloc(
+            4 + // magic
+            1 + // flags and s_bytes
+            1 + // offset_bytes
+            3 * s_bytes + // cells_num, roots, complete
+            offset_bytes + // full_size
+            s_bytes + // root_idx
+            (has_idx ? cells_num * offset_bytes : 0) +
+            full_size +
+            (hash_crc32 ? 4 : 0)
+        );
+        let serCursor = 0;
+
+        reachBocMagicPrefix.copy(serialization);
+        serCursor = 4;
+        serialization[serCursor++] = ((has_idx ? 1 : 0) << 7) |
+            ((hash_crc32 ? 1 : 0) << 6) |
+            ((has_cache_bits ? 1 : 0) << 5) |
+            flags << 3 |
+            s_bytes;
+        serialization[serCursor++] = offset_bytes;
+        writeNumber(serialization, serCursor, cells_num, s_bytes);
+        serCursor += s_bytes;
+        writeNumber(serialization, serCursor, 1, s_bytes);
+        serCursor += s_bytes;
+        writeNumber(serialization, serCursor, 0, s_bytes);
+        serCursor += s_bytes;
+        writeNumber(serialization, serCursor, full_size, offset_bytes);
+        serCursor += offset_bytes;
+        writeNumber(serialization, serCursor, 0, s_bytes);
+        serCursor += s_bytes;
         if (has_idx) {
-            allCells.forEach(
-                (cell_data, index) =>
-                    serialization.writeUint(sizeIndex[index], offset_bytes * 8));
+            allCells.forEach((_, index) => {
+                writeNumber(serialization, serCursor, sizeIndex[index], offset_bytes);
+                serCursor += offset_bytes;
+            });
         }
-        for (let cell_info of allCells) {
+        for (let i = 0; i < cells_num; i++) {
             //TODO it should be async map or async for
-            const refcell_ser = serializeForBoc(cell_info.cell, cell_info.refs, s_bytes);
-            serialization.writeBuffer(refcell_ser);
+            serializeForBoc(allCells[i].cell, allCells[i].refs, s_bytes, serialization, serCursor);
+            serCursor += sizes[i];
         }
-        let ser_arr = serialization.getTopUppedArray();
         if (hash_crc32) {
-            ser_arr = Buffer.concat([ser_arr, crc32c(ser_arr)]);
+            crc32c(serialization.subarray(0, serialization.length - 4)).copy(serialization, serialization.length - 4);
         }
 
-        return ser_arr;
+        return serialization;
     });
 }
