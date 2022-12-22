@@ -11,7 +11,7 @@
   "scripts": {
     "build": "rm -fr dist && tsc --declaration",
     "test": "jest --verbose --runInBand",
-    "release": "yarn build && yarn test && yarn release-it --npm.yarn1"
+    "release": "yarn build && yarn release-it --npm.yarn1"
   },
   "devDependencies": {
     "@release-it/keep-a-changelog": "^3.1.0",
