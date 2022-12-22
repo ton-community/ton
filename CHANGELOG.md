@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # Changed
 - Improved BOC serialization
 
+## [12.3.2]
+- Fix unicode symbols in `readString` function
+
 ## [10.4.0]
 - `TonClient4` - client for new API
 
