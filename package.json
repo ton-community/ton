@@ -11,9 +11,10 @@
   "scripts": {
     "build": "rm -fr dist && tsc --declaration",
     "test": "jest --verbose --runInBand",
-    "release": "yarn build && yarn test && yarn publish"
+    "release": "yarn build && yarn test && yarn release-it --npm.yarn1"
   },
   "devDependencies": {
+    "@release-it/keep-a-changelog": "^3.1.0",
     "@types/bn.js": "^5.1.0",
     "@types/jest": "^27.0.1",
     "@types/node": "^16.7.10",
@@ -26,6 +27,7 @@
     "karma-jasmine": "^4.0.1",
     "karma-typescript": "^5.5.2",
     "karma-webpack": "^5.0.0",
+    "release-it": "^15.5.1",
     "tonweb": "0.0.18",
     "ts-jest": "^27.0.5",
     "ts-loader": "^9.2.5",
@@ -45,5 +47,19 @@
     "teslabot": "^1.3.0",
     "ton-crypto": "2.1.0",
     "tweetnacl": "1.0.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "release-it": {
+    "github": {
+      "release": true
+    },
+    "plugins": {
+      "@release-it/keep-a-changelog": {
+        "filename": "CHANGELOG.md"
+      }
+    }
   }
 }
