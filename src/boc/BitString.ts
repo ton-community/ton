@@ -222,20 +222,18 @@ export class BitString implements Iterable<boolean> {
         }
     }
 
-    setTopUppedArray(array: Buffer, fullfilledBytes = true) {
-        this.#length = array.length * 8;
-        this.#buffer = Buffer.alloc(array.length);
-        array.copy(this.#buffer);
-        this.#cursor = this.length;
-        if (fullfilledBytes || !this.length) {
-            return;
-        } else {
+    static fromTopUppedArray(array: Buffer, fullfilledBytes = true) {
+        const b = Buffer.alloc(array.length);
+        const l = array.length * 8;
+        let cur = l;
+        array.copy(b);
+        if (!fullfilledBytes && l > 0) {
             let foundEndBit = false;
             for (let c = 0; c < 7; c++) {
-                this.#cursor -= 1;
-                if (this.get(this.cursor)) {
+                cur--;
+                if ((b[b.length-1] & (1 << c)) > 0) {
                     foundEndBit = true;
-                    this.off(this.cursor);
+                    b[b.length-1] &= ~(1 << c);
                     break;
                 }
             }
@@ -243,6 +241,7 @@ export class BitString implements Iterable<boolean> {
                 throw new Error("Incorrect TopUppedArray");
             }
         }
+        return new BitString(b, l, cur);
     }
 
     getTopUppedLength() {
