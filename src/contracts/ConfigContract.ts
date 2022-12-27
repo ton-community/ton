@@ -1,40 +1,31 @@
 import { Address, beginCell, Cell } from "ton-core";
-import { Contract, ContractSource, TonClient, UnknownContractSource } from "..";
+import { Contract} from "..";
 import { parseDictRefs } from "../boc/dict/parseDict";
 import { parseFullConfig } from "./configs/configParsing";
+import { ContractExecutor } from "./ContractExecutor";
 
 
 export class ConfigContract implements Contract {
     readonly address: Address = Address.parseRaw('-1:5555555555555555555555555555555555555555555555555555555555555555');
-    readonly source: ContractSource = new UnknownContractSource('org.ton.config', -1, 'Config Contract');
-    private readonly client: TonClient;
 
-    constructor(client: TonClient) {
-        this.client = client;
+    async getSeqno(executor: ContractExecutor) {
+        let res = await executor.callGetMethod('seqno');
+        return res.stack.readNumber();
     }
 
-    async getSeqNo() {
-        let res = await this.client.callGetMethod(this.address, 'seqno');
-        return parseInt(res.stack[0][1], 16);
-    }
-
-    async getPublicKey() {
-        let data = (await this.client.getContractState(this.address)).data;
-        let slice = Cell.fromBoc(data!)[0].beginParse();
-        slice.skip(32); // Seqno
-        return slice.loadBuffer(32); // Public Key
-    }
-
-    async getConfigsRaw() {
-        let data = (await this.client.getContractState(this.address)).data;
-        let slice = Cell.fromBoc(data!)[0].beginParse();
+    async getConfigsRaw(executor: ContractExecutor) {
+        let state = (await executor.getState());
+        if (state.state.kind !== 'active') {
+            throw new Error('Contract is not active');
+        }
+        let slice = Cell.fromBoc(state.state.state.data)[0].beginParse();
         let dict = slice.loadRef();
         let res = parseDictRefs(dict, 32);
         return res;
     }
 
-    async getConfigs() {
-        let configs = await this.getConfigsRaw();
+    async getConfigs(executor: ContractExecutor) {
+        let configs = await this.getConfigsRaw(executor);
         return parseFullConfig(configs);
     }
 

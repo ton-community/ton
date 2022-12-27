@@ -604,7 +604,7 @@ export function parseFullConfig(configs: Map<string, Slice>) {
         validatorsPunish: configParse40(configs.get('40')),
         bridges: {
             ethereum: configParseBridge(configs.get('71')),
-            binance: configParseBridge(configs.get('72')),
+            // binance: configParseBridge(configs.get('72')),
             polygon: configParseBridge(configs.get('73'))
         },
         catchain: configParse28(configs.get('28')),

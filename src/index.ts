@@ -12,9 +12,6 @@ export { SendMode } from './client/SendMode';
 export { TonCache, InMemoryCache } from './client/TonCache';
 export { HttpApi } from './client/api/HttpApi';
 export { DictBuilder, beginDict } from './boc/DictBuilder';
-export { bnToAddress } from './utils/bnToAddress';
-export { TupleSlice } from './boc/TupleSlice';
-export { TupleSlice4 } from './boc/TupleSlice4';
 export { getSupportedInterfaces, resolveKnownInterface, getSupportedInterfacesRaw, KnownInterface, SupportedInterface } from './introspection/getSupportedInterfaces';
 export { SupportedMessage, parseSupportedMessage } from './introspection/parseSupportedMessage';
 
@@ -128,20 +125,6 @@ export {
     RawCreditPhase,
     RawMasterChainStateExtra,
 } from './block/parse';
-
-// VM Stack
-export {
-    StackNull,
-    StackInt,
-    StackNaN,
-    StackCell,
-    StackSlice,
-    StackBuilder,
-    StackTuple,
-    StackItem,
-    serializeStack,
-    parseStack
-} from './block/stack';
 
 // Client 4
 export {

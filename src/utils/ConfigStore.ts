@@ -1,4 +1,4 @@
-import { Address } from "..";
+import { Address } from "ton-core";
 
 export class ConfigStore {
     #map = new Map<string, string>();
@@ -58,7 +58,7 @@ export class ConfigStore {
     }
 
     setAddress = (key: string, address: Address) => {
-        this.setString(key, address.toFriendly());
+        this.setString(key, address.toString());
     }
 
     save() {

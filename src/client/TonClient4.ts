@@ -1,7 +1,6 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
-import { Address, Cell } from "ton-core";
-import { parseStack, serializeStack, StackItem } from "../block/stack";
+import { Address, Cell, parseTuple, serializeTuple, TupleItem } from "ton-core";
 import { toUrlSafe } from "../utils/toUrlSafe";
 
 export type TonClient4Parameters = {
@@ -126,8 +125,8 @@ export class TonClient4 {
         return res.data;
     }
 
-    async runMethod(seqno: number, address: Address, name: string, args?: StackItem[]) {
-        let tail = args && args.length > 0 ? '/' + toUrlSafe(serializeStack(args).toBoc({ idx: false, crc32: false }).toString('base64')) : '';
+    async runMethod(seqno: number, address: Address, name: string, args?: TupleItem[]) {
+        let tail = args && args.length > 0 ? '/' + toUrlSafe(serializeTuple(args).toBoc({ idx: false, crc32: false }).toString('base64')) : '';
         let url = this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }) + '/run/' + name + tail;
         let res = await axios.get(url, { adapter: this.#adapter, timeout: this.#timeout });
         if (!runMethodCodec.is(res.data)) {
@@ -135,7 +134,7 @@ export class TonClient4 {
         }
         return {
             exitCode: res.data.exitCode,
-            result: res.data.resultRaw ? parseStack(Cell.fromBoc(Buffer.from(res.data.resultRaw, 'base64'))[0]) : [],
+            result: res.data.resultRaw ? parseTuple(Cell.fromBoc(Buffer.from(res.data.resultRaw, 'base64'))[0]) : [],
             resultRaw: res.data.resultRaw,
             block: res.data.block,
             shardBlock: res.data.shardBlock,

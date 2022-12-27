@@ -1,3 +1,4 @@
+import { beginCell, BitBuilder, BitString, Builder, Cell, Slice } from "ton-core";
 import { findCommonPrefix } from "./utils/findCommonPrefix";
 
 //
@@ -91,7 +92,7 @@ export function buildTree<T>(src: Map<string, T>, keyLength: number) {
     // Convert map keys
     let converted = new Map<string, T>();
     for (let k of Array.from(src.keys())) {
-        const padded = pad(new BN(k).toString(2), keyLength);
+        const padded = pad(BigInt(k).toString(2), keyLength);
         converted.set(padded, src.get(k)!);
     }
 
@@ -103,19 +104,19 @@ export function buildTree<T>(src: Map<string, T>, keyLength: number) {
 // Serialization
 //
 
-export function writeLabelShort(src: string, to: BitString) {
+export function writeLabelShort(src: string, to: Builder) {
     // Header
-    to.writeBit(0);
+    to.storeBit(0);
 
     // Unary length
     for (let i = 0; i < src.length; i++) {
-        to.writeBit(1);
+        to.storeBit(1);
     }
-    to.writeBit(0);
+    to.storeBit(0);
 
     // Value
     for (let i = 0; i < src.length; i++) {
-        to.writeBit(src[i] === '1');
+        to.storeBit(src[i] === '1');
     }
     return to;
 }
@@ -124,18 +125,18 @@ function labelShortLength(src: string) {
     return 1 + src.length + 1 + src.length;
 }
 
-export function writeLabelLong(src: string, keyLength: number, to: BitString) {
+export function writeLabelLong(src: string, keyLength: number, to: Builder) {
     // Header
-    to.writeBit(1);
-    to.writeBit(0);
+    to.storeBit(1);
+    to.storeBit(0);
 
     // Length
     let length = Math.ceil(Math.log2(keyLength + 1));
-    to.writeUint(src.length, length);
+    to.storeUint(src.length, length);
 
     // Value
     for (let i = 0; i < src.length; i++) {
-        to.writeBit(src[i] === '1');
+        to.storeBit(src[i] === '1');
     }
     return to;
 }
@@ -144,17 +145,17 @@ function labelLongLength(src: string, keyLength: number) {
     return 1 + 1 + Math.ceil(Math.log2(keyLength + 1)) + src.length;
 }
 
-export function writeLabelSame(value: number | boolean, length: number, keyLength: number, to: BitString) {
+export function writeLabelSame(value: number | boolean, length: number, keyLength: number, to: Builder) {
     // Header
-    to.writeBit(1);
-    to.writeBit(1);
+    to.storeBit(1);
+    to.storeBit(1);
 
     // Value
-    to.writeBit(value);
+    to.storeBit(value);
 
     // Length
     let lenLen = Math.ceil(Math.log2(keyLength + 1));
-    to.writeUint(length, lenLen);
+    to.storeUint(length, lenLen);
 }
 
 function labelSameLength(keyLength: number) {
@@ -194,7 +195,7 @@ export function detectLabelType(src: string, keyLength: number) {
     return kind;
 }
 
-function writeLabel(src: string, keyLength: number, to: BitString) {
+function writeLabel(src: string, keyLength: number, to: Builder) {
     let type = detectLabelType(src, keyLength);
     if (type === 'short') {
         writeLabelShort(src, to);
@@ -206,28 +207,28 @@ function writeLabel(src: string, keyLength: number, to: BitString) {
         writeLabelSame(src[0] === '1', src.length, keyLength, to);
     }
 }
-function writeNode<T>(src: Node<T>, keyLength: number, serializer: (src: T, cell: Cell) => void, to: Cell) {
+function writeNode<T>(src: Node<T>, keyLength: number, serializer: (src: T, cell: Builder) => void, to: Builder) {
     if (src.type === 'leaf') {
         serializer(src.value, to);
     }
     if (src.type === 'fork') {
-        const leftCell = new Cell();
-        const rightCell = new Cell();
+        const leftCell = beginCell();
+        const rightCell = beginCell();
         writeEdge(src.left, keyLength - 1, serializer, leftCell);
         writeEdge(src.right, keyLength - 1, serializer, rightCell);
-        to.refs.push(leftCell);
-        to.refs.push(rightCell);
+        to.storeRef(leftCell);
+        to.storeRef(rightCell);
     }
 }
 
-function writeEdge<T>(src: Edge<T>, keyLength: number, serializer: (src: T, cell: Cell) => void, to: Cell) {
-    writeLabel(src.label, keyLength, to.bits);
+function writeEdge<T>(src: Edge<T>, keyLength: number, serializer: (src: T, cell: Builder) => void, to: Builder) {
+    writeLabel(src.label, keyLength, to);
     writeNode(src.node, keyLength - src.label.length, serializer, to);
 }
 
-export function serializeDict<T>(src: Map<string, T>, keyLength: number, serializer: (src: T, cell: Cell) => void) {
+export function serializeDict<T>(src: Map<string, T>, keyLength: number, serializer: (src: T, cell: Builder) => void) {
     const tree = buildTree<T>(src, keyLength);
-    const dest = new Cell();
+    const dest = beginCell();
     writeEdge(tree, keyLength, serializer, dest);
-    return dest;
+    return dest.endCell();
 }

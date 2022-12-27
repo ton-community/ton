@@ -785,10 +785,10 @@ export function parseTransaction(workchain: number, slice: Slice): RawTransactio
     }
     let outMessages: RawMessage[] = [];
     if (hasOutMessages) {
-        // let dict = parseDict(messages.loadRef(), 15, (slice) => parseMessage(slice.loadRef().beginParse()));
-        // for (let msg of Array.from(dict.values())) {
-        //     outMessages.push(msg);
-        // }
+        let dict = parseDict(messages.loadRef(), 15, (slice) => parseMessage(slice.loadRef().beginParse()));
+        for (let msg of Array.from(dict.values())) {
+            outMessages.push(msg);
+        }
     }
 
     // Currency collections

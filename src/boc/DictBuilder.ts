@@ -20,7 +20,7 @@ export class DictBuilder {
         } else if (typeof index === 'bigint') {
             key = index.toString(10);
         } else if (Buffer.isBuffer(index)) {
-            key = new BN(index.toString('hex'), 'hex').toString(10);
+            key = BigInt('0x' + index.toString('hex')).toString();
         } else {
             throw Error('Invalid index type');
         }
@@ -30,7 +30,7 @@ export class DictBuilder {
         this.items.set(key, value);
     }
 
-    storeRef = (index: number | BN | Buffer, value: Cell) => {
+    storeRef = (index: number | bigint | Buffer, value: Cell) => {
         if (this.ended) {
             throw Error('Already ended')
         }
@@ -49,7 +49,7 @@ export class DictBuilder {
         if (this.items.size === 0) {
             return null;
         }
-        return serializeDict<Cell>(this.items, this.keySize, (src, dst) => dst.writeCell(src));
+        return serializeDict<Cell>(this.items, this.keySize, (src, dst) => dst.storeSlice(src.asSlice()));
     }
 
     endCell = () => {

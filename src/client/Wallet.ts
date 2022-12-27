@@ -1,6 +1,6 @@
-import BN from "bn.js";
+import { Address, beginCell } from "ton-core";
 import { keyPairFromSecretKey } from "ton-crypto";
-import { Address, BinaryMessage, Cell, CellMessage, CommentMessage, contractAddress, ExternalMessage, Message, StateInit, TonClient } from "..";
+import { BinaryMessage, Cell, CellMessage, CommentMessage, contractAddress, ExternalMessage, Message, StateInit, TonClient } from "..";
 import { WalletSource } from "../contracts/sources/WalletSource";
 import { WalletV1R2Source } from "../contracts/sources/WalletV1R2Source";
 import { WalletV1R3Source } from "../contracts/sources/WalletV1R3Source";
@@ -102,14 +102,14 @@ export class Wallet {
         return w;
     }
 
-    static async findActiveBySecretKey(client: TonClient, workchain: number, secretKey: Buffer): Promise<{ address: Address, type: WalletContractType, deployed: boolean, balance: BN }[]> {
+    static async findActiveBySecretKey(client: TonClient, workchain: number, secretKey: Buffer): Promise<{ address: Address, type: WalletContractType, deployed: boolean, balance: bigint }[]> {
         const publicKey = keyPairFromSecretKey(secretKey).publicKey;
-        let types: { address: Address, type: WalletContractType, deployed: boolean, balance: BN }[] = [];
+        let types: { address: Address, type: WalletContractType, deployed: boolean, balance: bigint }[] = [];
         for (let type of allTypes) {
             let contra = createContract(client, type, publicKey, workchain);
             let deployed = await client.isContractDeployed(contra.address);
             let balance = await client.getBalance(contra.address);
-            if (deployed || balance.gt(new BN(0))) {
+            if (deployed || balance > 0n) {
                 types.push({ address: contra.address, type, balance, deployed });
             }
         }
@@ -131,12 +131,12 @@ export class Wallet {
         for (let i = 1; i < allActive.length; i++) {
             let ac = allActive[i];
             // Contracts are sorted by priority
-            if (ac.balance.gte(maxBalance)) {
+            if (ac.balance >= maxBalance) {
                 maxBalance = ac.balance;
                 bestContract = ac.type;
             }
         }
-        if (maxBalance.gt(new BN(0))) {
+        if (maxBalance > 0n) {
             let c = createContract(client, bestContract, publicKey, workchain);;
             let w = new Wallet(client, c.address);
             w.prepare(workchain, publicKey, bestContract);
@@ -166,7 +166,7 @@ export class Wallet {
     async getSeqNo() {
         if (await this.#client.isContractDeployed(this.address)) {
             let res = await this.#client.callGetMethod(this.address, 'seqno');
-            return parseInt(res.stack[0][1], 16);
+            return res.stack.readNumber();
         } else {
             return 0;
         }
@@ -194,7 +194,7 @@ export class Wallet {
     async transfer(args: {
         seqno: number,
         to: Address,
-        value: BN,
+        value: bigint,
         secretKey: Buffer,
         bounce: boolean,
         sendMode?: Maybe<SendMode>,
@@ -245,7 +245,7 @@ export class Wallet {
         to: Address,
         bounce: boolean,
         seqno: number,
-        value: BN,
+        value: bigint,
         secretKey: Buffer,
         payload?: Maybe<string | Buffer | Cell>
         timeout?: Maybe<number>,
@@ -291,9 +291,9 @@ export class Wallet {
             })
         });
 
-        const res = new Cell();
+        const res = beginCell();
         message.writeTo(res);
-        return res;
+        return res.endCell();
     }
 
     /**

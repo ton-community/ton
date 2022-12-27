@@ -1,18 +1,27 @@
-import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
 import { Message } from "../messages/Message";
 import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
 import { ExternalMessage } from "../messages/ExternalMessage";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
 import { StateInit } from "../messages/StateInit";
-import { Contract } from "../contracts/Contract";
-import { Wallet } from "./Wallet";
+import { ContractWithSource } from "../contracts/Contract";
 import { Maybe } from '../types';
-import { CellMessage, WalletContractType, WalletSource } from '..';
 import { TonTransaction, TonMessage } from './TonTransaction';
-import { ConfigContract } from '../contracts/ConfigContract';
 import { InMemoryCache, TonCache } from './TonCache';
 import { AxiosAdapter } from 'axios';
-import { Address, beginCell, Cell } from 'ton-core';
+import { Address, beginCell, Cell, TupleItem, TupleReader } from 'ton-core';
+import { CellMessage } from "../messages/CellMessage";
+
+function parseStack(src: any[]) {
+    let stack: TupleItem[] = [];
+    for (let s of src) {
+        if (s[0] === 'num') {
+            stack.push({ type: 'int', value: BigInt(s[1]) });
+        } else {
+            throw Error('Unsupported stack item type: ' + s[0])
+        }
+    }
+    return new TupleReader(stack);
+}
 
 export type TonClientParameters = {
     endpoint: string;
@@ -74,10 +83,6 @@ export class TonClient {
 
     #api: HttpApi;
 
-    services = {
-        configs: new ConfigContract(this)
-    };
-
     constructor(parameters: TonClientParameters) {
         this.parameters = {
             endpoint: parameters.endpoint,
@@ -106,12 +111,12 @@ export class TonClient {
      * @param params optional parameters
      * @returns stack and gas_used field
      */
-    async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[] }> {
+    async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: TupleReader }> {
         let res = await this.#api.callGetMethod(address, name, params);
         if (res.exit_code !== 0) {
             throw Error('Unable to execute get method. Got exit_code: ' + res.exit_code);
         }
-        return { gas_used: res.gas_used, stack: res.stack };
+        return { gas_used: res.gas_used, stack: parseStack(res.stack) };
     }
 
     /**
@@ -121,9 +126,9 @@ export class TonClient {
      * @param params optional parameters
      * @returns stack and gas_used field
     */
-    async callGetMethodWithError(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: any[], exit_code: number }> {
+    async callGetMethodWithError(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: TupleReader, exit_code: number }> {
         let res = await this.#api.callGetMethod(address, name, params);
-        return { gas_used: res.gas_used, stack: res.stack, exit_code: res.exit_code };
+        return { gas_used: res.gas_used, stack: parseStack(res.stack), exit_code: res.exit_code };
     }
 
     /**
@@ -240,7 +245,7 @@ export class TonClient {
      * @param contract contract to send message
      * @param src message body
      */
-    async sendExternalMessage(contract: Contract, src: Cell) {
+    async sendExternalMessage(contract: ContractWithSource, src: Cell) {
         if (await this.isContractDeployed(contract.address)) {
             const message = new ExternalMessage({
                 to: contract.address,
@@ -293,68 +298,6 @@ export class TonClient {
                 seqno: info.block_id.seqno
             },
             timestampt: info.sync_utime
-        };
-    }
-
-    /**
-     * Open Wallet from address
-     * @param source wallet address
-     * @returns wallet with specified address
-     */
-    openWalletFromAddress(args: { source: Address }) {
-        return Wallet.open(this, args.source);
-    }
-
-    /**
-     * Open Wallet from secret key. Searches for best wallet contract.
-     * @param workchain wallet workchain
-     * @param secretKey wallet secret key
-     * @returns best matched wallet
-     */
-    findWalletFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
-        return Wallet.findBestBySecretKey(this, args.workchain, args.secretKey);
-    }
-
-    /**
-     * Open wallet with default contract
-     * @param args workchain and secret key
-     * @returns wallet
-     */
-    openWalletDefaultFromSecretKey(args: { workchain: number, secretKey: Buffer }) {
-        return Wallet.openDefault(this, args.workchain, args.secretKey);
-    }
-
-    /**
-     * Open wallet with default contract
-     * @param args workchain and secret key
-     * @returns wallet
-     */
-    openWalletFromSecretKey(args: { workchain: number, secretKey: Buffer, type: WalletContractType }) {
-        return Wallet.openByType(this, args.workchain, args.secretKey, args.type);
-    }
-
-    /**
-     * Opens wallet from custom contract
-     * @param src source
-     * @returns wallet
-     */
-    openWalletFromCustomContract(src: WalletSource) {
-        return Wallet.openFromSource(this, src);
-    }
-
-    /**
-     * Securely creates new wallet
-     * @param password optional password
-     */
-    async createNewWallet(args: { workchain: number, password?: Maybe<string>, type?: Maybe<WalletContractType> }) {
-        let mnemonic = await mnemonicNew(24, args.password);
-        let key = await mnemonicToWalletKey(mnemonic, args.password);
-        let kind = args.type || 'org.ton.wallets.v3';
-        let wallet = Wallet.openByType(this, args.workchain, key.secretKey, kind);
-        return {
-            mnemonic,
-            key,
-            wallet
         };
     }
 }

@@ -1,5 +1,4 @@
 import { Address } from "ton-core";
-import { TupleSlice } from "../boc/TupleSlice";
 import { TonClient } from "../client/TonClient";
 
 //
@@ -61,7 +60,7 @@ export async function getSupportedInterfacesRaw(src: Address, client: TonClient)
     }
 
     try {
-        let slice = new TupleSlice(res.stack);
+        let slice = res.stack;
 
         // First interface have to be introspection
         let firstNumber = slice.readBigNumber().toString();

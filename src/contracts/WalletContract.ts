@@ -1,13 +1,13 @@
 import { TonClient } from "..";
 import { InternalMessage } from "../messages/InternalMessage";
-import { Contract } from "./Contract";
+import { ContractWithSource } from "./Contract";
 import { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3, createWalletTransferV4 } from "./messages/createWalletTransfer";
 import { WalletSource } from "./sources/WalletSource";
 import { Maybe } from "../types";
 import { contractAddress } from "./contractAddress";
 import { Address } from "ton-core";
 
-export class WalletContract implements Contract {
+export class WalletContract implements ContractWithSource {
 
     static create(client: TonClient, source: WalletSource) {
         let address = contractAddress(source);
@@ -27,7 +27,7 @@ export class WalletContract implements Contract {
     async getSeqNo() {
         if (await this.client.isContractDeployed(this.address)) {
             let res = await this.client.callGetMethod(this.address, 'seqno');
-            return parseInt(res.stack[0][1], 16);
+            return res.stack.readNumber();
         } else {
             return 0;
         }
