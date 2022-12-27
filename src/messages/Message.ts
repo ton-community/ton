@@ -1,5 +1,5 @@
-import { Cell } from "../boc/Cell";
+import { Writable } from "ton-core";
 
-export interface Message {
-    writeTo(cell: Cell): void;
+export interface Message extends Writable {
+    
 }

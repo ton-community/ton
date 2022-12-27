@@ -1,6 +1,6 @@
 import { BN } from "bn.js";
+import { Cell } from "ton-core";
 import { bnToAddress } from "../utils/bnToAddress";
-import { Cell } from "./Cell";
 
 export class TupleSlice {
     private readonly items: any[];

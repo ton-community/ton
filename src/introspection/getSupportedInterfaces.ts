@@ -1,4 +1,4 @@
-import { Address } from "../address/Address";
+import { Address } from "ton-core";
 import { TupleSlice } from "../boc/TupleSlice";
 import { TonClient } from "../client/TonClient";
 

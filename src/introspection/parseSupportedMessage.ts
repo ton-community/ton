@@ -1,17 +1,14 @@
-import BN from "bn.js";
-import { Address } from "../address/Address";
-import { Cell } from "../boc/Cell";
-import { Slice } from "../boc/Slice";
+import { Address, beginCell, Cell, Slice } from "ton-core";
 import { crc32str } from "../utils/crc32";
 import { KnownInterface } from "./getSupportedInterfaces";
 
-export type SupportedMessage = { type: string, data: { [key: string]: BN | string | number | boolean | Buffer | Cell | Address | null } };
+export type SupportedMessage = { type: string, data: { [key: string]: bigint | string | number | boolean | Buffer | Cell | Address | null } };
 
 function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null {
     // Deposit
     if (op === crc32str('op::stake_deposit')) {
-        let queryId = sc.readUint(64);
-        let gasLimit = sc.readCoins().toNumber();
+        let queryId = sc.loadUintBig(64);
+        let gasLimit = sc.loadCoins();
         return {
             type: 'deposit',
             data: {
@@ -29,9 +26,9 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
 
     // Withdraw
     if (op === crc32str('op::stake_withdraw')) {
-        let queryId = sc.readUint(64);
-        let gasLimit = sc.readCoins().toNumber();
-        const stake = sc.readCoins();
+        let queryId = sc.loadUintBig(64);
+        let gasLimit = sc.loadCoins();
+        let stake = sc.loadCoins();
         return {
             type: 'withdraw',
             data: {
@@ -56,9 +53,9 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
 
     // Upgrade
     if (op === crc32str('op::upgrade')) {
-        let queryId = sc.readUint(64);
-        let gasLimit = sc.readCoins().toNumber();
-        const code = sc.readCell();
+        let queryId = sc.loadUintBig(64);
+        let gasLimit = sc.loadCoins();
+        let code = sc.loadRef();
         return {
             type: 'upgrade',
             data: {
@@ -77,9 +74,9 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
 
     // Upgrade
     if (op === crc32str('op::upgrade')) {
-        let queryId = sc.readUint(64);
-        let gasLimit = sc.readCoins().toNumber();
-        const code = sc.readCell();
+        let queryId = sc.loadUintBig(64);
+        let gasLimit = sc.loadCoins();
+        let code = sc.loadRef();
         return {
             type: 'upgrade',
             data: {
@@ -98,9 +95,9 @@ function parseNominatorsMessage(op: number, sc: Slice): SupportedMessage | null 
 
     // Update
     if (op === crc32str('op::update')) {
-        let queryId = sc.readUint(64);
-        let gasLimit = sc.readCoins().toNumber();
-        const params = sc.readCell();
+        let queryId = sc.loadUintBig(64);
+        let gasLimit = sc.loadCoins();
+        let params = sc.loadRef();
         return {
             type: 'update',
             data: {
@@ -124,7 +121,7 @@ function parseJettonWallet(op: number, sc: Slice): SupportedMessage | null {
 
     // excesses#d53276db query_id:uint64 = InternalMsgBody;
     if (op === 0xd53276db) {
-        let queryId = sc.readUint(64);
+        let queryId = sc.loadUintBig(64);
         return {
             type: 'jetton::excesses',
             data: {
@@ -138,13 +135,13 @@ function parseJettonWallet(op: number, sc: Slice): SupportedMessage | null {
     //              forward_ton_amount:(VarUInteger 16) forward_payload:(Either Cell ^Cell)
     //              = InternalMsgBody;
     if (op === 0xf8a7ea5) {
-        let queryId = sc.readUint(64);
-        let amount = sc.readCoins();
-        let destination = sc.readAddress();
-        let responseDestination = sc.readAddress();
-        let customPayload = sc.readBit() ? sc.readCell() : null;
-        let forwardTonAmount = sc.readCoins();
-        let forwardPayload = sc.readBit() ? sc.readCell() : sc.toCell();
+        let queryId = sc.loadUintBig(64);
+        let amount = sc.loadCoins();
+        let destination = sc.loadMaybeAddress();
+        let responseDestination = sc.loadMaybeAddress();
+        let customPayload = sc.loadMaybeRef();
+        let forwardTonAmount = sc.loadCoins();
+        let forwardPayload = sc.loadBit() ? sc.loadRef() : beginCell().storeSlice(sc).endCell();
         return {
             type: 'jetton::transfer',
             data: {
@@ -163,10 +160,10 @@ function parseJettonWallet(op: number, sc: Slice): SupportedMessage | null {
     //        sender:MsgAddress forward_payload:(Either Cell ^Cell)
     //        = InternalMsgBody;
     if (op === 0x7362d09c) {
-        let queryId = sc.readUint(64);
-        let amount = sc.readCoins();
-        let sender = sc.readAddress();
-        let forwardPayload = sc.readBit() ? sc.readCell() : sc.toCell();
+        let queryId = sc.loadUintBig(64);
+        let amount = sc.loadCoins();
+        let sender = sc.loadMaybeAddress();
+        let forwardPayload = sc.loadBit() ? sc.loadRef() : beginCell().storeSlice(sc).endCell();
         return {
             type: 'jetton::transfer_notification',
             data: {
@@ -190,10 +187,10 @@ export function parseSupportedMessage(knownInteface: KnownInterface, message: Ce
 
         // Load OP
         let sc = message.beginParse();
-        if (sc.remaining < 32) {
+        if (sc.remainingBits < 32) {
             return null;
         }
-        let op = sc.readUintNumber(32);
+        let op = sc.loadUint(32);
         if (op === 0) {
             return null;
         }

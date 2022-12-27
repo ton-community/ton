@@ -1,5 +1,7 @@
-import { Cell, ConfigStore, ContractSource } from "../..";
+import { beginCell, Cell } from "ton-core";
 import { Maybe } from "../../types";
+import { ConfigStore } from "../../utils/ConfigStore";
+import { ContractSource } from "./ContractSource";
 
 export class WalletV4Source implements ContractSource {
 
@@ -13,11 +15,12 @@ export class WalletV4Source implements ContractSource {
         // Build initial code and data
         const walletId = opts.walletId ? opts.walletId : 698983191;
         let initialCode = Cell.fromBoc(WalletV4Source.SOURCE)[0];
-        let initialData = new Cell();
-        initialData.bits.writeUint(0, 32);
-        initialData.bits.writeUint(walletId, 32);
-        initialData.bits.writeBuffer(opts.publicKey);
-        initialData.bits.writeBit(0);
+        let initialData = beginCell()
+            .storeUint(0, 32)
+            .storeUint(walletId, 32)
+            .storeBuffer(opts.publicKey)
+            .storeBit(0)
+            .endCell();
 
         return new WalletV4Source({ initialCode, initialData, workchain: opts.workchain, walletId, publicKey: opts.publicKey });
     }

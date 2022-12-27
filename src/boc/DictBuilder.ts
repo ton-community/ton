@@ -1,6 +1,5 @@
 import BN from "bn.js";
-import { beginCell } from "./Builder";
-import { Cell } from "./Cell";
+import { beginCell, Cell } from 'ton-core';
 import { serializeDict } from "./dict/serializeDict";
 
 export class DictBuilder {

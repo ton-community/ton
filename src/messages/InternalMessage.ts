@@ -1,7 +1,5 @@
-import BN from "bn.js";
+import { Address, Builder } from "ton-core";
 import { CommonMessageInfo } from "..";
-import { Address } from "../address/Address";
-import { Cell } from "../boc/Cell";
 import { Maybe } from "../types";
 import { Message } from "./Message";
 
@@ -9,23 +7,23 @@ export class InternalMessage implements Message {
 
     readonly from: Address | null;
     readonly to: Address;
-    readonly value: BN;
+    readonly value: bigint;
     readonly ihrDisabled: boolean;
     readonly bounce: boolean;
     readonly bounced: boolean;
-    readonly ihrFees: BN;
-    readonly fwdFees: BN;
-    readonly createdAt: BN;
-    readonly createdLt: BN;
+    readonly ihrFees: bigint;
+    readonly fwdFees: bigint;
+    readonly createdAt: bigint;
+    readonly createdLt: bigint;
     readonly body: CommonMessageInfo;
 
     constructor(opts: {
         to: Address,
-        value: number | BN,
+        value: number | bigint,
         bounce: boolean,
-        ihrFees?: Maybe<number | BN>,
-        fwdFees?: Maybe<number | BN>,
-        createdLt?: Maybe<number | BN>,
+        ihrFees?: Maybe<number | bigint>,
+        fwdFees?: Maybe<number | bigint>,
+        createdLt?: Maybe<number | bigint>,
         createdAt?: Maybe<number>,
         ihrDisabled?: Maybe<boolean>,
         bounced?: Maybe<boolean>,
@@ -33,7 +31,7 @@ export class InternalMessage implements Message {
         body: CommonMessageInfo
     }) {
         this.to = opts.to;
-        this.value = new BN(opts.value);
+        this.value = BigInt(opts.value);
         this.bounce = opts.bounce;
         this.body = opts.body;
         if (opts.from) {
@@ -52,40 +50,40 @@ export class InternalMessage implements Message {
             this.bounced = false;
         }
         if (opts.ihrFees !== null && opts.ihrFees !== undefined) {
-            this.ihrFees = new BN(opts.ihrFees);
+            this.ihrFees = BigInt(opts.ihrFees);
         } else {
-            this.ihrFees = new BN(0);
+            this.ihrFees = BigInt(0);
         }
         if (opts.fwdFees !== null && opts.fwdFees !== undefined) {
-            this.fwdFees = new BN(opts.fwdFees);
+            this.fwdFees = BigInt(opts.fwdFees);
         } else {
-            this.fwdFees = new BN(0);
+            this.fwdFees = BigInt(0);
         }
         if (opts.createdAt !== null && opts.createdAt !== undefined) {
-            this.createdAt = new BN(opts.createdAt);
+            this.createdAt = BigInt(opts.createdAt);
         } else {
-            this.createdAt = new BN(0);
+            this.createdAt = BigInt(0);
         }
         if (opts.createdLt !== null && opts.createdLt !== undefined) {
-            this.createdLt = new BN(opts.createdLt);
+            this.createdLt = BigInt(opts.createdLt);
         } else {
-            this.createdLt = new BN(0);
+            this.createdLt = BigInt(0);
         }
     }
 
-    writeTo(cell: Cell) {
-        cell.bits.writeBit(0); // Message id
-        cell.bits.writeBit(this.ihrDisabled);
-        cell.bits.writeBit(this.bounce);
-        cell.bits.writeBit(this.bounced);
-        cell.bits.writeAddress(this.from);
-        cell.bits.writeAddress(this.to);
-        cell.bits.writeCoins(this.value);
-        cell.bits.writeBit(false); // Currency collection (not supported)
-        cell.bits.writeCoins(this.ihrFees);
-        cell.bits.writeCoins(this.fwdFees);
-        cell.bits.writeUint(this.createdLt, 64);
-        cell.bits.writeUint(this.createdAt, 32);
-        this.body.writeTo(cell);
+    writeTo(builder: Builder) {
+        builder.storeBit(0); // Message id
+        builder.storeBit(this.ihrDisabled);
+        builder.storeBit(this.bounce);
+        builder.storeBit(this.bounced);
+        builder.storeAddress(this.from);
+        builder.storeAddress(this.to);
+        builder.storeCoins(this.value);
+        builder.storeBit(false); // Currency collection (not supported)
+        builder.storeCoins(this.ihrFees);
+        builder.storeCoins(this.fwdFees);
+        builder.storeUint(this.createdLt, 64);
+        builder.storeUint(this.createdAt, 32);
+        this.body.writeTo(builder);
     }
 }

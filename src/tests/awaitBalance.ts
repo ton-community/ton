@@ -4,6 +4,9 @@ import { delay } from "../utils/time";
 
 const TIMEOUT = 30000;
 
+/**
+ * @deprecated
+ */
 export async function awaitBalance(client: TonClient, address: Address, value: BN) {
     let start = Date.now();
     while (Date.now() - start < TIMEOUT) {

@@ -1,6 +1,4 @@
-import BN from "bn.js";
-import { Address, Cell, Slice } from "..";
-import { AddressExternal } from "../address/AddressExternal";
+import { Address, Cell, ExternalAddress, Slice } from "ton-core";
 import { parseDict } from "../boc/dict/parseDict";
 
 
@@ -11,7 +9,7 @@ import { parseDict } from "../boc/dict/parseDict";
 // acc_state_nonexist$11 = AccountStatus;
 export type RawAccountStatus = 'uninitialized' | 'frozen' | 'active' | 'non-existing';
 export function parseAccountStatus(slice: Slice): RawAccountStatus {
-    const status = slice.readUintNumber(2);
+    const status = slice.loadUint(2);
     if (status === 0x00) {
         return 'uninitialized';
     }
@@ -32,16 +30,16 @@ export function parseAccountStatus(slice: Slice): RawAccountStatus {
 //  = ExtraCurrencyCollection;
 //  currencies$_ grams:Grams other:ExtraCurrencyCollection 
 //            = CurrencyCollection;
-export type RawCurrencyCollection = { extraCurrencies: Map<number, number> | null, coins: BN };
+export type RawCurrencyCollection = { extraCurrencies: Map<number, bigint> | null, coins: bigint };
 export function parseCurrencyCollection(slice: Slice): RawCurrencyCollection {
-    const coins = slice.readCoins();
+    const coins = slice.loadCoins();
 
     // Read extra currencies
-    let extraCurrencies: Map<number, number> | null = null;
-    if (slice.readBit()) {
-        let dc = slice.readCell();
+    let extraCurrencies: Map<number, bigint> | null = null;
+    if (slice.loadBit()) {
+        let dc = slice.loadRef();
         if (!dc.isExotic) {
-            let pd = parseDict(dc.beginParse(), 32, (s) => s.readVarUIntNumber(5));
+            let pd = parseDict(dc, 32, (s) => s.loadVarIntBig(5));
             extraCurrencies = new Map();
             for (let e of pd) {
                 extraCurrencies.set(parseInt(e[0], 10), e[1]);
@@ -74,41 +72,41 @@ export type InternalCommonMessageInfo = {
     src: Address,
     dest: Address,
     value: RawCurrencyCollection,
-    ihrFee: BN,
-    fwdFee: BN,
-    createdLt: BN,
+    ihrFee: bigint,
+    fwdFee: bigint,
+    createdLt: bigint,
     createdAt: number
 };
 
 export type ExternalOutCommonMessageInfo = {
     type: 'external-out',
     src: Address,
-    dest: AddressExternal | null,
-    createdLt: BN,
+    dest: ExternalAddress | null,
+    createdLt: bigint,
     createdAt: number
 };
 
 export type ExternalInCommonMessageInfo = {
     type: 'external-in',
-    src: AddressExternal | null,
+    src: ExternalAddress | null,
     dest: Address,
-    importFee: BN 
+    importFee: bigint
 };
 
 export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
 
-    if (!slice.readBit()) {
+    if (!slice.loadBit()) {
         // Internal
-        let ihrDisabled = slice.readBit();
-        let bounce = slice.readBit();
-        let bounced = slice.readBit();
-        let src = slice.readAddressInternal();
-        let dest = slice.readAddressInternal();
+        let ihrDisabled = slice.loadBit();
+        let bounce = slice.loadBit();
+        let bounced = slice.loadBit();
+        let src = slice.loadAddress();
+        let dest = slice.loadAddress();
         let value = parseCurrencyCollection(slice);
-        let ihrFee = slice.readCoins();
-        let fwdFee = slice.readCoins();
-        let createdLt = slice.readUint(64);
-        let createdAt = slice.readUintNumber(32);
+        let ihrFee = slice.loadCoins();
+        let fwdFee = slice.loadCoins();
+        let createdLt = slice.loadUintBig(64);
+        let createdAt = slice.loadUint(32);
         return {
             type: 'internal',
             ihrDisabled,
@@ -122,12 +120,12 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
             createdLt,
             createdAt
         }
-    } else if (slice.readBit()) {
+    } else if (slice.loadBit()) {
         // Outgoing external
-        let src = slice.readAddressInternal();
-        let dest = slice.readAddressExternal();
-        let createdLt = slice.readUint(64);
-        let createdAt = slice.readUintNumber(32);
+        let src = slice.loadAddress();
+        let dest = slice.loadMaybeExternalAddress();
+        let createdLt = slice.loadUintBig(64);
+        let createdAt = slice.loadUint(32);
         return {
             type: 'external-out',
             src,
@@ -137,9 +135,9 @@ export function parseCommonMsgInfo(slice: Slice): RawCommonMessageInfo {
         }
     } else {
         // Incoming external
-        let src = slice.readAddressExternal();
-        let dest = slice.readAddressInternal();
-        let importFee = slice.readCoins()
+        let src = slice.loadMaybeExternalAddress();
+        let dest = slice.loadAddress();
+        let importFee = slice.loadCoins()
         return {
             type: 'external-in',
             src,
@@ -168,33 +166,33 @@ export type InternalCommonMessageInfoRelaxed = {
     src: Address | null,
     dest: Address,
     value: RawCurrencyCollection,
-    ihrFee: BN,
-    fwdFee: BN,
-    createdLt: BN,
+    ihrFee: bigint,
+    fwdFee: bigint,
+    createdLt: bigint,
     createdAt: number
 };
 
 export type ExternalOutCommonMessageInfoRelaxed = {
     type: 'external-out',
     src: Address | null,
-    dest: AddressExternal | null,
-    createdLt: BN,
+    dest: ExternalAddress | null,
+    createdLt: bigint,
     createdAt: number
 };
 
 export function parseCommonMsgInfoRelaxed(slice: Slice): RawCommonMessageInfoRelaxed {
-    if (!slice.readBit()) {
+    if (!slice.loadBit()) {
         // Internal
-        let ihrDisabled = slice.readBit();
-        let bounce = slice.readBit();
-        let bounced = slice.readBit();
-        let src = slice.readAddress();
-        let dest = slice.readAddressInternal();
+        let ihrDisabled = slice.loadBit();
+        let bounce = slice.loadBit();
+        let bounced = slice.loadBit();
+        let src = slice.loadMaybeAddress();
+        let dest = slice.loadAddress();
         let value = parseCurrencyCollection(slice);
-        let ihrFee = slice.readCoins();
-        let fwdFee = slice.readCoins();
-        let createdLt = slice.readUint(64);
-        let createdAt = slice.readUintNumber(32);
+        let ihrFee = slice.loadCoins();
+        let fwdFee = slice.loadCoins();
+        let createdLt = slice.loadUintBig(64);
+        let createdAt = slice.loadUint(32);
         return {
             type: 'internal',
             ihrDisabled,
@@ -208,12 +206,12 @@ export function parseCommonMsgInfoRelaxed(slice: Slice): RawCommonMessageInfoRel
             createdLt,
             createdAt
         }
-    } else if (slice.readBit()) {
+    } else if (slice.loadBit()) {
         // Outgoing external
-        let src = slice.readAddress();
-        let dest = slice.readAddressExternal();
-        let createdLt = slice.readUint(64);
-        let createdAt = slice.readUintNumber(32);
+        let src = slice.loadAddress();
+        let dest = slice.loadMaybeExternalAddress();
+        let createdLt = slice.loadUintBig(64);
+        let createdAt = slice.loadUint(32);
         return {
             type: 'external-out',
             src,
@@ -230,8 +228,8 @@ export function parseCommonMsgInfoRelaxed(slice: Slice): RawCommonMessageInfoRel
 export type RawTickTock = { tick: boolean, tock: boolean };
 export function parseRawTickTock(slice: Slice): RawTickTock {
     return {
-        tick: slice.readBit(),
-        tock: slice.readBit()
+        tick: slice.loadBit(),
+        tock: slice.loadBit()
     };
 }
 
@@ -241,18 +239,18 @@ export function parseRawTickTock(slice: Slice): RawTickTock {
 //  library:(HashmapE 256 SimpleLib) = StateInit;
 export type RawStateInit = { splitDepth: number | null, code: Cell | null, data: Cell | null, special: RawTickTock | null, raw: Cell };
 export function parseStateInit(slice: Slice): RawStateInit {
-    let raw = slice.toCell();
+    let raw = slice.asCell();
     let splitDepth: number | null = null;
-    if (slice.readBit()) {
-        splitDepth = slice.readUintNumber(5);
+    if (slice.loadBit()) {
+        splitDepth = slice.loadUint(5);
     }
-    const special = slice.readBit() ? parseRawTickTock(slice) : null;
-    const hasCode = slice.readBit();
-    const code = hasCode ? slice.readCell() : null;
-    const hasData = slice.readBit();
-    const data = hasData ? slice.readCell() : null;
-    if (slice.readBit()) {
-        slice.readCell(); // Skip libraries for now
+    const special = slice.loadBit() ? parseRawTickTock(slice) : null;
+    const hasCode = slice.loadBit();
+    const code = hasCode ? slice.loadRef() : null;
+    const hasData = slice.loadBit();
+    const data = hasData ? slice.loadRef() : null;
+    if (slice.loadBit()) {
+        slice.loadRef(); // Skip libraries for now
     }
 
     return { splitDepth, data, code, special, raw };
@@ -269,18 +267,18 @@ export type RawMessage = {
     body: Cell
 };
 export function parseMessage(slice: Slice): RawMessage {
-    const raw = slice.toCell();
+    const raw = slice.asCell();
     const info = parseCommonMsgInfo(slice);
-    const hasInit = slice.readBit();
+    const hasInit = slice.loadBit();
     let init: RawStateInit | null = null;
     if (hasInit) {
-        if (!slice.readBit()) {
+        if (!slice.loadBit()) {
             init = parseStateInit(slice);
         } else {
-            init = parseStateInit(slice.readRef());
+            init = parseStateInit(slice.loadRef().beginParse());
         }
     }
-    const body = slice.readBit() ? slice.readRef().toCell() : slice.toCell();
+    const body = slice.loadBit() ? slice.loadRef() : slice.asCell();
 
     return {
         info,
@@ -302,18 +300,18 @@ export type RawMessageRelaxed = {
     body: Cell
 };
 export function parseMessageRelaxed(slice: Slice): RawMessageRelaxed {
-    const raw = slice.toCell();
+    const raw = slice.asCell();
     const info = parseCommonMsgInfoRelaxed(slice);
-    const hasInit = slice.readBit();
+    const hasInit = slice.loadBit();
     let init: RawStateInit | null = null;
     if (hasInit) {
-        if (!slice.readBit()) {
+        if (!slice.loadBit()) {
             init = parseStateInit(slice);
         } else {
-            init = parseStateInit(slice.readRef());
+            init = parseStateInit(slice.loadRef().beginParse());
         }
     }
-    const body = slice.readBit() ? slice.readRef().toCell() : slice.toCell();
+    const body = slice.loadBit() ? slice.loadRef() : slice.asCell();
     return {
         info,
         init,
@@ -328,11 +326,11 @@ export function parseMessageRelaxed(slice: Slice): RawMessageRelaxed {
 //  = HASH_UPDATE X;
 export type RawHashUpdate = { oldHash: Buffer, newHash: Buffer };
 export function parseHashUpdate(slice: Slice): RawHashUpdate {
-    if (slice.readUintNumber(8) !== 0x72) {
+    if (slice.loadUint(8) !== 0x72) {
         throw Error('Invalid data');
     }
-    const oldHash = slice.readBuffer(32);
-    const newHash = slice.readBuffer(32);
+    const oldHash = slice.loadBuffer(32);
+    const newHash = slice.loadBuffer(32);
     return { oldHash, newHash };
 }
 
@@ -341,10 +339,10 @@ export function parseHashUpdate(slice: Slice): RawHashUpdate {
 // acst_deleted$11 = AccStatusChange;   // frozen -> deleted
 export type RawAccountStatusChange = 'unchanged' | 'frozen' | 'deleted';
 export function parseAccountChange(slice: Slice): RawAccountStatusChange {
-    if (!slice.readBit()) {
+    if (!slice.loadBit()) {
         return 'unchanged';
     }
-    if (slice.readBit()) {
+    if (slice.loadBit()) {
         return 'frozen';
     } else {
         return 'deleted';
@@ -356,8 +354,8 @@ export function parseAccountChange(slice: Slice): RawAccountStatusChange {
 export type RawStorageUsedShort = { cells: number, bits: number };
 export function parseStorageUsedShort(slice: Slice): RawStorageUsedShort {
     return {
-        cells: slice.readVarUIntNumber(3),
-        bits: slice.readVarUIntNumber(3)
+        cells: slice.loadVarUint(3),
+        bits: slice.loadVarUint(3)
     }
 }
 
@@ -365,12 +363,12 @@ export function parseStorageUsedShort(slice: Slice): RawStorageUsedShort {
 //   storage_fees_due:(Maybe Grams)
 //   status_change:AccStatusChange
 //   = TrStoragePhase;
-export type RawStoragePhase = { storageFeesCollected: BN, storageFeesDue: BN | null, statusChange: RawAccountStatusChange };
+export type RawStoragePhase = { storageFeesCollected: bigint, storageFeesDue: bigint | null, statusChange: RawAccountStatusChange };
 export function parseStoragePhase(slice: Slice): RawStoragePhase {
-    const storageFeesCollected = slice.readCoins();
-    let storageFeesDue: BN | null = null;
-    if (slice.readBit()) {
-        storageFeesDue = slice.readCoins();
+    const storageFeesCollected = slice.loadCoins();
+    let storageFeesDue: bigint | null = null;
+    if (slice.loadBit()) {
+        storageFeesDue = slice.loadCoins();
     }
     const statusChange = parseAccountChange(slice);
     return {
@@ -382,9 +380,9 @@ export function parseStoragePhase(slice: Slice): RawStoragePhase {
 
 // tr_phase_credit$_ due_fees_collected:(Maybe Grams)
 //   credit:CurrencyCollection = TrCreditPhase;
-export type RawCreditPhase = { dueFeesColelcted: BN | null, credit: RawCurrencyCollection };
+export type RawCreditPhase = { dueFeesColelcted: bigint | null, credit: RawCurrencyCollection };
 export function parseCreditPhase(slice: Slice): RawCreditPhase {
-    let dueFeesColelcted = slice.readBit() ? slice.readCoins() : null;
+    let dueFeesColelcted = slice.loadBit() ? slice.loadCoins() : null;
     const credit = parseCurrencyCollection(slice);
     return {
         dueFeesColelcted,
@@ -419,10 +417,10 @@ export type ComputedComputePhase = {
     success: boolean,
     messageStateUsed: boolean,
     accountActivated: boolean,
-    gasFees: BN,
-    gasUsed: BN,
-    gasLimit: BN,
-    gasCredit: BN | null,
+    gasFees: bigint,
+    gasUsed: bigint,
+    gasLimit: bigint,
+    gasCredit: bigint | null,
     mode: number,
     exitCode: number,
     exitArg: number | null,
@@ -432,8 +430,8 @@ export type ComputedComputePhase = {
 };
 
 export function parseComputePhase(slice: Slice): RawComputePhase {
-    if (!slice.readBit()) {
-        const skipReason = slice.readUintNumber(2);
+    if (!slice.loadBit()) {
+        const skipReason = slice.loadUint(2);
         if (skipReason === 0x00) {
             return {
                 type: 'skipped',
@@ -454,21 +452,21 @@ export function parseComputePhase(slice: Slice): RawComputePhase {
         }
     }
 
-    const success = slice.readBit();
-    const messageStateUsed = slice.readBit();
-    const accountActivated = slice.readBit();
-    let gasFees = slice.readCoins();
+    const success = slice.loadBit();
+    const messageStateUsed = slice.loadBit();
+    const accountActivated = slice.loadBit();
+    let gasFees = slice.loadCoins();
 
-    const vmState = slice.readRef();
-    let gasUsed = vmState.readVarUInt(3);
-    let gasLimit = vmState.readVarUInt(3);
-    let gasCredit = vmState.readBit() ? vmState.readVarUInt(2) : null;
-    let mode = vmState.readUintNumber(8);
-    let exitCode = vmState.readUintNumber(32);
-    let exitArg = vmState.readBit() ? vmState.readUintNumber(32) : null; // TODO: change to int
-    let vmSteps = vmState.readUintNumber(32);
-    let vmInitStateHash = vmState.readBuffer(32);
-    let vmFinalStateHash = vmState.readBuffer(32);
+    const vmState = slice.loadRef().beginParse();
+    let gasUsed = vmState.loadVarUintBig(3);
+    let gasLimit = vmState.loadVarUintBig(3);
+    let gasCredit = vmState.loadBit() ? vmState.loadVarUintBig(2) : null;
+    let mode = vmState.loadUint(8);
+    let exitCode = vmState.loadUint(32);
+    let exitArg = vmState.loadBit() ? vmState.loadUint(32) : null; // TODO: change to int
+    let vmSteps = vmState.loadUint(32);
+    let vmInitStateHash = vmState.loadBuffer(32);
+    let vmFinalStateHash = vmState.loadBuffer(32);
 
     return {
         type: 'computed',
@@ -501,8 +499,8 @@ export type RawActionPhase = {
     valid: boolean,
     noFunds: boolean,
     statusChange: RawAccountStatusChange,
-    totalFwdFees: BN | null,
-    totalActionFees: BN | null,
+    totalFwdFees: bigint | null,
+    totalActionFees: bigint | null,
     resultCode: number,
     resultArg: number | null,
     totalActions: number,
@@ -513,19 +511,19 @@ export type RawActionPhase = {
     totalMessageSizes: RawStorageUsedShort
 };
 export function parseActionPhase(slice: Slice): RawActionPhase {
-    const success = slice.readBit();
-    const valid = slice.readBit();
-    const noFunds = slice.readBit();
+    const success = slice.loadBit();
+    const valid = slice.loadBit();
+    const noFunds = slice.loadBit();
     const statusChange = parseAccountChange(slice);
-    const totalFwdFees = slice.readBit() ? slice.readCoins() : null;
-    const totalActionFees = slice.readBit() ? slice.readCoins() : null;
-    const resultCode = slice.readUintNumber(32); // TODO: Change to int32
-    const resultArg = slice.readBit() ? slice.readUintNumber(32) : null; // TODO: Change to int32
-    const totalActions = slice.readUintNumber(16);
-    const specialActions = slice.readUintNumber(16);
-    const skippedActions = slice.readUintNumber(16);
-    const messagesCreated = slice.readUintNumber(16);
-    const actionListHash = slice.readBuffer(32);
+    const totalFwdFees = slice.loadBit() ? slice.loadCoins() : null;
+    const totalActionFees = slice.loadBit() ? slice.loadCoins() : null;
+    const resultCode = slice.loadUint(32); // TODO: Change to int32
+    const resultArg = slice.loadBit() ? slice.loadUint(32) : null; // TODO: Change to int32
+    const totalActions = slice.loadUint(16);
+    const specialActions = slice.loadUint(16);
+    const skippedActions = slice.loadUint(16);
+    const messagesCreated = slice.loadUint(16);
+    const actionListHash = slice.loadBuffer(32);
     const totalMessageSizes = parseStorageUsedShort(slice);
 
     return {
@@ -554,17 +552,17 @@ export type RawBouncePhase =
     | NoFundsBouncePhase
     | NegativeFundsBouncePhase;
 
-export type OkBouncePhase = { type: 'ok', msgSize: RawStorageUsedShort, msgFees: BN, fwdFees: BN };
-export type NoFundsBouncePhase = { type: 'no-funds', msgSize: RawStorageUsedShort, fwdFees: BN };
+export type OkBouncePhase = { type: 'ok', msgSize: RawStorageUsedShort, msgFees: bigint, fwdFees: bigint };
+export type NoFundsBouncePhase = { type: 'no-funds', msgSize: RawStorageUsedShort, fwdFees: bigint };
 export type NegativeFundsBouncePhase = { type: 'negative-funds' };
 
 export function parseBouncePhase(slice: Slice): RawBouncePhase {
 
     // Is OK
-    if (slice.readBit()) {
+    if (slice.loadBit()) {
         const msgSize = parseStorageUsedShort(slice);
-        const msgFees = slice.readCoins();
-        const fwdFees = slice.readCoins();
+        const msgFees = slice.loadCoins();
+        const fwdFees = slice.loadCoins();
         return {
             type: 'ok',
             msgSize,
@@ -574,9 +572,9 @@ export function parseBouncePhase(slice: Slice): RawBouncePhase {
     }
 
     // No funds
-    if (slice.readBit()) {
+    if (slice.loadBit()) {
         const msgSize = parseStorageUsedShort(slice);
-        const fwdFees = slice.readCoins();
+        const fwdFees = slice.loadCoins();
         return {
             type: 'no-funds',
             msgSize,
@@ -631,25 +629,25 @@ export function parseBouncePhase(slice: Slice): RawBouncePhase {
 //   aborted:Bool destroyed:Bool
 //   = TransactionDescr;
 export type RawTransactionDescription =
-  | GenericTransactionDescription
-  | StorageTransactionDescription
-  | TickTockTransactionDescription
+    | GenericTransactionDescription
+    | StorageTransactionDescription
+    | TickTockTransactionDescription
 
 export type GenericTransactionDescription = {
-  type: "generic";
-  creditFirst: boolean;
-  storagePhase: RawStoragePhase | null;
-  creditPhase: RawCreditPhase | null;
-  computePhase: RawComputePhase;
-  actionPhase: RawActionPhase | null;
-  bouncePhase: RawBouncePhase | null;
-  aborted: boolean;
-  destroyed: boolean;
+    type: "generic";
+    creditFirst: boolean;
+    storagePhase: RawStoragePhase | null;
+    creditPhase: RawCreditPhase | null;
+    computePhase: RawComputePhase;
+    actionPhase: RawActionPhase | null;
+    bouncePhase: RawBouncePhase | null;
+    aborted: boolean;
+    destroyed: boolean;
 };
 
 export type StorageTransactionDescription = {
-  type: "storage";
-  storagePhase: RawStoragePhase;
+    type: "storage";
+    storagePhase: RawStoragePhase;
 };
 
 export type TickTockTransactionDescription = {
@@ -663,28 +661,28 @@ export type TickTockTransactionDescription = {
 }
 
 export function parseTransactionDescription(slice: Slice): RawTransactionDescription {
-    const type = slice.readUintNumber(4);
+    const type = slice.loadUint(4);
     if (type === 0x00) {
-        const creditFirst = slice.readBit();
+        const creditFirst = slice.loadBit();
         let storagePhase: RawStoragePhase | null = null;
         let creditPhase: RawCreditPhase | null = null;
-        if (slice.readBit()) {
+        if (slice.loadBit()) {
             storagePhase = parseStoragePhase(slice);
         }
-        if (slice.readBit()) {
+        if (slice.loadBit()) {
             creditPhase = parseCreditPhase(slice);
         }
         let computePhase: RawComputePhase = parseComputePhase(slice);
         let actionPhase: RawActionPhase | null = null;
-        if (slice.readBit()) {
-            actionPhase = parseActionPhase(slice.readRef());
+        if (slice.loadBit()) {
+            actionPhase = parseActionPhase(slice.loadRef().beginParse());
         }
-        let aborted = slice.readBit();
+        let aborted = slice.loadBit();
         let bouncePhase: RawBouncePhase | null = null;
-        if (slice.readBit()) {
+        if (slice.loadBit()) {
             bouncePhase = parseBouncePhase(slice);
         }
-        const destroyed = slice.readBit();
+        const destroyed = slice.loadBit();
         return {
             type: 'generic',
             creditFirst,
@@ -709,11 +707,11 @@ export function parseTransactionDescription(slice: Slice): RawTransactionDescrip
         let storagePhase: RawStoragePhase = parseStoragePhase(slice);
         let computePhase: RawComputePhase = parseComputePhase(slice);
         let actionPhase: RawActionPhase | null = null;
-        if (slice.readBit()) {
-            actionPhase = parseActionPhase(slice.readRef());
+        if (slice.loadBit()) {
+            actionPhase = parseActionPhase(slice.loadRef().beginParse());
         }
-        const aborted = slice.readBit();
-        const destroyed = slice.readBit();
+        const aborted = slice.loadBit();
+        const destroyed = slice.loadBit();
         return {
             type: 'tick-tock',
             isTock,
@@ -737,9 +735,9 @@ export function parseTransactionDescription(slice: Slice): RawTransactionDescrip
 //  description:^TransactionDescr = Transaction;
 export type RawTransaction = {
     address: Address,
-    lt: BN,
+    lt: bigint,
     prevTransaction: {
-        lt: BN,
+        lt: bigint,
         hash: Buffer
     }
     time: number,
@@ -753,42 +751,42 @@ export type RawTransaction = {
     outMessages: RawMessage[]
 };
 export function parseTransaction(workchain: number, slice: Slice): RawTransaction {
-    if (slice.readUintNumber(4) !== 0x07) {
+    if (slice.loadUint(4) !== 0x07) {
         throw Error('Invalid data');
     }
 
     // Read address
-    const addressHash = slice.readBuffer(32);
+    const addressHash = slice.loadBuffer(32);
     const address = new Address(workchain, addressHash);
 
     // Read lt
-    const lt = slice.readUint(64);
+    const lt = slice.loadUintBig(64);
 
     // Read prevTrans
-    const prevTransHash = slice.readBuffer(32);
-    const prevTransLt = slice.readUint(64);
+    const prevTransHash = slice.loadBuffer(32);
+    const prevTransLt = slice.loadUintBig(64);
 
     // Read time
-    const time = slice.readUintNumber(32);
+    const time = slice.loadUint(32);
 
     // Output messages
-    const outMessagesCount = slice.readUintNumber(15);
+    const outMessagesCount = slice.loadUint(15);
 
     // Status
     const oldStatus = parseAccountStatus(slice);
     const newStatus = parseAccountStatus(slice);
 
     // Messages ref
-    const messages = slice.readRef();
-    let hasInMessage = messages.readBit();
-    let hasOutMessages = messages.readBit();
+    const messages = slice.loadRef().beginParse();
+    let hasInMessage = messages.loadBit();
+    let hasOutMessages = messages.loadBit();
     let inMessage: RawMessage | null = null;
     if (hasInMessage) {
-        inMessage = parseMessage(messages.readRef());
+        inMessage = parseMessage(messages.loadRef().beginParse());
     }
     let outMessages: RawMessage[] = [];
     if (hasOutMessages) {
-        let dict = messages.readDict(15, (slice) => parseMessage(slice.readRef()));
+        let dict = parseDict(messages.loadRef(), 15, (slice) => parseMessage(slice.loadRef().beginParse()));
         for (let msg of Array.from(dict.values())) {
             outMessages.push(msg);
         }
@@ -798,10 +796,10 @@ export function parseTransaction(workchain: number, slice: Slice): RawTransactio
     let fees = parseCurrencyCollection(slice);
 
     // Hash update
-    let update = parseHashUpdate(slice.readRef());
+    let update = parseHashUpdate(slice.loadRef().beginParse());
 
     // Description
-    let description = parseTransactionDescription(slice.readRef());
+    let description = parseTransactionDescription(slice.loadRef().beginParse());
 
     return {
         address,
@@ -838,9 +836,9 @@ export type RawStorageUsed = {
 };
 export function parseStorageUsed(cs: Slice): RawStorageUsed {
     return {
-        cells: cs.readVarUIntNumber(3),
-        bits: cs.readVarUIntNumber(3),
-        publicCells: cs.readVarUIntNumber(3),
+        cells: cs.loadVarUint(3),
+        bits: cs.loadVarUint(3),
+        publicCells: cs.loadVarUint(3),
     }
 }
 
@@ -850,13 +848,13 @@ export function parseStorageUsed(cs: Slice): RawStorageUsed {
 export type RawStorageInfo = {
     used: RawStorageUsed,
     lastPaid: number,
-    duePayment: BN | null
+    duePayment: bigint | null
 };
 export function parseStorageInfo(cs: Slice): RawStorageInfo {
     return {
         used: parseStorageUsed(cs),
-        lastPaid: cs.readUintNumber(32),
-        duePayment: cs.readBit() ? cs.readCoins() : null
+        lastPaid: cs.loadUint(32),
+        duePayment: cs.loadBit() ? cs.loadCoins() : null
     };
 }
 
@@ -874,10 +872,10 @@ export type ActiveAccountState = { type: 'active', state: RawStateInit };
 export type FrozenAccountState = { type: 'frozen', stateHash: Buffer };
 
 export function parseAccountState(cs: Slice): RawAccountState {
-    if (cs.readBit()) {
+    if (cs.loadBit()) {
         return { type: 'active', state: parseStateInit(cs) };
-    } else if (cs.readBit()) {
-        return { type: 'frozen', stateHash: cs.readBuffer(32) };
+    } else if (cs.loadBit()) {
+        return { type: 'frozen', stateHash: cs.loadBuffer(32) };
     } else {
         return { type: 'uninit' };
     }
@@ -887,12 +885,12 @@ export function parseAccountState(cs: Slice): RawAccountState {
 // account_storage$_ last_trans_lt:uint64 balance:CurrencyCollection state:AccountState 
 //   = AccountStorage;
 export type RawAccountStorage = {
-    lastTransLt: BN,
+    lastTransLt: bigint,
     balance: RawCurrencyCollection
     state: RawAccountState
 }
 export function parseAccountStorage(cs: Slice): RawAccountStorage {
-    return { lastTransLt: cs.readUint(64), balance: parseCurrencyCollection(cs), state: parseAccountState(cs) };
+    return { lastTransLt: cs.loadUintBig(64), balance: parseCurrencyCollection(cs), state: parseAccountState(cs) };
 }
 
 // Source: https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/block/block.tlb#L231
@@ -905,9 +903,9 @@ export type RawAccount = {
     storage: RawAccountStorage
 }
 export function parseAccount(cs: Slice) {
-    if (cs.readBit()) {
+    if (cs.loadBit()) {
         return {
-            address: cs.readAddressInternal(),
+            address: cs.loadAddress(),
             storageStat: parseStorageInfo(cs),
             storage: parseAccountStorage(cs)
         }
@@ -922,15 +920,15 @@ export function parseAccount(cs: Slice) {
 export type RawShardIdent = {
     shardPrefixBits: number,
     workchainId: number,
-    shardPrefix: BN
+    shardPrefix: bigint
 }
 export function parseShardIdent(cs: Slice) {
-    if (cs.readUintNumber(2) !== 0) {
+    if (cs.loadUint(2) !== 0) {
         throw Error('Invalid data')
     }
-    let shardPrefixBits = cs.readUintNumber(6);
-    let workchainId = cs.readIntNumber(32);
-    let shardPrefix = cs.readUint(64);
+    let shardPrefixBits = cs.loadUint(6);
+    let workchainId = cs.loadInt(32);
+    let shardPrefix = cs.loadIntBig(64);
     return {
         shardPrefixBits,
         workchainId,
@@ -944,18 +942,18 @@ export function parseShardIdent(cs: Slice) {
 export type RawShardAccount = {
     address: Address | null;
     lastTransHash: Buffer;
-    lastTransLt: BN;
+    lastTransLt: bigint;
 };
 export function parseShardAccount(cs: Slice): RawShardAccount {
-    let accountCell = cs.readCell();
+    let accountCell = cs.loadRef();
     let address: Address | null = null;
     if (!accountCell.isExotic) {
-        address = accountCell.beginParse().readAddress();
+        address = accountCell.beginParse().loadAddress();
     }
     return {
         address,
-        lastTransHash: cs.readBuffer(32),
-        lastTransLt: cs.readUint(64)
+        lastTransHash: cs.loadBuffer(32),
+        lastTransLt: cs.loadUintBig(64)
     }
 }
 
@@ -967,7 +965,7 @@ export type RawDepthBalanceInfo = {
 }
 export function parseDepthBalanceInfo(cs: Slice): RawDepthBalanceInfo {
     return {
-        splitDepth: cs.readUintNumber(5),
+        splitDepth: cs.loadUint(5),
         balance: parseCurrencyCollection(cs)
     }
 }
@@ -979,10 +977,10 @@ export type RawShardAccountRef = {
     depthBalanceInfo: RawDepthBalanceInfo
 };
 export function parseShardAccounts(cs: Slice): Map<string, RawShardAccountRef> {
-    if (!cs.readBit()) {
+    if (!cs.loadBit()) {
         return new Map();
     }
-    return parseDict(cs.readRef(), 256, (cs2) => {
+    return parseDict(cs.loadRef(), 256, (cs2) => {
         let depthBalanceInfo = parseDepthBalanceInfo(cs2);
         let shardAccount = parseShardAccount(cs2);
         return {
@@ -1015,18 +1013,18 @@ export type RawMasterChainStateExtra = {
 export function parseMasterchainStateExtra(cs: Slice): RawMasterChainStateExtra {
 
     // Check magic
-    if (cs.readUintNumber(16) !== 0xcc26) {
+    if (cs.loadUint(16) !== 0xcc26) {
         throw Error('Invalid data');
     }
 
     // Skip shard_hashes
-    if (cs.readBit()) {
-        cs.readCell();
+    if (cs.loadBit()) {
+        cs.loadRef();
     }
 
     // Read config
-    let configAddress = new Address(-1, cs.readBuffer(32));
-    let config = cs.readCell();
+    let configAddress = new Address(-1, cs.loadBuffer(32));
+    let config = cs.loadRef();
 
     // Rad global balance
     const globalBalance = parseCurrencyCollection(cs);
@@ -1060,32 +1058,32 @@ export type RawShardStateUnsplit = {
     seqno: number,
     vertSeqNo: number,
     genUtime: number,
-    genLt: BN,
+    genLt: bigint,
     minRefSeqno: number,
     beforeSplit: boolean,
     accounts: Map<string, RawShardAccountRef>,
     extras: RawMasterChainStateExtra | null
 }
 export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
-    if (cs.readUintNumber(32) !== 0x9023afe2) {
+    if (cs.loadUint(32) !== 0x9023afe2) {
         throw Error('Invalid data');
     }
-    let globalId = cs.readIntNumber(32);
+    let globalId = cs.loadInt(32);
     let shardId = parseShardIdent(cs);
-    let seqno = cs.readUintNumber(32);
-    let vertSeqNo = cs.readUintNumber(32);
-    let genUtime = cs.readUintNumber(32);
-    let genLt = cs.readUint(64);
-    let minRefSeqno = cs.readUintNumber(32);
+    let seqno = cs.loadUint(32);
+    let vertSeqNo = cs.loadUint(32);
+    let genUtime = cs.loadUint(32);
+    let genLt = cs.loadUintBig(64);
+    let minRefSeqno = cs.loadUint(32);
 
     // Skip OutMsgQueueInfo: usually exotic
-    cs.readCell();
+    cs.loadRef();
 
-    let beforeSplit = cs.readBit();
+    let beforeSplit = cs.loadBit();
 
     // Parse accounts
     let accounts: Map<string, RawShardAccountRef>;
-    let accountsCell = cs.readCell();
+    let accountsCell = cs.loadRef();
     if (accountsCell.isExotic) {
         accounts = new Map();
     } else {
@@ -1093,13 +1091,13 @@ export function parseShardStateUnsplit(cs: Slice): RawShardStateUnsplit {
     }
 
     // Skip (not used by apps)
-    cs.readCell();
+    cs.loadRef();
 
     // Parse extras
-    let mcStateExtra = cs.readBit();
+    let mcStateExtra = cs.loadBit();
     let extras: RawMasterChainStateExtra | null = null;
     if (mcStateExtra) {
-        let cell = cs.readCell();
+        let cell = cs.loadRef();
         if (!cell.isExotic) {
             extras = parseMasterchainStateExtra(cell.beginParse());
         }

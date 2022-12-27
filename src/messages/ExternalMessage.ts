@@ -1,6 +1,5 @@
+import { Address, Builder } from "ton-core";
 import { CommonMessageInfo } from "..";
-import { Address } from "../address/Address";
-import { Cell } from "../boc/Cell";
 import { Message } from "./Message";
 
 export class ExternalMessage implements Message {
@@ -25,11 +24,11 @@ export class ExternalMessage implements Message {
         }
     }
 
-    writeTo(cell: Cell) {
-        cell.bits.writeUint(2, 2);
-        cell.bits.writeAddress(this.from);
-        cell.bits.writeAddress(this.to);
-        cell.bits.writeCoins(this.importFee);
-        this.body.writeTo(cell);
+    writeTo(builder: Builder) {
+        builder.storeUint(2, 2);
+        builder.storeAddress(this.from);
+        builder.storeAddress(this.to);
+        builder.storeCoins(this.importFee);
+        this.body.writeTo(builder);
     }
 }

@@ -1,5 +1,5 @@
+import { Cell } from "ton-core";
 import { sha256_sync, sign, signVerify } from "ton-crypto";
-import { Cell } from "../boc/Cell";
 
 const MIN_SEED_LENGTH = 8;
 const MAX_SEED_LENGTH = 64;

@@ -1,5 +1,4 @@
-import { BN } from "bn.js";
-import { fromNano, toNano } from "..";
+import { fromNano, toNano } from "./convert";
 
 const cases: { nano: string, real: string }[] = [
     { real: '1', nano: '1000000000' },
@@ -12,7 +11,7 @@ describe('convert', () => {
     it('should convert toNano', () => {
         for (let r of cases) {
             let c = toNano(r.real);
-            expect(c.eq(new BN(r.nano))).toBe(true);
+            expect(c).toBe(BigInt(r.nano));
         }
     });
     it('should convert fromNano', () => {

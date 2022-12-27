@@ -1,4 +1,4 @@
-import { Cell } from "../..";
+import { Cell } from "ton-core";
 import { ContractSource } from "./ContractSource";
 
 export class UnknownContractSource implements ContractSource {

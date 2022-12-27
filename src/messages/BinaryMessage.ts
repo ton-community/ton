@@ -1,4 +1,4 @@
-import { Cell } from "../boc/Cell";
+import { Builder } from "ton-core";
 import { Message } from "./Message";
 
 export class BinaryMessage implements Message {
@@ -9,7 +9,7 @@ export class BinaryMessage implements Message {
         this.payload = payload;
     }
 
-    writeTo(cell: Cell) {
-        cell.bits.writeBuffer(this.payload);
+    writeTo(builder: Builder) {
+        builder.storeBuffer(this.payload);
     }
 }

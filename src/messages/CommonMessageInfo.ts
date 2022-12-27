@@ -1,4 +1,4 @@
-import { Cell } from "../boc/Cell";
+import { beginCell, Builder } from "ton-core";
 import { Maybe } from "../types";
 import { Message } from "./Message";
 
@@ -20,39 +20,39 @@ export class CommonMessageInfo implements Message {
         }
     }
 
-    writeTo(cell: Cell) {
+    writeTo(builder: Builder) {
 
         // Write state
         if (this.stateInit) {
-            cell.bits.writeBit(1);
-            const stateInitCell = new Cell();
+            builder.storeBit(1);
+            const stateInitCell = beginCell();
             this.stateInit.writeTo(stateInitCell);
 
             //-1:  need at least one bit for body
-            if (cell.bits.available - 1 /* At least on byte for body */ >= stateInitCell.bits.cursor) {
-                cell.bits.writeBit(0);
-                cell.writeCell(stateInitCell);
+            if (builder.availableBits - 1 /* At least on byte for body */ >= stateInitCell.bits) {
+                builder.storeBit(0);
+                builder.storeBuilder(stateInitCell);
             } else {
-                cell.bits.writeBit(1);
-                cell.refs.push(stateInitCell);
+                builder.storeBit(1);
+                builder.storeRef(stateInitCell.endCell());
             }
         } else {
-            cell.bits.writeBit(0);
+            builder.storeBit(0);
         }
 
         // Write body
         if (this.body) {
-            const bodyCell = new Cell();
-            this.body.writeTo(bodyCell);
-            if (cell.bits.available >= bodyCell.bits.cursor) {
-                cell.bits.writeBit(0);
-                cell.writeCell(bodyCell);
+            const body = beginCell();
+            this.body.writeTo(body);
+            if ((1023 - builder.bits) - 1 /* At least on byte for body */ >= body.bits) {
+                builder.storeBit(0);
+                builder.storeBuilder(body);
             } else {
-                cell.bits.writeBit(1);
-                cell.refs.push(bodyCell);
+                builder.storeBit(1);
+                builder.storeRef(body.endCell());
             }
         } else {
-            cell.bits.writeBit(0);
+            builder.storeBit(0);
         }
     }
 }

@@ -1,4 +1,4 @@
-import { Address } from "..";
+import { Address } from "ton-core";
 import { awaitBalance } from "../tests/awaitBalance";
 import { createTestClient } from "../tests/createTestClient";
 import { openTestTreasure } from "../tests/openTestTreasure";

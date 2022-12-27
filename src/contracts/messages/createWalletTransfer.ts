@@ -1,5 +1,6 @@
+import { beginCell } from "ton-core";
 import { sign } from "ton-crypto";
-import { Cell, InternalMessage } from "../..";
+import { InternalMessage } from "../../messages/InternalMessage";
 import { Maybe } from "../../types";
 import { WalletV1SigningMessage } from "./WalletV1SigningMessage";
 import { WalletV2SigningMessage } from "./WalletV2SigningMessage";
@@ -15,14 +16,16 @@ export function createWalletTransferV1(args: { seqno: number, sendMode: number, 
     });
 
     // Sign message
-    const cell = new Cell();
-    signingMessage.writeTo(cell);
+    const cell = beginCell()
+        .storeWritable(signingMessage)
+        .endCell();
     let signature = sign(cell.hash(), args.secretKey);
 
     // Body
-    const body = new Cell();
-    body.bits.writeBuffer(signature);
-    signingMessage.writeTo(body);
+    const body = beginCell()
+        .storeBuffer(signature)
+        .storeWritable(signingMessage)
+        .endCell();
 
     return body;
 }
@@ -37,14 +40,16 @@ export function createWalletTransferV2(args: { seqno: number, sendMode: number, 
     });
 
     // Sign message
-    const cell = new Cell();
-    signingMessage.writeTo(cell);
+    const cell = beginCell()
+        .storeWritable(signingMessage)
+        .endCell();
     let signature = sign(cell.hash(), args.secretKey);
 
     // Body
-    const body = new Cell();
-    body.bits.writeBuffer(signature);
-    signingMessage.writeTo(body);
+    const body = beginCell()
+        .storeBuffer(signature)
+        .storeWritable(signingMessage)
+        .endCell();
 
     return body;
 }
@@ -67,14 +72,16 @@ export function createWalletTransferV3(args: {
     });
 
     // Sign message
-    const cell = new Cell();
-    signingMessage.writeTo(cell);
+    const cell = beginCell()
+        .storeWritable(signingMessage)
+        .endCell();
     let signature = sign(cell.hash(), args.secretKey);
 
     // Body
-    const body = new Cell();
-    body.bits.writeBuffer(signature);
-    signingMessage.writeTo(body);
+    const body = beginCell()
+        .storeBuffer(signature)
+        .storeWritable(signingMessage)
+        .endCell();
 
     return body;
 }
@@ -97,19 +104,20 @@ export function createWalletTransferV4(args: {
     });
 
     // Sign message
-    const cell = new Cell();
-    signingMessage.writeTo(cell);
+    const cell = beginCell()
+        .storeWritable(signingMessage);
     let signature: Buffer;
     if (args.secretKey) {
-        signature = sign(cell.hash(), args.secretKey);
+        signature = sign(cell.endCell().hash(), args.secretKey);
     } else {
         signature = Buffer.alloc(64);
     }
 
     // Body
-    const body = new Cell();
-    body.bits.writeBuffer(signature);
-    signingMessage.writeTo(body);
+    const body = beginCell()
+        .storeBuffer(signature)
+        .storeWritable(signingMessage)
+        .endCell();
 
     return body;
 }

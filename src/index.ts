@@ -1,21 +1,16 @@
-export { BitString } from './boc/BitString';
-export { BitStringReader } from './boc/BitStringReader';
-export { Cell } from './boc/Cell';
-export { CellType } from './boc/CellType';
+// Core
+export { Cell } from 'ton-core';
+export { Slice } from 'ton-core';
+export { Builder, beginCell } from 'ton-core';
+
 export { TonClient } from './client/TonClient';
 export { Wallet, validateWalletType, WalletContractType, allTypes as AllWalletContractTypes } from './client/Wallet';
-export { Address } from './address/Address';
-export { AddressExternal } from './address/AddressExternal';
+
 export { toNano, fromNano } from './utils/convert';
-export { KeyStore, KeyRecord } from './keystore/KeyStore';
 export { TonTransaction, TonMessage, TonMessageData } from './client/TonTransaction';
 export { SendMode } from './client/SendMode';
 export { TonCache, InMemoryCache } from './client/TonCache';
 export { HttpApi } from './client/api/HttpApi';
-export { Slice } from './boc/Slice';
-export { ADNLAddress } from './address/ADNLAddress';
-export { ADNLKey } from './keystore/ADNLKey';
-export { Builder, beginCell } from './boc/Builder';
 export { DictBuilder, beginDict } from './boc/DictBuilder';
 export { bnToAddress } from './utils/bnToAddress';
 export { TupleSlice } from './boc/TupleSlice';
@@ -188,8 +183,5 @@ export {
     configParse28,
     configParse29
 } from './contracts/configs/configParsing';
-
-// Traits
-export { Traits } from './traits/index';
 
 export { readString, stringToCell } from './utils/strings';

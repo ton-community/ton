@@ -1,6 +1,3 @@
-import { BN } from "bn.js";
-import { Address } from "../..";
-import { Cell } from "../../boc/Cell";
 import { toNano } from "../../utils/convert";
 import { CommonMessageInfo } from "../../messages/CommonMessageInfo";
 import { EmptyMessage } from "../../messages/EmptyMessage";

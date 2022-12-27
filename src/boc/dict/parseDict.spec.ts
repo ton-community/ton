@@ -1,4 +1,3 @@
-import { Cell } from "../Cell";
 import { parseDict, parseDictBitString } from "./parseDict";
 
 describe('parseDict', () => {

@@ -1,5 +1,8 @@
 import { delay } from "../utils/time";
 
+/**
+ * @deprecated
+ */
 export async function awaitCondition(ms: number, condition: () => Promise<boolean>) {
     let start = Date.now();
     while (Date.now() - start < ms) {

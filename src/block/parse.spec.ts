@@ -1,4 +1,4 @@
-import { Address, Cell } from "..";
+import { Address, Cell } from "ton-core";
 import { parseAccount, parseMessage, parseMessageRelaxed, parseShardStateUnsplit, parseTransaction } from "./parse";
 
 describe('parse', () => {

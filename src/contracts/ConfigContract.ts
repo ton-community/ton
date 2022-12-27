@@ -1,7 +1,5 @@
-import BN from "bn.js";
-import { Address, Cell, Contract, ContractSource, TonClient, UnknownContractSource } from "..";
-import { BitStringReader } from "../boc/BitStringReader";
-import { beginCell } from "../boc/Builder";
+import { Address, beginCell, Cell } from "ton-core";
+import { Contract, ContractSource, TonClient, UnknownContractSource } from "..";
 import { parseDictRefs } from "../boc/dict/parseDict";
 import { parseFullConfig } from "./configs/configParsing";
 
@@ -22,16 +20,15 @@ export class ConfigContract implements Contract {
 
     async getPublicKey() {
         let data = (await this.client.getContractState(this.address)).data;
-        let cell = Cell.fromBoc(data!)[0];
-        let reader = new BitStringReader(cell.bits);
-        reader.readUint(32); // Seqno
-        return reader.readUint(256); // Public Key
+        let slice = Cell.fromBoc(data!)[0].beginParse();
+        slice.skip(32); // Seqno
+        return slice.loadBuffer(32); // Public Key
     }
 
     async getConfigsRaw() {
         let data = (await this.client.getContractState(this.address)).data;
         let slice = Cell.fromBoc(data!)[0].beginParse();
-        let dict = slice.readRef();
+        let dict = slice.loadRef();
         let res = parseDictRefs(dict, 32);
         return res;
     }
@@ -42,7 +39,7 @@ export class ConfigContract implements Contract {
     }
 
     async createProposal(args: {
-        queryId: BN,
+        queryId: bigint,
         expiresAt: number,
         critical: boolean,
         paramId: number,
@@ -56,8 +53,8 @@ export class ConfigContract implements Contract {
             .storeRef(beginCell()
                 .storeUint(0xf3, 8)
                 .storeUint(args.paramId, 32)
-                .storeRefMaybe(args.paramValue)
-                .storeRefMaybe(args.ifHashEqual)
+                .storeMaybeRef(args.paramValue)
+                .storeMaybeRef(args.ifHashEqual)
                 .endCell()
             )
             .storeBit(args.critical)

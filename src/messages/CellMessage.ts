@@ -1,4 +1,4 @@
-import { Cell } from "../boc/Cell";
+import { Builder, Cell } from "ton-core";
 import { Message } from "./Message";
 
 export class CellMessage implements Message {
@@ -9,7 +9,7 @@ export class CellMessage implements Message {
         this.cell = cell;
     }
 
-    writeTo(cell: Cell) {
-        cell.writeCell(this.cell);
+    writeTo(builder: Builder) {
+        builder.storeSlice(this.cell.beginParse());
     }
 }

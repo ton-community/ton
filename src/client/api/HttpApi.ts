@@ -1,10 +1,10 @@
-import { Address, Cell } from '../..';
 import * as t from 'io-ts';
 import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
 import { TonCache } from '../TonCache';
 import DataLoader from 'dataloader';
 import axios, { AxiosAdapter } from 'axios';
+import { Address, Cell } from 'ton-core';
 
 const version = require('../../../package.json').version as string;
 
@@ -302,10 +302,10 @@ export class HttpApi {
         ignoreSignature: boolean
     }) {
         return await this.doCall('estimateFee', {
-            address: address.toFriendly(),
-            body: (await args.body.toBoc({ idx: false })).toString('base64'),
-            'init_data': args.initData ? (await args.initData.toBoc({ idx: false })).toString('base64') : '',
-            'init_code': args.initCode ? (await args.initCode.toBoc({ idx: false })).toString('base64') : '',
+            address: address.toString(),
+            body: args.body.toBoc().toString('base64'),
+            'init_data': args.initData ? args.initData.toBoc().toString('base64') : '',
+            'init_code': args.initCode ? args.initCode.toBoc().toString('base64') : '',
             ignore_chksig: args.ignoreSignature
         }, feeResponse);
     }

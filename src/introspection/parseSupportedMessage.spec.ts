@@ -1,4 +1,4 @@
-import { Cell } from "../boc/Cell";
+import { Cell } from "ton-core";
 import { parseSupportedMessage } from "./parseSupportedMessage";
 
 describe('parseSupportedMessage', () => {

@@ -1,5 +1,4 @@
-import BN from "bn.js";
-import { Address } from "..";
+import { Address } from "ton-core";
 
 export type TonMessageData = {
     type: 'text',
@@ -12,9 +11,9 @@ export type TonMessageData = {
 export type TonMessage = {
     source: Address | null;
     destination: Address | null;
-    value: BN;
-    forwardFee: BN;
-    ihrFee: BN;
+    value: bigint;
+    forwardFee: bigint;
+    ihrFee: bigint;
     createdLt: string;
     body: TonMessageData | null;
 };
@@ -25,9 +24,9 @@ export type TonTransaction = {
         hash: string;
     };
     time: number;
-    storageFee: BN;
-    otherFee: BN;
-    fee: BN;
+    storageFee: bigint;
+    otherFee: bigint;
+    fee: bigint;
     data: string;
     inMessage: TonMessage | null;
     outMessages: TonMessage[];

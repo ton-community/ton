@@ -1,10 +1,11 @@
-import { Address, TonClient } from "..";
+import { TonClient } from "..";
 import { InternalMessage } from "../messages/InternalMessage";
 import { Contract } from "./Contract";
 import { createWalletTransferV1, createWalletTransferV2, createWalletTransferV3, createWalletTransferV4 } from "./messages/createWalletTransfer";
 import { WalletSource } from "./sources/WalletSource";
 import { Maybe } from "../types";
 import { contractAddress } from "./contractAddress";
+import { Address } from "ton-core";
 
 export class WalletContract implements Contract {
 

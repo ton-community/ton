@@ -1,9 +1,7 @@
 import axios, { AxiosAdapter } from "axios";
-import BN from "bn.js";
 import * as t from 'io-ts';
-import { Address } from "../address/Address";
+import { Address, Cell } from "ton-core";
 import { parseStack, serializeStack, StackItem } from "../block/stack";
-import { Cell } from "../boc/Cell";
 import { toUrlSafe } from "../utils/toUrlSafe";
 
 export type TonClient4Parameters = {
@@ -67,7 +65,7 @@ export class TonClient4 {
     }
 
     async getAccount(seqno: number, address: Address) {
-        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }), { adapter: this.#adapter, timeout: this.#timeout });
+        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }), { adapter: this.#adapter, timeout: this.#timeout });
         if (!accountCodec.is(res.data)) {
             throw Error('Mailformed response');
         }
@@ -75,23 +73,23 @@ export class TonClient4 {
     }
 
     async getAccountLite(seqno: number, address: Address) {
-        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }) + '/lite', { adapter: this.#adapter, timeout: this.#timeout });
+        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }) + '/lite', { adapter: this.#adapter, timeout: this.#timeout });
         if (!accountLiteCodec.is(res.data)) {
             throw Error('Mailformed response');
         }
         return res.data;
     }
 
-    async isAccountChanged(seqno: number, address: Address, lt: BN) {
-        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }) + '/changed/' + lt.toString(10), { adapter: this.#adapter, timeout: this.#timeout });
+    async isAccountChanged(seqno: number, address: Address, lt: bigint) {
+        let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }) + '/changed/' + lt.toString(10), { adapter: this.#adapter, timeout: this.#timeout });
         if (!changedCodec.is(res.data)) {
             throw Error('Mailformed response');
         }
         return res.data;
     }
 
-    async getAccountTransactions(address: Address, lt: BN, hash: Buffer) {
-        let res = await axios.get(this.#endpoint + '/account/' + address.toFriendly({ urlSafe: true }) + '/tx/' + lt.toString(10) + '/' + toUrlSafe(hash.toString('base64')), { adapter: this.#adapter, timeout: this.#timeout });
+    async getAccountTransactions(address: Address, lt: bigint, hash: Buffer) {
+        let res = await axios.get(this.#endpoint + '/account/' + address.toString({ urlSafe: true }) + '/tx/' + lt.toString(10) + '/' + toUrlSafe(hash.toString('base64')), { adapter: this.#adapter, timeout: this.#timeout });
         if (!transactionsCodec.is(res.data)) {
             throw Error('Mailformed response');
         }
@@ -130,7 +128,7 @@ export class TonClient4 {
 
     async runMethod(seqno: number, address: Address, name: string, args?: StackItem[]) {
         let tail = args && args.length > 0 ? '/' + toUrlSafe(serializeStack(args).toBoc({ idx: false, crc32: false }).toString('base64')) : '';
-        let url = this.#endpoint + '/block/' + seqno + '/' + address.toFriendly({ urlSafe: true }) + '/run/' + name + tail;
+        let url = this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }) + '/run/' + name + tail;
         let res = await axios.get(url, { adapter: this.#adapter, timeout: this.#timeout });
         if (!runMethodCodec.is(res.data)) {
             throw Error('Mailformed response');

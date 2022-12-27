@@ -1,13 +1,10 @@
-import BN from "bn.js";
-import { beginCell, Builder } from "../boc/Builder";
-import { Cell } from "../boc/Cell";
-import { Slice } from "../boc/Slice";
+import { beginCell, Builder, Cell, Slice } from "ton-core";
 
-const INT64_MIN = new BN('-9223372036854775808');
-const INT64_MAX = new BN('9223372036854775807');
+const INT64_MIN = BigInt('-9223372036854775808');
+const INT64_MAX = BigInt('9223372036854775807');
 
 export type StackNull = { type: 'null' };
-export type StackInt = { type: 'int', value: BN };
+export type StackInt = { type: 'int', value: bigint };
 export type StackNaN = { type: 'nan' };
 export type StackCell = { type: 'cell', cell: Cell };
 export type StackSlice = { type: 'slice', cell: Cell };
@@ -36,10 +33,10 @@ export type StackItem = StackNull | StackInt | StackNaN | StackCell | StackSlice
 
 function serializeStackItem(src: StackItem, builder: Builder) {
     if (src.type === 'null') {
-        builder.storeUint8(0x00);
+        builder.storeUint(0x00, 8);
     } else if (src.type === 'int') {
-        if (src.value.lte(INT64_MAX) && src.value.gte(INT64_MIN)) {
-            builder.storeUint8(0x01);
+        if (src.value <= INT64_MAX && src.value >= INT64_MIN) {
+            builder.storeUint(0x01, 8);
             builder.storeInt(src.value, 64);
         } else {
             builder.storeUint(0x0100, 15);
@@ -48,17 +45,17 @@ function serializeStackItem(src: StackItem, builder: Builder) {
     } else if (src.type === 'nan') {
         builder.storeInt(0x02ff, 16);
     } else if (src.type === 'cell') {
-        builder.storeUint8(0x03);
+        builder.storeUint(0x03, 8);
         builder.storeRef(src.cell);
     } else if (src.type === 'slice') {
-        builder.storeUint8(0x04);
+        builder.storeUint(0x04, 8);
         builder.storeUint(0, 10);
-        builder.storeUint(src.cell.bits.cursor, 10);
+        builder.storeUint(src.cell.bits.length, 10);
         builder.storeUint(0, 3);
         builder.storeUint(src.cell.refs.length, 3);
         builder.storeRef(src.cell);
     } else if (src.type === 'builder') {
-        builder.storeUint8(0x05);
+        builder.storeUint(0x05, 8);
         builder.storeRef(src.cell);
     } else if (src.type === 'tuple') {
         let head: Cell | null = null;
@@ -82,7 +79,7 @@ function serializeStackItem(src: StackItem, builder: Builder) {
             tail = bc.endCell();
         }
 
-        builder.storeUint8(0x07);
+        builder.storeUint(0x07, 8);
         builder.storeUint(src.items.length, 16);
         if (head) {
             builder.storeRef(head);
@@ -96,61 +93,63 @@ function serializeStackItem(src: StackItem, builder: Builder) {
 }
 
 function parseStackItem(cs: Slice): StackItem {
-    let kind = cs.readUintNumber(8);
+    let kind = cs.loadUint(8);
     if (kind === 0) {
         return { type: 'null' };
     } else if (kind === 1) {
-        return { type: 'int', value: cs.readInt(64) }
+        return { type: 'int', value: cs.loadIntBig(64) }
     } else if (kind === 2) {
-        if (cs.readUintNumber(7) === 0) {
-            return { type: 'int', value: cs.readInt(257) }
+        if (cs.loadUint(7) === 0) {
+            return { type: 'int', value: cs.loadIntBig(257) }
         } else {
-            cs.readBit(); // must eq 1
+            cs.loadBit(); // must eq 1
             return { type: 'nan' };
         }
     } else if (kind === 3) {
-        return { type: 'cell', cell: cs.readCell() };
+        return { type: 'cell', cell: cs.loadRef() };
     } else if (kind === 4) {
-        let startBits = cs.readUintNumber(10);
-        let endBits = cs.readUintNumber(10);
-        let startRefs = cs.readUintNumber(3);
-        let endRefs = cs.readUintNumber(3);
+        let startBits = cs.loadUint(10);
+        let endBits = cs.loadUint(10);
+        let startRefs = cs.loadUint(3);
+        let endRefs = cs.loadUint(3);
 
         // Copy to new cell
-        let rs = cs.readCell().beginParse();
+        let rs = cs.loadRef().beginParse();
         rs.skip(startBits);
-        let dt = rs.readBitString(endBits - startBits);
-        let cell = new Cell('ordinary', dt);
+        let dt = rs.loadBits(endBits - startBits);
+
+        let builder = beginCell()
+            .storeBits(dt);
 
         // Copy refs if exist
         if (startRefs < endRefs) {
             for (let i = 0; i < startRefs; i++) {
-                cs.readCell();
+                cs.loadRef();
             }
             for (let i = 0; i < endRefs - startRefs; i++) {
-                cell.refs.push(cs.readCell());
+                builder.storeRef(cs.loadRef());
             }
         }
 
-        return { type: 'slice', cell };
+        return { type: 'slice', cell: builder.endCell() };
     } else if (kind === 5) {
-        return { type: 'builder', cell: cs.readCell() };
+        return { type: 'builder', cell: cs.loadRef() };
     } else if (kind === 7) {
-        let length = cs.readUintNumber(16);
+        let length = cs.loadUint(16);
         let items: StackItem[] = [];
         if (length > 1) {
-            let head: Slice = cs.readRef();
-            let tail: Slice = cs.readRef();
+            let head: Slice = cs.loadRef().beginParse();
+            let tail: Slice = cs.loadRef().beginParse();
             items.unshift(parseStackItem(tail));
             for (let i = 0; i < length - 2; i++) {
                 let ohead = head;
-                head = ohead.readRef();
-                tail = ohead.readRef();
+                head = ohead.loadRef().beginParse();
+                tail = ohead.loadRef().beginParse();
                 items.unshift(parseStackItem(tail));
             }
             items.unshift(parseStackItem(head));
         } else if (length === 1) {
-            items.push(parseStackItem(cs.readRef()));
+            items.push(parseStackItem(cs.loadRef().beginParse()));
         }
         return { type: 'tuple', items };
     } else {
@@ -191,11 +190,11 @@ export function serializeStack(src: StackItem[]) {
 export function parseStack(src: Cell): StackItem[] {
     let res: StackItem[] = [];
     let cs = src.beginParse();
-    let size = cs.readUintNumber(24);
+    let size = cs.loadUint(24);
     for (let i = 0; i < size; i++) {
-        let next = cs.readRef();
+        let next = cs.loadRef();
         res.unshift(parseStackItem(cs));
-        cs = next;
+        cs = next.beginParse();
     }
     return res;
 }

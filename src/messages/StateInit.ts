@@ -1,4 +1,4 @@
-import { Cell } from "..";
+import { Builder, Cell } from "ton-core";
 import { Maybe } from "../types";
 import { Message } from "./Message";
 
@@ -20,17 +20,12 @@ export class StateInit implements Message {
         }
     }
 
-    writeTo(cell: Cell) {
-        cell.bits.writeBit(0); // SplitDepth
-        cell.bits.writeBit(0); // TickTock
-        cell.bits.writeBit(!!this.code); // Code presence
-        cell.bits.writeBit(!!this.data); // Data presence
-        cell.bits.writeBit(0); // Library
-        if (this.code) {
-            cell.refs.push(this.code);
-        }
-        if (this.data) {
-            cell.refs.push(this.data);
-        }
+    writeTo(builder: Builder) {
+        builder.storeBit(0);
+        builder.storeBit(0); // SplitDepth
+        builder.storeBit(0); // TickTock
+        builder.storeMaybeRef(this.code); // Code
+        builder.storeMaybeRef(this.data); // Code
+        builder.storeBit(0); // Library
     }
 }

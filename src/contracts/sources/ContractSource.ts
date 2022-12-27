@@ -1,4 +1,4 @@
-import { Cell } from "../..";
+import { Cell } from "ton-core";
 
 export interface ContractSource {
     initialCode: Cell;

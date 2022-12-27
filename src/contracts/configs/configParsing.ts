@@ -1,37 +1,36 @@
-import BN from "bn.js";
-import { Address, Slice } from "../..";
+import { Address, Slice } from "ton-core";
 import { parseDict } from "../../boc/dict/parseDict";
 
 export function configParseMasterAddress(slice: Slice | null | undefined) {
     if (slice) {
-        return new Address(-1, slice.readBuffer(32));
+        return new Address(-1, slice.loadBuffer(32));
     } else {
         return null;
     }
 }
 
 export function configParseWorkchainDescriptor(slice: Slice) {
-    if (slice.readUint(8).toNumber() !== 0xA6) {
+    if (slice.loadUint(8) !== 0xA6) {
         throw Error('Invalid config');
     }
-    let enabledSince = slice.readUint(32).toNumber();
-    let actialMinSplit = slice.readUint(8).toNumber();
-    let min_split = slice.readUint(8).toNumber();
-    let max_split = slice.readUint(8).toNumber();
-    let basic = slice.readBit();
-    let active = slice.readBit();
-    let accept_msgs = slice.readBit();
-    let flags = slice.readUint(13).toNumber();
-    let zerostateRootHash = slice.readBuffer(32);
-    let zerostateFileHash = slice.readBuffer(32);
-    let version = slice.readUint(32).toNumber();
+    let enabledSince = slice.loadUint(32);
+    let actialMinSplit = slice.loadUint(8);
+    let min_split = slice.loadUint(8);
+    let max_split = slice.loadUint(8);
+    let basic = slice.loadBit();
+    let active = slice.loadBit();
+    let accept_msgs = slice.loadBit();
+    let flags = slice.loadUint(13);
+    let zerostateRootHash = slice.loadBuffer(32);
+    let zerostateFileHash = slice.loadBuffer(32);
+    let version = slice.loadUint(32);
 
     // Only basic format supported
-    if (slice.readBit()) {
+    if (slice.loadBit()) {
         throw Error('Invalid config');
     }
-    let vmVersion = slice.readUint(32).toNumber();
-    let vmMode = slice.readUint(64);
+    let vmVersion = slice.loadUint(32);
+    let vmMode = slice.loadUintBig(64);
 
     return {
         enabledSince,
@@ -54,25 +53,25 @@ export function configParseWorkchainDescriptor(slice: Slice) {
 
 function readPublicKey(slice: Slice) {
     // 8e81278a
-    if (slice.readUint(32).toNumber() !== 0x8e81278a) {
+    if (slice.loadUint(32) !== 0x8e81278a) {
         throw Error('Invalid config');
     }
-    return slice.readBuffer(32);
+    return slice.loadBuffer(32);
 }
 
 export function parseValidatorDescr(slice: Slice) {
-    let header = slice.readUint(8).toNumber();
+    let header = slice.loadUint(8);
     if (header === 0x53) {
         return {
             publicKey: readPublicKey(slice),
-            weight: slice.readUint(64),
+            weight: slice.loadUintBig(64),
             adnlAddress: null
         };
     } else if (header === 0x73) {
         return {
             publicKey: readPublicKey(slice),
-            weight: slice.readUint(64),
-            adnlAddress: slice.readBuffer(32)
+            weight: slice.loadUintBig(64),
+            adnlAddress: slice.loadBuffer(32)
         };
     } else {
         throw Error('Invalid config');
@@ -80,13 +79,13 @@ export function parseValidatorDescr(slice: Slice) {
 }
 
 export function parseValidatorSet(slice: Slice) {
-    let header = slice.readUint(8).toNumber();
+    let header = slice.loadUint(8);
     if (header === 0x11) {
-        let timeSince = slice.readUint(32).toNumber();
-        let timeUntil = slice.readUint(32).toNumber();
-        let total = slice.readUint(16).toNumber();
-        let main = slice.readUint(16).toNumber();
-        let list = parseDict(slice.readRef(), 16, parseValidatorDescr);
+        let timeSince = slice.loadUint(32);
+        let timeUntil = slice.loadUint(32);
+        let total = slice.loadUint(16);
+        let main = slice.loadUint(16);
+        let list = parseDict(slice.loadRef(), 16, parseValidatorDescr);
         return {
             timeSince,
             timeUntil,
@@ -96,13 +95,13 @@ export function parseValidatorSet(slice: Slice) {
             list
         };
     } else if (header === 0x12) {
-        let timeSince = slice.readUint(32).toNumber();
-        let timeUntil = slice.readUint(32).toNumber();
-        let total = slice.readUint(16).toNumber();
-        let main = slice.readUint(16).toNumber();
-        let totalWeight = slice.readUint(64);
-        let exists = slice.readBit();
-        let list = exists ? parseDict(slice.readRef(), 16, parseValidatorDescr) : null;
+        let timeSince = slice.loadUint(32);
+        let timeUntil = slice.loadUint(32);
+        let total = slice.loadUint(16);
+        let main = slice.loadUint(16);
+        let totalWeight = slice.loadUintBig(64);
+        let exists = slice.loadBit();
+        let list = exists ? parseDict(slice.loadRef(), 16, parseValidatorDescr) : null;
         return {
             timeSince,
             timeUntil,
@@ -115,10 +114,10 @@ export function parseValidatorSet(slice: Slice) {
 }
 
 export function parseBridge(slice: Slice) {
-    let bridgeAddress = slice.readBuffer(32);
-    let oracleMultisigAddress = slice.readBuffer(32);
-    let oracles = slice.readBit() ? parseDict(slice.readRef(), 256, (slice) => slice.readBuffer(32)) : null;
-    let externalChainAddress = slice.readBuffer(32);
+    let bridgeAddress = slice.loadBuffer(32);
+    let oracleMultisigAddress = slice.loadBuffer(32);
+    let oracles = slice.loadBit() ? parseDict(slice.loadRef(), 256, (slice) => slice.loadBuffer(32)) : null;
+    let externalChainAddress = slice.loadBuffer(32);
     return {
         bridgeAddress,
         oracleMultisigAddress,
@@ -138,10 +137,10 @@ export function configParse15(slice: Slice | null | undefined) {
     if (!slice) {
         throw Error('Invalid config');
     }
-    let validatorsElectedFor = slice.readUintNumber(32);
-    let electorsStartBefore = slice.readUintNumber(32);
-    let electorsEndBefore = slice.readUintNumber(32);
-    let stakeHeldFor = slice.readUintNumber(32);
+    let validatorsElectedFor = slice.loadUint(32);
+    let electorsStartBefore = slice.loadUint(32);
+    let electorsEndBefore = slice.loadUint(32);
+    let stakeHeldFor = slice.loadUint(32);
     return {
         validatorsElectedFor,
         electorsStartBefore,
@@ -155,9 +154,9 @@ export function configParse16(slice: Slice | null | undefined) {
         throw Error('Invalid config');
     }
 
-    let maxValidators = slice.readUintNumber(16);
-    let maxMainValidators = slice.readUintNumber(16);
-    let minValidators = slice.readUintNumber(16);
+    let maxValidators = slice.loadUint(16);
+    let maxMainValidators = slice.loadUint(16);
+    let minValidators = slice.loadUint(16);
     return {
         maxValidators,
         maxMainValidators,
@@ -170,10 +169,10 @@ export function configParse17(slice: Slice | null | undefined) {
         throw Error('Invalid config');
     }
 
-    let minStake = slice.readCoins();
-    let maxStake = slice.readCoins();
-    let minTotalStake = slice.readCoins();
-    let maxStakeFactor = slice.readUintNumber(32);
+    let minStake = slice.loadCoins();
+    let maxStake = slice.loadCoins();
+    let minTotalStake = slice.loadCoins();
+    let maxStakeFactor = slice.loadUint(32);
 
     return {
         minStake,
@@ -184,11 +183,11 @@ export function configParse17(slice: Slice | null | undefined) {
 }
 
 export type StoragePrices = {
-    utime_since: BN,
-    bit_price_ps: BN,
-    cell_price_ps: BN,
-    mc_bit_price_ps: BN,
-    mc_cell_price_ps: BN
+    utime_since: number,
+    bit_price_ps: bigint,
+    cell_price_ps: bigint,
+    mc_bit_price_ps: bigint,
+    mc_cell_price_ps: bigint
 }
 export function configParse18(slice: Slice | null | undefined): StoragePrices[] {
     if (!slice) {
@@ -196,16 +195,16 @@ export function configParse18(slice: Slice | null | undefined): StoragePrices[] 
     }
 
     let result: StoragePrices[] = [];
-    parseDict(slice, 32, (slice) => {
-        let header = slice.readUintNumber(8);
+    parseDict(slice.asCell(), 32, (slice) => {
+        let header = slice.loadUint(8);
         if (header !== 0xcc) {
             throw Error('Invalid config');
         }
-        let utime_since = slice.readUint(32);
-        let bit_price_ps = slice.readUint(64);
-        let cell_price_ps = slice.readUint(64);
-        let mc_bit_price_ps = slice.readUint(64);
-        let mc_cell_price_ps = slice.readUint(64);
+        let utime_since = slice.loadUint(32);
+        let bit_price_ps = slice.loadUintBig(64);
+        let cell_price_ps = slice.loadUintBig(64);
+        let mc_bit_price_ps = slice.loadUintBig(64);
+        let mc_cell_price_ps = slice.loadUintBig(64);
         return {
             utime_since,
             bit_price_ps,
@@ -223,12 +222,12 @@ export function configParse8(slice: Slice | null | undefined) {
     if (!slice) {
         return {
             version: 0,
-            capabilities: new BN(0)
+            capabilities: 0n
         }
     }
 
-    let version = slice.readUintNumber(32);
-    let capabilities = slice.readUint(64);
+    let version = slice.loadUint(32);
+    let capabilities = slice.loadUintBig(64);
     return {
         version,
         capabilities
@@ -240,22 +239,22 @@ export function configParse40(slice: Slice | null | undefined) {
         return null;
     }
 
-    let header = slice.readUintNumber(8);
+    let header = slice.loadUint(8);
     if (header !== 1) {
         throw Error('Invalid config');
     }
 
-    let defaultFlatFine = slice.readCoins();
-    let defaultProportionaFine = slice.readCoins();
-    let severityFlatMult = slice.readUintNumber(16);
-    let severityProportionalMult = slice.readUintNumber(16);
-    let unfunishableInterval = slice.readUintNumber(16);
-    let longInterval = slice.readUintNumber(16);
-    let longFlatMult = slice.readUintNumber(16);
-    let longProportionalMult = slice.readUintNumber(16);
-    let mediumInterval = slice.readUintNumber(16);
-    let mediumFlatMult = slice.readUintNumber(16);
-    let mediumProportionalMult = slice.readUintNumber(16);
+    let defaultFlatFine = slice.loadCoins();
+    let defaultProportionaFine = slice.loadCoins();
+    let severityFlatMult = slice.loadUint(16);
+    let severityProportionalMult = slice.loadUint(16);
+    let unfunishableInterval = slice.loadUint(16);
+    let longInterval = slice.loadUint(16);
+    let longFlatMult = slice.loadUint(16);
+    let longProportionalMult = slice.loadUint(16);
+    let mediumInterval = slice.loadUint(16);
+    let mediumFlatMult = slice.loadUint(16);
+    let mediumProportionalMult = slice.loadUint(16);
     return {
         defaultFlatFine,
         defaultProportionaFine,
@@ -275,8 +274,8 @@ export function configParse12(slice: Slice | null | undefined) {
     if (!slice) {
         throw Error('Invalid config');
     }
-    if (slice.readUint(1).toNumber()) {
-        return parseDict(slice.readRef(), 32, configParseWorkchainDescriptor);
+    if (slice.loadBit()) {
+        return parseDict(slice.loadRef(), 32, configParseWorkchainDescriptor);
     } else {
         throw Error('No workchains exist')
     }
@@ -297,15 +296,15 @@ export function configParseBridge(slice: Slice | null | undefined) {
 }
 
 function parseGasLimitsInternal(slice: Slice) {
-    const tag = slice.readUintNumber(8);
+    const tag = slice.loadUint(8);
     if (tag === 0xde) {
-        const gasPrice = slice.readUint(64);
-        const gasLimit = slice.readUint(64);
-        const specialGasLimit = slice.readUint(64);
-        const gasCredit = slice.readUint(64);
-        const blockGasLimit = slice.readUint(64);
-        const freezeDueLimit = slice.readUint(64);
-        const deleteDueLimit = slice.readUint(64);
+        const gasPrice = slice.loadUintBig(64);
+        const gasLimit = slice.loadUintBig(64);
+        const specialGasLimit = slice.loadUintBig(64);
+        const gasCredit = slice.loadUintBig(64);
+        const blockGasLimit = slice.loadUintBig(64);
+        const freezeDueLimit = slice.loadUintBig(64);
+        const deleteDueLimit = slice.loadUintBig(64);
         return {
             gasPrice,
             gasLimit,
@@ -316,12 +315,12 @@ function parseGasLimitsInternal(slice: Slice) {
             deleteDueLimit
         };
     } else if (tag === 0xdd) {
-        const gasPrice = slice.readUint(64);
-        const gasLimit = slice.readUint(64);
-        const gasCredit = slice.readUint(64);
-        const blockGasLimit = slice.readUint(64);
-        const freezeDueLimit = slice.readUint(64);
-        const deleteDueLimit = slice.readUint(64);
+        const gasPrice = slice.loadUintBig(64);
+        const gasLimit = slice.loadUintBig(64);
+        const gasCredit = slice.loadUintBig(64);
+        const blockGasLimit = slice.loadUintBig(64);
+        const freezeDueLimit = slice.loadUintBig(64);
+        const deleteDueLimit = slice.loadUintBig(64);
         return {
             gasPrice,
             gasLimit,
@@ -340,10 +339,10 @@ export function configParseGasLimitsPrices(slice: Slice | null | undefined) {
     if (!slice) {
         throw Error('Invalid config');
     }
-    const tag = slice.readUintNumber(8);
+    const tag = slice.loadUint(8);
     if (tag === 0xd1) {
-        const flatLimit = slice.readUint(64);
-        const flatGasPrice = slice.readUint(64);
+        const flatLimit = slice.loadUintBig(64);
+        const flatGasPrice = slice.loadUintBig(64);
         const other = parseGasLimitsInternal(slice);
         return {
             flatLimit,
@@ -360,17 +359,17 @@ export function configParseMsgPrices(slice: Slice | null | undefined) {
     if (!slice) {
         throw new Error('Invalid config');
     }
-    let magic = slice.readUintNumber(8);
+    let magic = slice.loadUint(8);
     if (magic !== 0xea) {
         throw new Error('Invalid msg prices param');
     }
     return {
-        lumpPrice: slice.readUint(64),
-        bitPrice: slice.readUint(64),
-        cellPrice: slice.readUint(64),
-        ihrPriceFactor: slice.readUint(32),
-        firstFrac: slice.readUint(16),
-        nextFrac: slice.readUint(16)
+        lumpPrice: slice.loadUintBig(64),
+        bitPrice: slice.loadUintBig(64),
+        cellPrice: slice.loadUintBig(64),
+        ihrPriceFactor: slice.loadUint(32),
+        firstFrac: slice.loadUint(16),
+        nextFrac: slice.loadUint(16)
     };
 }
 
@@ -386,12 +385,12 @@ export function configParse28(slice: Slice | null | undefined) {
     if (!slice) {
         throw new Error('Invalid config');
     }
-    let magic = slice.readUintNumber(8);
+    let magic = slice.loadUint(8);
     if (magic === 0xc1) {
-        let masterCatchainLifetime = slice.readUintNumber(32);
-        let shardCatchainLifetime = slice.readUintNumber(32);
-        let shardValidatorsLifetime = slice.readUintNumber(32);
-        let shardValidatorsCount = slice.readUintNumber(32);
+        let masterCatchainLifetime = slice.loadUint(32);
+        let shardCatchainLifetime = slice.loadUint(32);
+        let shardValidatorsLifetime = slice.loadUint(32);
+        let shardValidatorsCount = slice.loadUint(32);
         return {
             masterCatchainLifetime,
             shardCatchainLifetime,
@@ -400,12 +399,12 @@ export function configParse28(slice: Slice | null | undefined) {
         };
     }
     if (magic === 0xc2) {
-        let flags = slice.readUintNumber(7);
-        let suffleMasterValidators = slice.readBit();
-        let masterCatchainLifetime = slice.readUintNumber(32);
-        let shardCatchainLifetime = slice.readUintNumber(32);
-        let shardValidatorsLifetime = slice.readUintNumber(32);
-        let shardValidatorsCount = slice.readUintNumber(32);
+        let flags = slice.loadUint(7);
+        let suffleMasterValidators = slice.loadBit();
+        let masterCatchainLifetime = slice.loadUint(32);
+        let shardCatchainLifetime = slice.loadUint(32);
+        let shardValidatorsLifetime = slice.loadUint(32);
+        let shardValidatorsCount = slice.loadUint(32);
         return {
             flags,
             suffleMasterValidators,
@@ -440,16 +439,16 @@ export function configParse29(slice: Slice | null | undefined) {
     if (!slice) {
         throw new Error('Invalid config');
     }
-    let magic = slice.readUintNumber(8);
+    let magic = slice.loadUint(8);
     if (magic === 0xd6) {
-        let roundCandidates = slice.readUintNumber(32);
-        let nextCandidateDelay = slice.readUintNumber(32);
-        let consensusTimeout = slice.readUintNumber(32);
-        let fastAttempts = slice.readUintNumber(32);
-        let attemptDuration = slice.readUintNumber(32);
-        let catchainMaxDeps = slice.readUintNumber(32);
-        let maxBlockBytes = slice.readUintNumber(32);
-        let maxColaltedBytes = slice.readUintNumber(32);
+        let roundCandidates = slice.loadUint(32);
+        let nextCandidateDelay = slice.loadUint(32);
+        let consensusTimeout = slice.loadUint(32);
+        let fastAttempts = slice.loadUint(32);
+        let attemptDuration = slice.loadUint(32);
+        let catchainMaxDeps = slice.loadUint(32);
+        let maxBlockBytes = slice.loadUint(32);
+        let maxColaltedBytes = slice.loadUint(32);
         return {
             roundCandidates,
             nextCandidateDelay,
@@ -461,16 +460,16 @@ export function configParse29(slice: Slice | null | undefined) {
             maxColaltedBytes
         }
     } else if (magic === 0xd7) {
-        let flags = slice.readUintNumber(7);
-        let newCatchainIds = slice.readBit();
-        let roundCandidates = slice.readUintNumber(8);
-        let nextCandidateDelay = slice.readUintNumber(32);
-        let consensusTimeout = slice.readUintNumber(32);
-        let fastAttempts = slice.readUintNumber(32);
-        let attemptDuration = slice.readUintNumber(32);
-        let catchainMaxDeps = slice.readUintNumber(32);
-        let maxBlockBytes = slice.readUintNumber(32);
-        let maxColaltedBytes = slice.readUintNumber(32);
+        let flags = slice.loadUint(7);
+        let newCatchainIds = slice.loadBit();
+        let roundCandidates = slice.loadUint(8);
+        let nextCandidateDelay = slice.loadUint(32);
+        let consensusTimeout = slice.loadUint(32);
+        let fastAttempts = slice.loadUint(32);
+        let attemptDuration = slice.loadUint(32);
+        let catchainMaxDeps = slice.loadUint(32);
+        let maxBlockBytes = slice.loadUint(32);
+        let maxColaltedBytes = slice.loadUint(32);
         return {
             flags,
             newCatchainIds,
@@ -484,17 +483,17 @@ export function configParse29(slice: Slice | null | undefined) {
             maxColaltedBytes
         }
     } else if (magic === 0xd8) {
-        let flags = slice.readUintNumber(7);
-        let newCatchainIds = slice.readBit();
-        let roundCandidates = slice.readUintNumber(8);
-        let nextCandidateDelay = slice.readUintNumber(32);
-        let consensusTimeout = slice.readUintNumber(32);
-        let fastAttempts = slice.readUintNumber(32);
-        let attemptDuration = slice.readUintNumber(32);
-        let catchainMaxDeps = slice.readUintNumber(32);
-        let maxBlockBytes = slice.readUintNumber(32);
-        let maxColaltedBytes = slice.readUintNumber(32);
-        let protoVersion = slice.readUintNumber(16);
+        let flags = slice.loadUint(7);
+        let newCatchainIds = slice.loadBit();
+        let roundCandidates = slice.loadUint(8);
+        let nextCandidateDelay = slice.loadUint(32);
+        let consensusTimeout = slice.loadUint(32);
+        let fastAttempts = slice.loadUint(32);
+        let attemptDuration = slice.loadUint(32);
+        let catchainMaxDeps = slice.loadUint(32);
+        let maxBlockBytes = slice.loadUint(32);
+        let maxColaltedBytes = slice.loadUint(32);
+        let protoVersion = slice.loadUint(16);
         return {
             flags,
             newCatchainIds,
@@ -509,18 +508,18 @@ export function configParse29(slice: Slice | null | undefined) {
             protoVersion
         }
     } else if (magic === 0xd9) {
-        let flags = slice.readUintNumber(7);
-        let newCatchainIds = slice.readBit();
-        let roundCandidates = slice.readUintNumber(8);
-        let nextCandidateDelay = slice.readUintNumber(32);
-        let consensusTimeout = slice.readUintNumber(32);
-        let fastAttempts = slice.readUintNumber(32);
-        let attemptDuration = slice.readUintNumber(32);
-        let catchainMaxDeps = slice.readUintNumber(32);
-        let maxBlockBytes = slice.readUintNumber(32);
-        let maxColaltedBytes = slice.readUintNumber(32);
-        let protoVersion = slice.readUintNumber(16);
-        let catchainMaxBlocksCoeff = slice.readUintNumber(32);
+        let flags = slice.loadUint(7);
+        let newCatchainIds = slice.loadBit();
+        let roundCandidates = slice.loadUint(8);
+        let nextCandidateDelay = slice.loadUint(32);
+        let consensusTimeout = slice.loadUint(32);
+        let fastAttempts = slice.loadUint(32);
+        let attemptDuration = slice.loadUint(32);
+        let catchainMaxDeps = slice.loadUint(32);
+        let maxBlockBytes = slice.loadUint(32);
+        let maxColaltedBytes = slice.loadUint(32);
+        let protoVersion = slice.loadUint(16);
+        let catchainMaxBlocksCoeff = slice.loadUint(32);
         return {
             flags,
             newCatchainIds,
@@ -541,18 +540,18 @@ export function configParse29(slice: Slice | null | undefined) {
 
 // cfg_vote_cfg#36 min_tot_rounds:uint8 max_tot_rounds:uint8 min_wins:uint8 max_losses:uint8 min_store_sec:uint32 max_store_sec:uint32 bit_price:uint32 cell_price:uint32 = ConfigProposalSetup;
 export function parseProposalSetup(slice: Slice) {
-    let magic = slice.readUintNumber(8);
+    let magic = slice.loadUint(8);
     if (magic !== 0x36) {
         throw new Error('Invalid config');
     }
-    let minTotalRounds = slice.readUintNumber(8);
-    let maxTotalRounds = slice.readUintNumber(8);
-    let minWins = slice.readUintNumber(8);
-    let maxLoses = slice.readUintNumber(8);
-    let minStoreSec = slice.readUintNumber(32);
-    let maxStoreSec = slice.readUintNumber(32);
-    let bitPrice = slice.readUintNumber(32);
-    let cellPrice = slice.readUintNumber(32);
+    let minTotalRounds = slice.loadUint(8);
+    let maxTotalRounds = slice.loadUint(8);
+    let minWins = slice.loadUint(8);
+    let maxLoses = slice.loadUint(8);
+    let minStoreSec = slice.loadUint(32);
+    let maxStoreSec = slice.loadUint(32);
+    let bitPrice = slice.loadUint(32);
+    let cellPrice = slice.loadUint(32);
     return { minTotalRounds, maxTotalRounds, minWins, maxLoses, minStoreSec, maxStoreSec, bitPrice, cellPrice };
 }
 
@@ -561,12 +560,12 @@ export function parseVotingSetup(slice: Slice | null | undefined) {
     if (!slice) {
         throw new Error('Invalid config');
     }
-    let magic = slice.readUintNumber(8);
+    let magic = slice.loadUint(8);
     if (magic !== 0x91) {
         throw new Error('Invalid config');
     }
-    let normalParams = parseProposalSetup(slice.readRef());
-    let criticalParams = parseProposalSetup(slice.readRef());
+    let normalParams = parseProposalSetup(slice.loadRef().beginParse());
+    let criticalParams = parseProposalSetup(slice.loadRef().beginParse());
     return { normalParams, criticalParams };
 }
 

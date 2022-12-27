@@ -1,7 +1,5 @@
 import { mnemonicNew, mnemonicToWalletKey } from 'ton-crypto';
-import { Address } from "../address/Address";
 import { Message } from "../messages/Message";
-import { Cell } from "../boc/Cell";
 import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
 import { ExternalMessage } from "../messages/ExternalMessage";
 import { CommonMessageInfo } from "../messages/CommonMessageInfo";
@@ -9,13 +7,12 @@ import { StateInit } from "../messages/StateInit";
 import { Contract } from "../contracts/Contract";
 import { Wallet } from "./Wallet";
 import { Maybe } from '../types';
-import { BN } from 'bn.js';
 import { CellMessage, WalletContractType, WalletSource } from '..';
 import { TonTransaction, TonMessage } from './TonTransaction';
 import { ConfigContract } from '../contracts/ConfigContract';
 import { InMemoryCache, TonCache } from './TonCache';
-import { boolean } from 'fp-ts';
 import { AxiosAdapter } from 'axios';
+import { Address, beginCell, Cell } from 'ton-core';
 
 export type TonClientParameters = {
     endpoint: string;
@@ -46,9 +43,9 @@ function convertMessage(t: HTTPMessage): TonMessage {
     return {
         source: t.source !== '' ? Address.parseFriendly(t.source).address : null,
         destination: t.destination !== '' ? Address.parseFriendly(t.destination).address : null,
-        forwardFee: new BN(t.fwd_fee),
-        ihrFee: new BN(t.ihr_fee),
-        value: new BN(t.value),
+        forwardFee: BigInt(t.fwd_fee),
+        ihrFee: BigInt(t.ihr_fee),
+        value: BigInt(t.value),
         createdLt: t.created_lt,
         body: (
             t.msg_data['@type'] === 'msg.dataRaw'
@@ -64,9 +61,9 @@ function convertTransaction(r: HTTPTransaction): TonTransaction {
         id: { lt: r.transaction_id.lt, hash: r.transaction_id.hash },
         time: r.utime,
         data: r.data,
-        storageFee: new BN(r.storage_fee),
-        otherFee: new BN(r.other_fee),
-        fee: new BN(r.fee),
+        storageFee: BigInt(r.storage_fee),
+        otherFee: BigInt(r.other_fee),
+        fee: BigInt(r.fee),
         inMessage: r.in_msg ? convertMessage(r.in_msg) : null,
         outMessages: r.out_msgs.map(convertMessage)
     }
@@ -209,9 +206,10 @@ export class TonClient {
      * @param src source message
      */
     async sendMessage(src: Message) {
-        const cell = new Cell();
-        src.writeTo(cell);
-        const boc = await cell.toBoc({ idx: false });
+        const boc = beginCell()
+            .storeWritable(src)
+            .endCell()
+            .toBoc();
         await this.#api.sendBoc(boc);
     }
 
@@ -278,7 +276,7 @@ export class TonClient {
      */
     async getContractState(address: Address) {
         let info = await this.#api.getAddressInformation(address);
-        let balance = new BN(info.balance);
+        let balance = BigInt(info.balance);
         let state = info.state as 'frozen' | 'active' | 'uninitialized';
         return {
             balance,

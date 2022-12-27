@@ -1,6 +1,6 @@
-import { Cell } from "../../boc/Cell";
 import { Maybe } from "../../types";
 import { Message } from "../../messages/Message";
+import { Builder } from "ton-core";
 
 export class WalletV4SigningMessage implements Message {
 
@@ -30,24 +30,22 @@ export class WalletV4SigningMessage implements Message {
         }
     }
 
-    writeTo(cell: Cell) {
-        cell.bits.writeUint(this.walletId, 32);
+    writeTo(builder: Builder) {
+        builder.storeUint(this.walletId, 32);
         if (this.seqno === 0) {
             for (let i = 0; i < 32; i++) {
-                cell.bits.writeBit(1);
+                builder.storeBit(1);
             }
         } else {
-            cell.bits.writeUint(this.timeout, 32);
+            builder.storeUint(this.timeout, 32);
         }
-        cell.bits.writeUint(this.seqno, 32);
-        cell.bits.writeUint8(0); // Simple order
+        builder.storeUint(this.seqno, 32);
+        builder.storeUint(0, 8); // Simple order
 
         // Write order
         if (this.order) {
-            cell.bits.writeUint8(this.sendMode);
-            let orderCell = new Cell();
-            this.order.writeTo(orderCell);
-            cell.refs.push(orderCell);
+            builder.storeUint(this.sendMode, 8);
+            this.order.writeTo(builder);
         }
     }
 }

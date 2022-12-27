@@ -1,5 +1,4 @@
-import { BN } from "bn.js";
-import { Address, Cell } from "../..";
+import { Address, beginCell } from "ton-core";
 import { CommonMessageInfo } from "../../messages/CommonMessageInfo";
 import { ExternalMessage } from "../../messages/ExternalMessage";
 import { InMemoryCache } from "../TonCache";
@@ -9,7 +8,7 @@ describe('HttpApi', () => {
     it('should get balance', async () => {
         const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
         let res = await api.getAddressInformation(Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address);
-        expect(new BN(res.balance).gte(new BN(0))).toBe(true);
+        expect(BigInt(res.balance) >= 0n).toBe(true);
     });
 
     it('should send external messages', async () => {
@@ -18,9 +17,10 @@ describe('HttpApi', () => {
             to: Address.parseFriendly('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH').address,
             body: new CommonMessageInfo()
         });
-        const cell = new Cell();
-        message.writeTo(cell);
-        await api.sendBoc((await cell.toBoc({ idx: false })));
+        const cell = beginCell()
+            .storeWritable(message)
+            .endCell();
+        await api.sendBoc(cell.toBoc());
     });
 
     it('should get seqno', async () => {
@@ -70,7 +70,7 @@ describe('HttpApi', () => {
 
     it('should estimate fee', async () => {
         const api = new HttpApi('https://testnet.toncenter.com/api/v2/jsonRPC', new InMemoryCache());
-        const cell = new Cell();
+        const cell = beginCell().endCell();
         const fees = await api.estimateFee(Address.parse('EQDR4neQzqkfEz0oR3hXBcJph64d5NddP8H8wfN0thQIAqDH'), {
             body: cell,
             initCode: null,

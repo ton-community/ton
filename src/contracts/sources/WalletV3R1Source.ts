@@ -1,5 +1,6 @@
-import { Cell, ConfigStore } from "../..";
+import { beginCell, Cell } from "ton-core";
 import { Maybe } from "../../types";
+import { ConfigStore } from "../../utils/ConfigStore";
 import { ContractSource } from "./ContractSource";
 
 export class WalletV3R1Source implements ContractSource {
@@ -17,11 +18,12 @@ export class WalletV3R1Source implements ContractSource {
         }
 
         // Build initial code and data
-        let initialCode = Cell.fromBoc('B5EE9C724101010100620000C0FF0020DD2082014C97BA9730ED44D0D70B1FE0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED543FBE6EE0')[0];
-        let initialData = new Cell();
-        initialData.bits.writeUint(0, 32);
-        initialData.bits.writeUint(walletId, 32);
-        initialData.bits.writeBuffer(publicKey);
+        let initialCode = Cell.fromBoc(Buffer.from('B5EE9C724101010100620000C0FF0020DD2082014C97BA9730ED44D0D70B1FE0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED543FBE6EE0', 'hex'))[0];
+        let initialData = beginCell()
+            .storeUint(0, 32)
+            .storeUint(walletId, 32)
+            .storeBuffer(publicKey)
+            .endCell();
 
         // Build contract source
         return new WalletV3R1Source({

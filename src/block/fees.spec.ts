@@ -1,11 +1,9 @@
-import BN from 'bn.js'
-import { Address } from '../address/Address';
-import { Cell } from '../boc/Cell';
+import { Address, Cell } from 'ton-core';
 import { parseDictRefs } from '../boc/dict/parseDict';
 import { TonClient4 } from '../client/TonClient4';
 import { configParse18, configParseGasLimitsPrices, configParseMsgPrices } from '../contracts/configs/configParsing';
 import { fromNano, toNano } from '../utils/convert';
-import { computeExternalMessageFees, computeFwdFees, computeGasPrices, computeMessageForwardFees, computeStorageFees } from './fees'
+import { computeExternalMessageFees, computeGasPrices, computeMessageForwardFees, computeStorageFees } from './fees'
 import { parseTransaction } from './parse';
 
 const client = new TonClient4({ endpoint: 'https://mainnet-v4.tonhubapi.com' });
@@ -22,7 +20,7 @@ describe('fees', () => {
         //
 
         const config = await client.getConfig(seqno);
-        const dict = parseDictRefs(Cell.fromBoc(Buffer.from(config.config.cell, 'base64'))[0].beginParse(), 32);
+        const dict = parseDictRefs(Cell.fromBoc(Buffer.from(config.config.cell, 'base64'))[0], 32);
         const storagePrices = configParse18(dict.get('18'));
 
         //
@@ -68,7 +66,7 @@ describe('fees', () => {
         //
 
         const config = await client.getConfig(seqno);
-        const dict = parseDictRefs(Cell.fromBoc(Buffer.from(config.config.cell, 'base64'))[0].beginParse(), 32);
+        const dict = parseDictRefs(Cell.fromBoc(Buffer.from(config.config.cell, 'base64'))[0], 32);
         const msgPrices = configParseMsgPrices(dict.get('25')); // Workchain
 
         //
@@ -103,7 +101,7 @@ describe('fees', () => {
         //
 
         const config = await client.getConfig(seqno);
-        const dict = parseDictRefs(Cell.fromBoc(Buffer.from(config.config.cell, 'base64'))[0].beginParse(), 32);
+        const dict = parseDictRefs(Cell.fromBoc(Buffer.from(config.config.cell, 'base64'))[0], 32);
         const storagePrices = configParse18(dict.get('18'));
         const msgPrices = configParseMsgPrices(dict.get('25')); // Workchain
         const gasPrices = configParseGasLimitsPrices(dict.get('21')); // Workchain
@@ -165,11 +163,11 @@ describe('fees', () => {
         // Total fees
         //
 
-        let fees = new BN(0);
-        fees = fees.add(storageFees);
-        fees = fees.add(importFees);
-        fees = fees.add(gasFees);
-        fees = fees.add(fwdFees.fees);
+        let fees = BigInt(0);
+        fees = fees + storageFees;
+        fees = fees + importFees;
+        fees = fees + gasFees;
+        fees = fees + fwdFees.fees;
         expect(fromNano(fees)).toEqual('0.005281337'); // Value from blockchain
     });
 
@@ -189,8 +187,8 @@ describe('fees', () => {
         }
 
         let fwdFees = computeMessageForwardFees(props.config.workchain.message as any, props.outMsg);
-        
-        expect(fromNano(fwdFees.fees.add(fwdFees.remaining))).toEqual('0.001');
+
+        expect(fromNano(fwdFees.fees + fwdFees.remaining)).toEqual('0.001');
     });
 
     // it('should compute storage fees', () => {

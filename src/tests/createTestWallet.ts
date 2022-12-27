@@ -4,6 +4,9 @@ import { toNano } from "../utils/convert";
 import { awaitBalance } from "./awaitBalance";
 import { openTestTreasure } from "./openTestTreasure";
 
+/**
+ * @deprecated
+ */
 export async function createTestWallet(client: TonClient, value: number) {
     let treasure = await openTestTreasure(client);
     const wallet = await client.createNewWallet({ workchain: 0 });

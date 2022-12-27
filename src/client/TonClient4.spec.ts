@@ -1,6 +1,4 @@
-import BN from "bn.js";
-import { Address } from "../address/Address";
-import { beginCell } from "../boc/Builder";
+import { Address, beginCell } from "ton-core";
 import { TonClient4 } from "./TonClient4";
 
 const client = new TonClient4({ endpoint: 'https://mainnet-v4.tonhubapi.com' });
@@ -31,9 +29,9 @@ describe('TonClient4', () => {
     });
 
     it('should get account change state', async () => {
-        await client.isAccountChanged(1000, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), new BN(1231232));
-        await client.isAccountChanged(100000, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), new BN(1231232));
-        await client.isAccountChanged(20241422, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), new BN(1231232));
+        await client.isAccountChanged(1000, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), 1231232n);
+        await client.isAccountChanged(100000, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), 1231232n);
+        await client.isAccountChanged(20241422, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), 1231232n);
     });
     it('should get methods', async () => {
         await client.runMethod(1000, Address.parse('EQAAFhjXzKuQ5N0c96nsdZQWATcJm909LYSaCAvWFxVJP80D'), 'seqno');
@@ -43,6 +41,6 @@ describe('TonClient4', () => {
         await client.runMethod(20241422, Address.parse('EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales'), 'get_member', [{ type: 'slice', cell: beginCell().storeAddress(Address.parse('EQAeDrSEHEaKWFGWbuhLMnPQzMR0au7js3Ef0QeOXATF-ukl')).endCell() }]);
     });
     it('should account transactions', async () => {
-        await client.getAccountTransactions(Address.parse('EQCo6VT63H1vKJTiUo6W4M8RrTURCyk5MdbosuL5auEqpz-C'), new BN(27668319000001), Buffer.from('x2/3cqpuYzOC0CZU9bNMfGG84FT/huceZpcrcr2Bvgc=', 'base64'));
+        await client.getAccountTransactions(Address.parse('EQCo6VT63H1vKJTiUo6W4M8RrTURCyk5MdbosuL5auEqpz-C'), 27668319000001n, Buffer.from('x2/3cqpuYzOC0CZU9bNMfGG84FT/huceZpcrcr2Bvgc=', 'base64'));
     })
 });
