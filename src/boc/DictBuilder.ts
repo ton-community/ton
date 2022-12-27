@@ -1,4 +1,3 @@
-import BN from "bn.js";
 import { beginCell, Cell } from 'ton-core';
 import { serializeDict } from "./dict/serializeDict";
 
@@ -11,14 +10,14 @@ export class DictBuilder {
         this.keySize = keySize;
     }
 
-    storeCell = (index: number | BN | Buffer, value: Cell) => {
+    storeCell = (index: number | bigint | Buffer, value: Cell) => {
         if (this.ended) {
             throw Error('Already ended')
         }
         let key: string;
         if (typeof index === 'number') {
             key = index.toString(10);
-        } else if (BN.isBN(index)) {
+        } else if (typeof index === 'bigint') {
             key = index.toString(10);
         } else if (Buffer.isBuffer(index)) {
             key = new BN(index.toString('hex'), 'hex').toString(10);
