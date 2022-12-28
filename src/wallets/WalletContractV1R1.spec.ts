@@ -2,7 +2,6 @@ import { randomTestKey } from "../tests/randomTestKey";
 import { createTestClient4 } from "../tests/createTestClient4";
 import { Address, CommentMessage, CommonMessageInfo, InternalMessage, toNano } from "ton-core";
 import { WalletContractV1R1 } from "./WalletContractV1R1";
-import { createTestClient } from "../tests/createTestClient";
 
 describe('WalletContractV1R1', () => {
     it('should has balance and correct address', async () => {
@@ -19,7 +18,7 @@ describe('WalletContractV1R1', () => {
     });
     it('should perform transfer', async () => {
         // Create contract
-        let client = createTestClient();
+        let client = createTestClient4();
         let key = randomTestKey('v4-treasure');
         let contract = client.open(WalletContractV1R1.create({ workchain: 0, publicKey: key.publicKey }));
 

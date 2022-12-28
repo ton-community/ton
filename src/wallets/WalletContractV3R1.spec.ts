@@ -1,26 +1,26 @@
 import { randomTestKey } from "../tests/randomTestKey";
 import { createTestClient4 } from "../tests/createTestClient4";
 import { Address, CommentMessage, CommonMessageInfo, InternalMessage, toNano } from "ton-core";
-import { WalletContractV1R2 } from "./WalletContractV1R2";
+import { WalletContractV3R1 } from "./WalletContractV3R1";
 
-describe('WalletContractV1R2', () => {
+describe('WalletContractV3R1', () => {
     it('should has balance and correct address', async () => {
 
         // Create contract
         let client = createTestClient4();
         let key = randomTestKey('v4-treasure');
-        let contract = client.open(WalletContractV1R2.create({ workchain: 0, publicKey: key.publicKey }));
+        let contract = client.open(WalletContractV3R1.create({ workchain: 0, publicKey: key.publicKey }));
         let balance = await contract.getBalance();
 
         // Check parameters
-        expect(contract.address.equals(Address.parse('EQATDkvcCA2fFWbSTHMpGCrjkNGqgEywES15ZS11HHY3UuxK'))).toBe(true);
+        expect(contract.address.equals(Address.parse('EQBJp7j5N40GXJbAqFSnfTV1Af4ZTyHIMpRbKcudNhWJbbNO'))).toBe(true);
         expect(balance > 0n).toBe(true);
     });
     it('should perform transfer', async () => {
         // Create contract
         let client = createTestClient4();
         let key = randomTestKey('v4-treasure');
-        let contract = client.open(WalletContractV1R2.create({ workchain: 0, publicKey: key.publicKey }));
+        let contract = client.open(WalletContractV3R1.create({ workchain: 0, publicKey: key.publicKey }));
 
         // Prepare transfer
         let seqno = await contract.getSeqno();

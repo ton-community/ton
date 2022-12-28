@@ -21,7 +21,7 @@ export class WalletContractV2R2 implements Contract {
         this.publicKey = publicKey;
 
         // Build initial code and data
-        let code = Cell.fromBoc(Buffer.from('B5EE9C724101010100630000C2FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54044CD7A1', 'hex'))[0];
+        let code = Cell.fromBoc(Buffer.from('te6cckEBAQEAYwAAwv8AIN0gggFMl7ohggEznLqxnHGw7UTQ0x/XC//jBOCk8mCDCNcYINMf0x8B+CO78mPtRNDTH9P/0VExuvKhA/kBVBBC+RDyovgAApMg10qW0wfUAvsA6NGkyMsfy//J7VQETNeh', 'base64'))[0];
         let data = beginCell()
             .storeUint(0, 32) // Seqno
             .storeBuffer(publicKey)

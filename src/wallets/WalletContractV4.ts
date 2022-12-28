@@ -55,12 +55,6 @@ export class WalletContractV4 implements Contract {
         }
     }
 
-    // async awaitSeqno(seqno: number) {
-    //     while(true) {
-
-    //     }    
-    // }
-
     async send(executor: ContractProvider, message: Cell) {
         await executor.send(new CellMessage(message));
     }
