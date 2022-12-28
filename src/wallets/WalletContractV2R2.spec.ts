@@ -1,33 +1,33 @@
 import { randomTestKey } from "../tests/randomTestKey";
-import { WalletContractV4 } from "./WalletContractV4";
 import { createTestClient4 } from "../tests/createTestClient4";
 import { Address, CommentMessage, CommonMessageInfo, InternalMessage, toNano } from "ton-core";
-import { SendMode } from "../client/SendMode";
+import { WalletContractV2R2 } from "./WalletContractV2R2";
+import { createTestClient } from "../tests/createTestClient";
 
-describe('WalletContractV4', () => {
+describe('WalletContractV2R2', () => {
     it('should has balance and correct address', async () => {
 
         // Create contract
         let client = createTestClient4();
         let key = randomTestKey('v4-treasure');
-        let contract = client.open(WalletContractV4.create({ workchain: 0, publicKey: key.publicKey }));
+        let contract = client.open(WalletContractV2R2.create({ workchain: 0, publicKey: key.publicKey }));
         let balance = await contract.getBalance();
 
         // Check parameters
-        expect(contract.address.equals(Address.parse('EQDnBF4JTFKHTYjulEJyNd4dstLGH1m51UrLdu01_tw4z2Au'))).toBe(true);
+        expect(contract.address.equals(Address.parse('EQAkAcNLtzCHudScK9Hsk9I_7SrunBWf_9VrA2xJmGebwEsl'))).toBe(true);
         expect(balance > 0n).toBe(true);
     });
     it('should perform transfer', async () => {
         // Create contract
-        let client = createTestClient4();
+        let client = createTestClient();
         let key = randomTestKey('v4-treasure');
-        let contract = client.open(WalletContractV4.create({ workchain: 0, publicKey: key.publicKey }));
+        let contract = client.open(WalletContractV2R2.create({ workchain: 0, publicKey: key.publicKey }));
 
         // Prepare transfer
         let seqno = await contract.getSeqno();
         let transfer = contract.createTransfer({
             seqno,
-            sendMode: SendMode.IGNORE_ERRORS,
+            sendMode: 0,
             secretKey: key.secretKey,
             order: new InternalMessage({
                 bounce: true,

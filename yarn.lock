@@ -5751,10 +5751,10 @@ toidentifier@1.0.1:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.1.tgz#3be34321a88a820ed1bd80dfaa33e479fbb8dd35"
   integrity sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==
 
-ton-core@^0.12.0:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/ton-core/-/ton-core-0.12.0.tgz#fdf2d1a8c4e702d4e6a3332a77c6ddbb81b6ed40"
-  integrity sha512-c6wJWHHMMIJw5/g5Xv5zyaPUap5dS4NPo+AMA8pVVvbQsyjPcUi1Z7GwT3ccJ2KKUyN88QayeZvVucXnvNu9CQ==
+ton-core@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/ton-core/-/ton-core-0.13.0.tgz#2585f18ba383def099f358d1c1828d30365a9370"
+  integrity sha512-hCSPPjpgtii6C9HNSMGnpHDCiQ86EI75W6kPAABpq2FjG6+fX4Gwxn/YXGxmSf9PdrULFhV4oYc9rWt1uRQo3w==
   dependencies:
     symbol.inspect "1.0.1"
 

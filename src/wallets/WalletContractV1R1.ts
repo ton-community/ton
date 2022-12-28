@@ -32,7 +32,7 @@ export class WalletContractV1R1 implements Contract {
     async getSeqno(executor: ContractProvider) {
         let state = await executor.getState();
         if (state.state === 'active') {
-            return Cell.fromBoc(state.code!)[0].beginParse().loadUint(32);
+            return Cell.fromBoc(state.data!)[0].beginParse().loadUint(32);
         } else {
             return 0;
         }
@@ -41,7 +41,7 @@ export class WalletContractV1R1 implements Contract {
     async getPublicKey(executor: ContractProvider) {
         let state = await executor.getState();
         if (state.state === 'active') {
-            let sc = Cell.fromBoc(state.code!)[0].beginParse();
+            let sc = Cell.fromBoc(state.data!)[0].beginParse();
             sc.skip(32);
             return sc.loadBuffer(32);
         } else {
@@ -49,11 +49,16 @@ export class WalletContractV1R1 implements Contract {
         }
     }
 
+    async getBalance(executor: ContractProvider) {
+        let state = await executor.getState();
+        return state.balance;
+    }
+
     async send(executor: ContractProvider, message: Cell) {
         await executor.send(new CellMessage(message));
     }
 
-    createTransfer(args: { seqno: number, sendMode: SendMode, secretKey: Buffer, order: InternalMessage }) {
+    createTransfer(args: { seqno: number, sendMode: number, secretKey: Buffer, order: InternalMessage }) {
         return createWalletTransferV1({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
     }
 }

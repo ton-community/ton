@@ -1,7 +1,7 @@
 import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
 import { TonTransaction, TonMessage } from './TonTransaction';
 import { AxiosAdapter } from 'axios';
-import { Address, beginCell, Cell, CellMessage, CommonMessageInfo, ExternalMessage, Message, StateInit, TupleItem, TupleReader } from 'ton-core';
+import { Address, beginCell, Cell, CellMessage, CommonMessageInfo, contractAddress, ExternalMessage, Message, StateInit, TupleItem, TupleReader } from 'ton-core';
 import { Contract } from "../contracts/Contract";
 import { ContractProvider } from "../contracts/ContractProvider";
 import { open } from "../contracts/open";
@@ -371,7 +371,11 @@ function createProvider(client: TonClient, address: Address, init: { code: Cell,
                     body: message
                 })
             });
-            await client.sendMessage(ext);
+            let boc = beginCell()
+                .storeWritable(ext)
+                .endCell()
+                .toBoc();
+            await client.sendFile(boc);
         },
     }
 }

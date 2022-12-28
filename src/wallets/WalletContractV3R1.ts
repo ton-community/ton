@@ -49,6 +49,11 @@ export class WalletContractV3R1 implements Contract {
         }
     }
 
+    async getBalance(executor: ContractProvider) {
+        let state = await executor.getState();
+        return state.balance;
+    }
+
     async send(executor: ContractProvider, message: Cell) {
         await executor.send(new CellMessage(message));
     }
