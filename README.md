@@ -13,7 +13,7 @@ Cross-platform client for TON blockchain.
 ## Install
 
 ```bash
-yarn add ton buffer
+yarn add ton ton-crypto ton-core buffer
 ```
 
 #### Browser polifil
@@ -31,23 +31,38 @@ To use this library you need HTTP API endpoint, you can use one of the public en
 - Testnet: https://testnet.toncenter.com/api/v2/jsonRPC
 
 ```js
-import { TonClient } from "ton";
+import { TonClient, SendMode, WalletContractV4, Address, toNano } from "ton";
+import { mnemonicNew, mnemonicToPrivateKey } from "ton-crypto";
 
 // Create Client
 const client = new TonClient({
   endpoint: 'https://toncenter.com/api/v2/jsonRPC',
 });
 
-// Open Wallet
-const wallet = await client.openWallet('<public-key>');
-console.log(wallet.address);
-console.log(await wallet.getBalance());
+// Generate new key
+let mnemonics = await mnemonicNew();
+let keyPair = await mnemonicToPrivateKey(mnemonics);
 
-// Transfering coins
-let seqno = await wallet.getSeqNo();
+// Create wallet contract
+let workchain = 0; // Usually you need a workchain 0
+let wallet = WalletContractV4.create({ workchain, publicKey: keypair.publicKey });
+let contract = client.open(wallet);
 
-// In case of failure you can safely retry calling this method
-await wallet.transfer({ to: 'some-address', amount: 10.0, seqno, secretKey: '<secret>' });
+// Get balance
+let balance: biging = await contract.getBalance();
+
+// Create a transfer
+let seqno: number = await contract.getSeqno();
+let transfer = await contract.createTransfer({
+  seqno,
+  sendMode: SendMode.IGNORE_ERRORS,
+  order: new InternalMessage({
+    dest: Address.parse('EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N'),
+    bounce: false,
+    value: toNano('1.5')
+  })
+});
+
 ```
 
 # License
