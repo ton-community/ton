@@ -1,8 +1,7 @@
-import { randomTestKey } from "../tests/randomTestKey";
+import { randomTestKey } from "../utils/randomTestKey";
 import { WalletContractV4 } from "./WalletContractV4";
-import { createTestClient4 } from "../tests/createTestClient4";
-import { Address, CommentMessage, CommonMessageInfo, InternalMessage, toNano } from "ton-core";
-import { SendMode } from "../client/SendMode";
+import { createTestClient4 } from "../utils/createTestClient4";
+import { Address, CommentMessage, CommonMessageInfo, InternalMessage, SendMode, toNano } from "ton-core";
 
 describe('WalletContractV4', () => {
     it('should has balance and correct address', async () => {
@@ -27,7 +26,7 @@ describe('WalletContractV4', () => {
         let seqno = await contract.getSeqno();
         let transfer = contract.createTransfer({
             seqno,
-            sendMode: SendMode.IGNORE_ERRORS,
+            sendMode: SendMode.NONE,
             secretKey: key.secretKey,
             order: new InternalMessage({
                 bounce: true,

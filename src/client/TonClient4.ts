@@ -1,10 +1,9 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
-import { Address, beginCell, Cell, CommonMessageInfo, ExternalMessage, parseTuple, serializeTuple, StateInit, TupleItem, TupleReader } from "ton-core";
-import { Contract } from "../contracts/Contract";
-import { ContractProvider } from "../contracts/ContractProvider";
-import { open } from "../contracts/open";
+import { AccountState, Address, beginCell, Cell, CellMessage, CommonMessageInfo, Contract, ContractProvider, ExternalMessage, parseTuple, serializeTuple, StateInit, TupleItem, TupleReader } from "ton-core";
+import { Maybe } from "../utils/maybe";
 import { toUrlSafe } from "../utils/toUrlSafe";
+import { doOpen } from "./doOpen";
 
 export type TonClient4Parameters = {
 
@@ -217,7 +216,7 @@ export class TonClient4 {
      * @returns opened contract
      */
     open<T extends Contract>(contract: T) {
-        return open<T>(contract, (args) => createProvider(this, null, args.address, args.init));
+        return doOpen<T>(contract, (args) => createProvider(this, null, args.address, args.init));
     }
 
     /**
@@ -227,26 +226,80 @@ export class TonClient4 {
      * @returns opened contract
      */
     openAt<T extends Contract>(block: number, contract: T) {
-        return open<T>(contract, (args) => createProvider(this, block, args.address, args.init));
+        return doOpen<T>(contract, (args) => createProvider(this, block, args.address, args.init));
+    }
+
+    /**
+     * Create provider
+     * @param address address
+     * @param init optional init data
+     * @returns provider
+     */
+    provider(address: Address, init?: { code: Cell, data: Cell } | null) {
+        return createProvider(this, null, address, init ? init : null);
+    }
+
+    /**
+     * Create provider at specified block number
+     * @param block block number
+     * @param address address
+     * @param init optional init data
+     * @returns provider
+     */
+    providerAt(block: number, address: Address, init?: { code: Cell, data: Cell } | null) {
+        return createProvider(this, block, address, init ? init : null);
     }
 }
 
 function createProvider(client: TonClient4, block: number | null, address: Address, init: { code: Cell, data: Cell } | null): ContractProvider {
     return {
-        async getState(): Promise<{ balance: bigint, data: Buffer | null, code: Buffer | null, state: 'unint' | 'active' | 'frozen' }> {
+        async getState(): Promise<AccountState> {
+
+            // Resolve block
             let sq = block;
             if (sq === null) {
                 let res = await client.getLastBlock();
                 sq = res.last.seqno;
             }
+
+            // Load state
             let state = await client.getAccount(sq, address);
-            let data = state.account.state.type === 'active' ? state.account.state.data ? Buffer.from(state.account.state.data, 'base64') : null : null;
-            let code = state.account.state.type === 'active' ? state.account.state.code ? Buffer.from(state.account.state.code, 'base64') : null : null;
+
+            // Convert state
+            let last = state.account.last ? { lt: BigInt(state.account.last.lt), hash: Buffer.from(state.account.last.hash, 'base64') } : null;
+            let storage: {
+                type: 'uninit';
+            } | {
+                type: 'active';
+                code: Maybe<Buffer>;
+                data: Maybe<Buffer>;
+            } | {
+                type: 'frozen';
+                stateHash: Buffer;
+            };
+            if (state.account.state.type === 'active') {
+                storage = {
+                    type: 'active',
+                    code: state.account.state.code ? Buffer.from(state.account.state.code, 'base64') : null,
+                    data: state.account.state.data ? Buffer.from(state.account.state.data, 'base64') : null,
+                };
+            } else if (state.account.state.type === 'uninit') {
+                storage = {
+                    type: 'uninit',
+                };
+            } else if (state.account.state.type === 'frozen') {
+                storage = {
+                    type: 'frozen',
+                    stateHash: Buffer.from(state.account.state.stateHash, 'base64'),
+                };
+            } else {
+                throw Error('Unsupported state');
+            }
+
             return {
                 balance: BigInt(state.account.balance.coins),
-                data,
-                code,
-                state: state.account.state.type === 'active' ? 'active' : (state.account.state.type === 'frozen' ? 'frozen' : 'unint'),
+                last: last,
+                state: storage
             };
         },
         async callGetMethod(name, args) {
@@ -265,46 +318,21 @@ function createProvider(client: TonClient4, block: number | null, address: Addre
         },
         async send(message) {
 
-            // No init known
-            if (!init) {
-                const ext = new ExternalMessage({
-                    to: address,
-                    body: new CommonMessageInfo({
-                        body: message
-                    })
-                });
-                let pkg = beginCell()
-                    .storeWritable(ext)
-                    .endCell()
-                    .toBoc();
-                await client.sendMessage(pkg);
-                return;
-            }
-
-            // Check if contract deployed
+            // Resolve last
             let last = await client.getLastBlock();
-            let deployed = (await client.getAccountLite(last.last.seqno, address)).account.state.type === 'active';
-            if (deployed) {
-                const ext = new ExternalMessage({
-                    to: address,
-                    body: new CommonMessageInfo({
-                        body: message
-                    })
-                });
-                let pkg = beginCell()
-                    .storeWritable(ext)
-                    .endCell()
-                    .toBoc();
-                await client.sendMessage(pkg);
-                return;
+
+            // Resolve init
+            let neededInit: { code: Cell | null, data: Cell | null } | null = null;
+            if (init && (await client.getAccountLite(last.last.seqno, address)).account.state.type !== 'active') {
+                neededInit = init;
             }
 
             // Send with state init
             const ext = new ExternalMessage({
                 to: address,
                 body: new CommonMessageInfo({
-                    stateInit: new StateInit({ code: init.code, data: init.data }),
-                    body: message
+                    stateInit: neededInit ? new StateInit({ code: neededInit.code, data: neededInit.data }) : null,
+                    body: new CellMessage(message)
                 })
             });
             let pkg = beginCell()

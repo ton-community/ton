@@ -1,10 +1,9 @@
 import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
-import { TonTransaction, TonMessage } from './TonTransaction';
+import { TonClientTransaction, TonClientMessage } from './api/TonClientTransaction';
 import { AxiosAdapter } from 'axios';
-import { Address, beginCell, Cell, CellMessage, CommonMessageInfo, contractAddress, ExternalMessage, Message, StateInit, TupleItem, TupleReader } from 'ton-core';
-import { Contract } from "../contracts/Contract";
-import { ContractProvider } from "../contracts/ContractProvider";
-import { open } from "../contracts/open";
+import { AccountState, Address, beginCell, Cell, CellMessage, CommonMessageInfo, Contract, ContractProvider, ExternalMessage, Message, StateInit, TupleItem, TupleReader } from 'ton-core';
+import { doOpen } from "./doOpen";
+import { Maybe } from "../utils/maybe";
 
 export type TonClientParameters = {
     /**
@@ -28,11 +27,7 @@ export type TonClientParameters = {
     httpAdapter?: AxiosAdapter;
 }
 
-export type TonClientResolvedParameters = {
-    endpoint: string;
-}
-
-function convertMessage(t: HTTPMessage): TonMessage {
+function convertMessage(t: HTTPMessage): TonClientMessage {
     return {
         source: t.source !== '' ? Address.parseFriendly(t.source).address : null,
         destination: t.destination !== '' ? Address.parseFriendly(t.destination).address : null,
@@ -49,7 +44,7 @@ function convertMessage(t: HTTPMessage): TonMessage {
     };
 }
 
-function convertTransaction(r: HTTPTransaction): TonTransaction {
+function convertTransaction(r: HTTPTransaction): TonClientTransaction {
     return {
         id: { lt: r.transaction_id.lt, hash: r.transaction_id.hash },
         time: r.utime,
@@ -63,7 +58,7 @@ function convertTransaction(r: HTTPTransaction): TonTransaction {
 }
 
 export class TonClient {
-    readonly parameters: TonClientResolvedParameters;
+    readonly parameters: TonClientParameters;
 
     #api: HttpApi;
 
@@ -121,7 +116,7 @@ export class TonClient {
     async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string, inclusive?: boolean }) {
         // Fetch transactions
         let tx = await this.#api.getTransactions(address, opts);
-        let res: TonTransaction[] = [];
+        let res: TonClientTransaction[] = [];
         for (let r of tx) {
             res.push(convertTransaction(r))
         }
@@ -290,7 +285,17 @@ export class TonClient {
      * @returns contract
      */
     open<T extends Contract>(src: T) {
-        return open<T>(src, (args) => createProvider(this, args.address, args.init));
+        return doOpen<T>(src, (args) => createProvider(this, args.address, args.init));
+    }
+
+    /**
+     * Create a provider
+     * @param address address
+     * @param init optional init
+     * @returns provider
+     */
+    provider(address: Address, init: { code: Cell | null, data: Cell | null } | null) {
+        return createProvider(this, address, init);
     }
 }
 
@@ -318,57 +323,64 @@ function serializeStack(src: TupleItem[]) {
     return stack;
 }
 
-function createProvider(client: TonClient, address: Address, init: { code: Cell, data: Cell } | null): ContractProvider {
+function createProvider(client: TonClient, address: Address, init: { code: Cell | null, data: Cell | null } | null): ContractProvider {
     return {
-        async getState(): Promise<{ balance: bigint, data: Buffer | null, code: Buffer | null, state: 'unint' | 'active' | 'frozen' }> {
+        async getState(): Promise<AccountState> {
             let state = await client.getContractState(address);
+            let balance = state.balance;
+            let last = state.lastTransaction ? { lt: BigInt(state.lastTransaction.lt), hash: Buffer.from(state.lastTransaction.hash, 'base64') } : null;
+            let storage: {
+                type: 'uninit';
+            } | {
+                type: 'active';
+                code: Maybe<Buffer>;
+                data: Maybe<Buffer>;
+            } | {
+                type: 'frozen';
+                stateHash: Buffer;
+            };
+            if (state.state === 'active') {
+                storage = {
+                    type: 'active',
+                    code: state.code ? state.code : null,
+                    data: state.data ? state.data : null,
+                };
+            } else if (state.state === 'uninitialized') {
+                storage = {
+                    type: 'uninit',
+                };
+            } else if (state.state === 'frozen') {
+                storage = {
+                    type: 'frozen',
+                    stateHash: Buffer.alloc(0),
+                };
+            } else {
+                throw Error('Unsupported state');
+            }
             return {
-                balance: state.balance,
-                data: state.data,
-                code: state.code,
-                state: state.state === 'active' ? 'active' : (state.state === 'frozen' ? 'frozen' : 'unint'),
+                balance,
+                last,
+                state: storage,
             };
         },
         async callGetMethod(name, args) {
             let method = await client.callGetMethod(address, name, serializeStack(args));
-            return {
-                gas: method.gas_used,
-                stack: method.stack,
-            };
+            return { stack: method.stack };
         },
         async send(message) {
 
-            // No init known
-            if (!init) {
-                const ext = new ExternalMessage({
-                    to: address,
-                    body: new CommonMessageInfo({
-                        body: message
-                    })
-                });
-                await client.sendMessage(ext);
-                return;
-            }
-
-            // Check if contract deployed
-            let deployed = await client.isContractDeployed(address);
-            if (deployed) {
-                const ext = new ExternalMessage({
-                    to: address,
-                    body: new CommonMessageInfo({
-                        body: message
-                    })
-                });
-                await client.sendMessage(ext);
-                return;
+            // Resolve init
+            let neededInit: { code: Cell | null, data: Cell | null } | null = null;
+            if (init && !await client.isContractDeployed(address)) {
+                neededInit = init;
             }
 
             // Send with state init
             const ext = new ExternalMessage({
                 to: address,
                 body: new CommonMessageInfo({
-                    stateInit: new StateInit({ code: init.code, data: init.data }),
-                    body: message
+                    stateInit: neededInit ? new StateInit({ code: neededInit.code, data: neededInit.data }) : null,
+                    body: new CellMessage(message)
                 })
             });
             let boc = beginCell()

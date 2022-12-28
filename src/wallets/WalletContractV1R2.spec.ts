@@ -1,6 +1,6 @@
-import { randomTestKey } from "../tests/randomTestKey";
-import { createTestClient4 } from "../tests/createTestClient4";
-import { Address, CommentMessage, CommonMessageInfo, InternalMessage, toNano } from "ton-core";
+import { randomTestKey } from "../utils/randomTestKey";
+import { createTestClient4 } from "../utils/createTestClient4";
+import { Address, CommentMessage, CommonMessageInfo, InternalMessage, SendMode, toNano } from "ton-core";
 import { WalletContractV1R2 } from "./WalletContractV1R2";
 
 describe('WalletContractV1R2', () => {
@@ -26,7 +26,7 @@ describe('WalletContractV1R2', () => {
         let seqno = await contract.getSeqno();
         let transfer = contract.createTransfer({
             seqno,
-            sendMode: 0,
+            sendMode: SendMode.NONE,
             secretKey: key.secretKey,
             order: new InternalMessage({
                 bounce: true,

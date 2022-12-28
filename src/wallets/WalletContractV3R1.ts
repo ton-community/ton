@@ -1,5 +1,4 @@
-import { Address, beginCell, Cell, CellMessage, contractAddress, InternalMessage } from "ton-core";
-import { SendMode } from "../client/SendMode";
+import { Address, beginCell, Cell, contractAddress, InternalMessage, SendMode } from "ton-core";
 import { Contract } from "../contracts/Contract";
 import { ContractProvider } from "../contracts/ContractProvider";
 import { Maybe } from "../utils/maybe";
@@ -55,7 +54,7 @@ export class WalletContractV3R1 implements Contract {
     }
 
     async send(executor: ContractProvider, message: Cell) {
-        await executor.send(new CellMessage(message));
+        await executor.send(message);
     }
 
     createTransfer(args: { seqno: number, sendMode: SendMode, secretKey: Buffer, order: InternalMessage, timeout?: Maybe<number> }) {

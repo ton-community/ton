@@ -1,14 +1,12 @@
-import { Address, Cell } from "ton-core";
-import { Contract } from "./Contract";
-import { ContractProvider } from "./ContractProvider";
+import { Address, Cell, Contract, ContractProvider } from "ton-core";
 
-type MappedType<F> = {
+type OpenedContract<F> = {
     [P in keyof F]: P extends `${'get' | 'send'}${string}`
     ? (F[P] extends (x: ContractProvider, ...args: infer P) => infer R ? (...args: P) => R : never)
     : F[P];
 }
 
-export function open<T extends Contract>(src: T, factory: (params: { address: Address, init: { code: Cell, data: Cell } | null }) => ContractProvider): MappedType<T> {
+export function doOpen<T extends Contract>(src: T, factory: (params: { address: Address, init: { code: Cell, data: Cell } | null }) => ContractProvider): OpenedContract<T> {
 
     // Resolve parameters
     let address: Address;
@@ -42,5 +40,5 @@ export function open<T extends Contract>(src: T, factory: (params: { address: Ad
             }
             return value;
         }
-    }) as MappedType<T>;
+    }) as OpenedContract<T>;
 }

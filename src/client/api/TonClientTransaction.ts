@@ -1,6 +1,6 @@
 import { Address } from "ton-core";
 
-export type TonMessageData = {
+export type TonClientMessageData = {
     type: 'text',
     text: string
 } | {
@@ -8,17 +8,17 @@ export type TonMessageData = {
     data: Buffer
 }
 
-export type TonMessage = {
+export type TonClientMessage = {
     source: Address | null;
     destination: Address | null;
     value: bigint;
     forwardFee: bigint;
     ihrFee: bigint;
     createdLt: string;
-    body: TonMessageData | null;
+    body: TonClientMessageData | null;
 };
 
-export type TonTransaction = {
+export type TonClientTransaction = {
     id: {
         lt: string;
         hash: string;
@@ -28,6 +28,6 @@ export type TonTransaction = {
     otherFee: bigint;
     fee: bigint;
     data: string;
-    inMessage: TonMessage | null;
-    outMessages: TonMessage[];
+    inMessage: TonClientMessage | null;
+    outMessages: TonClientMessage[];
 };
