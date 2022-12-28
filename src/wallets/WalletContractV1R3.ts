@@ -1,6 +1,4 @@
-import { Address, beginCell, Cell, contractAddress, InternalMessage, SendMode } from "ton-core";
-import { Contract } from "../contracts/Contract";
-import { ContractProvider } from "../contracts/ContractProvider";
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, InternalMessage, SendMode } from "ton-core";
 import { createWalletTransferV1 } from "./signing/createWalletTransfer";
 
 export class WalletContractV1R3 implements Contract {
@@ -30,7 +28,7 @@ export class WalletContractV1R3 implements Contract {
 
     async getSeqno(executor: ContractProvider) {
         let state = await executor.getState();
-        if (state.state === 'active') {
+        if (state.state.type === 'active') {
             let res = await executor.callGetMethod('seqno', []);
             return res.stack.readNumber();
         } else {

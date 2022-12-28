@@ -1,6 +1,4 @@
-import { Address, beginCell, Cell, contractAddress, InternalMessage, SendMode } from "ton-core";
-import { Contract } from "../contracts/Contract";
-import { ContractProvider } from "../contracts/ContractProvider";
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, InternalMessage, SendMode } from "ton-core";;
 import { createWalletTransferV1 } from "./signing/createWalletTransfer";
 
 export class WalletContractV1R1 implements Contract {
@@ -30,8 +28,8 @@ export class WalletContractV1R1 implements Contract {
 
     async getSeqno(executor: ContractProvider) {
         let state = await executor.getState();
-        if (state.state === 'active') {
-            return Cell.fromBoc(state.data!)[0].beginParse().loadUint(32);
+        if (state.state.type === 'active') {
+            return Cell.fromBoc(state.state.data!)[0].beginParse().loadUint(32);
         } else {
             return 0;
         }
@@ -39,10 +37,8 @@ export class WalletContractV1R1 implements Contract {
 
     async getPublicKey(executor: ContractProvider) {
         let state = await executor.getState();
-        if (state.state === 'active') {
-            let sc = Cell.fromBoc(state.data!)[0].beginParse();
-            sc.skip(32);
-            return sc.loadBuffer(32);
+        if (state.state.type === 'active') {
+            return Cell.fromBoc(state.state.data!)[0].beginParse().skip(32).loadBuffer(32);
         } else {
             return null;
         }
