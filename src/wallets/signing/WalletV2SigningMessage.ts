@@ -32,10 +32,10 @@ export class WalletV2SigningMessage implements Message {
         } else {
             builder.storeUint(this.timeout, 32);
         }
-        builder.storeUint(this.sendMode, 8);
 
         // Write order
         for (let m of this.messages) {
+            builder.storeUint(this.sendMode, 8);
             builder.storeRef(beginCell().storeWritable(m));
         }
     }

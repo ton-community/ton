@@ -19,8 +19,8 @@ export class WalletV1SigningMessage implements Message {
 
     writeTo(builder: Builder) {
         builder.storeUint(this.seqno, 32);
-        builder.storeUint(this.sendMode, 8);
         for (let m of this.messages) {
+            builder.storeUint(this.sendMode, 8);
             builder.storeRef(beginCell().storeWritable(m));
         }
     }

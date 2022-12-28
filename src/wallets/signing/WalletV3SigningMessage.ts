@@ -39,10 +39,10 @@ export class WalletV3SigningMessage implements Message {
             builder.storeUint(this.timeout, 32);
         }
         builder.storeUint(this.seqno, 32);
-        builder.storeUint(this.sendMode, 8);
 
         // Write order
         for (let m of this.messages) {
+            builder.storeUint(this.sendMode, 8);
             builder.storeRef(beginCell().storeWritable(m));
         }
     }
