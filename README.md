@@ -31,7 +31,7 @@ To use this library you need HTTP API endpoint, you can use one of the public en
 - Testnet: https://testnet.toncenter.com/api/v2/jsonRPC
 
 ```js
-import { TonClient, SendMode, WalletContractV4, Address, toNano } from "ton";
+import { TonClient, WalletContractV4, internal } from "ton";
 import { mnemonicNew, mnemonicToPrivateKey } from "ton-crypto";
 
 // Create Client
@@ -55,12 +55,11 @@ let balance: biging = await contract.getBalance();
 let seqno: number = await contract.getSeqno();
 let transfer = await contract.createTransfer({
   seqno,
-  sendMode: SendMode.IGNORE_ERRORS,
-  order: new InternalMessage({
-    dest: Address.parse('EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N'),
-    bounce: false,
-    value: toNano('1.5')
-  })
+  messages: [internal({
+    value: '1.5'
+    dest: 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N',
+    body: 'Hello world'
+  })]
 });
 
 ```

@@ -5,11 +5,11 @@ export class WalletV2SigningMessage implements Message {
 
     readonly timeout: number;
     readonly seqno: number;
-    readonly order: Message;
+    readonly messages: Message[];
     readonly sendMode: number;
 
-    constructor(args: { timeout?: Maybe<number>, seqno: Maybe<number>, sendMode: number, order: Message }) {
-        this.order = args.order;
+    constructor(args: { timeout?: Maybe<number>, seqno: Maybe<number>, sendMode: number, messages: Message[] }) {
+        this.messages = args.messages;
         this.sendMode = args.sendMode;
         if (args.timeout !== undefined && args.timeout !== null) {
             this.timeout = args.timeout;
@@ -35,7 +35,8 @@ export class WalletV2SigningMessage implements Message {
         builder.storeUint(this.sendMode, 8);
 
         // Write order
-        builder.storeRef(beginCell()
-            .storeWritable(this.order));
+        for (let m of this.messages) {
+            builder.storeRef(beginCell().storeWritable(m));
+        }
     }
 }

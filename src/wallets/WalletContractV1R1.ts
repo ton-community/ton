@@ -1,4 +1,5 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, InternalMessage, SendMode } from "ton-core";;
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, InternalMessage, SendMode } from "ton-core";
+import { Maybe } from "../utils/maybe";
 import { createWalletTransferV1 } from "./signing/createWalletTransfer";
 
 export class WalletContractV1R1 implements Contract {
@@ -53,7 +54,21 @@ export class WalletContractV1R1 implements Contract {
         await executor.send(message);
     }
 
-    createTransfer(args: { seqno: number, sendMode: SendMode, secretKey: Buffer, order: InternalMessage }) {
-        return createWalletTransferV1({ seqno: args.seqno, sendMode: args.sendMode, secretKey: args.secretKey, order: args.order });
+    createTransfer(args: {
+        seqno: number,
+        secretKey: Buffer,
+        messages: InternalMessage[],
+        sendMode?: Maybe<SendMode>,
+    }) {
+        let sendMode = SendMode.PAY_GAS_SEPARATLY;
+        if (args.sendMode !== null && args.sendMode !== undefined) {
+            sendMode = args.sendMode;
+        }
+        return createWalletTransferV1({
+            seqno: args.seqno,
+            sendMode,
+            secretKey: args.secretKey,
+            messages: args.messages
+        });
     }
 }

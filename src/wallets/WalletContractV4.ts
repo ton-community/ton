@@ -56,12 +56,22 @@ export class WalletContractV4 implements Contract {
         await executor.send(message);
     }
 
-    createTransfer(args: { seqno: number, sendMode: SendMode, secretKey: Buffer, order: InternalMessage, timeout?: Maybe<number> }) {
+    createTransfer(args: {
+        seqno: number,
+        secretKey: Buffer,
+        messages: InternalMessage[]
+        sendMode?: Maybe<SendMode>,
+        timeout?: Maybe<number>,
+    }) {
+        let sendMode = SendMode.PAY_GAS_SEPARATLY;
+        if (args.sendMode !== null && args.sendMode !== undefined) {
+            sendMode = args.sendMode;
+        }
         return createWalletTransferV4({
             seqno: args.seqno,
-            sendMode: args.sendMode,
+            sendMode,
             secretKey: args.secretKey,
-            order: args.order,
+            messages: args.messages,
             timeout: args.timeout,
             walletId: this.walletId
         });

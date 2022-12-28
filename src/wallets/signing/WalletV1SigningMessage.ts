@@ -4,11 +4,11 @@ import { beginCell, Builder, Message } from "ton-core";
 export class WalletV1SigningMessage implements Message {
 
     readonly seqno: number;
-    readonly order: Message;
+    readonly messages: Message[];
     readonly sendMode: number;
 
-    constructor(args: { seqno: Maybe<number>, sendMode: number, order: Message }) {
-        this.order = args.order;
+    constructor(args: { seqno: Maybe<number>, sendMode: number, messages: Message[] }) {
+        this.messages = args.messages;
         this.sendMode = args.sendMode;
         if (args.seqno !== undefined && args.seqno !== null) {
             this.seqno = args.seqno;
@@ -20,7 +20,8 @@ export class WalletV1SigningMessage implements Message {
     writeTo(builder: Builder) {
         builder.storeUint(this.seqno, 32);
         builder.storeUint(this.sendMode, 8);
-        builder.storeRef(beginCell()
-            .storeWritable(this.order));
+        for (let m of this.messages) {
+            builder.storeRef(beginCell().storeWritable(m));
+        }
     }
 }

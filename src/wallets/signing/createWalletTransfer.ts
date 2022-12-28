@@ -6,12 +6,18 @@ import { WalletV2SigningMessage } from "./WalletV2SigningMessage";
 import { WalletV3SigningMessage } from "./WalletV3SigningMessage";
 import { WalletV4SigningMessage } from "./WalletV4SigningMessage";
 
-export function createWalletTransferV1(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer }) {
+export function createWalletTransferV1(args: { seqno: number, sendMode: number, messages: InternalMessage[], secretKey: Buffer }) {
 
+    // Check number of messages
+    if (args.messages.length > 4) {
+        throw new Error("Maximum number of messages in a single transfer is 4");
+    }
+
+    // Create message
     let signingMessage = new WalletV1SigningMessage({
         seqno: args.seqno,
         sendMode: args.sendMode,
-        order: args.order
+        messages: args.messages
     });
 
     // Sign message
@@ -29,12 +35,18 @@ export function createWalletTransferV1(args: { seqno: number, sendMode: number, 
     return body;
 }
 
-export function createWalletTransferV2(args: { seqno: number, sendMode: number, order: InternalMessage, secretKey: Buffer, timeout?: Maybe<number> }) {
+export function createWalletTransferV2(args: { seqno: number, sendMode: number, messages: InternalMessage[], secretKey: Buffer, timeout?: Maybe<number> }) {
 
+    // Check number of messages
+    if (args.messages.length > 4) {
+        throw new Error("Maximum number of messages in a single transfer is 4");
+    }
+
+    // Create message
     let signingMessage = new WalletV2SigningMessage({
         seqno: args.seqno,
         sendMode: args.sendMode,
-        order: args.order,
+        messages: args.messages,
         timeout: args.timeout
     });
 
@@ -57,17 +69,23 @@ export function createWalletTransferV3(args: {
     seqno: number,
     sendMode: number,
     walletId: number,
-    order: InternalMessage,
+    messages: InternalMessage[],
     secretKey: Buffer,
     timeout?: Maybe<number>
 }) {
 
+    // Check number of messages
+    if (args.messages.length > 4) {
+        throw new Error("Maximum number of messages in a single transfer is 4");
+    }
+
+    // Create message to sign
     let signingMessage = new WalletV3SigningMessage({
         timeout: args.timeout,
         walletId: args.walletId,
         seqno: args.seqno,
         sendMode: args.sendMode,
-        order: args.order
+        messages: args.messages
     });
 
     // Sign message
@@ -89,17 +107,22 @@ export function createWalletTransferV4(args: {
     seqno: number,
     sendMode: number,
     walletId: number,
-    order: InternalMessage | null,
+    messages: InternalMessage[],
     secretKey: Buffer,
     timeout?: Maybe<number>
 }) {
+
+    // Check number of messages
+    if (args.messages.length > 4) {
+        throw new Error("Maximum number of messages in a single transfer is 4");
+    }
 
     let signingMessage = new WalletV4SigningMessage({
         timeout: args.timeout,
         walletId: args.walletId,
         seqno: args.seqno,
         sendMode: args.sendMode,
-        order: args.order
+        messages: args.messages
     });
 
     // Sign message
