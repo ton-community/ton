@@ -40,6 +40,11 @@ export class WalletContractV4 implements Contract {
         this.address = contractAddress(workchain, { code, data });
     }
 
+    async getBalance(executor: ContractProvider) {
+        let state = await executor.getState();
+        return state.balance;
+    }
+
     async getSeqno(executor: ContractProvider) {
         let state = await executor.getState();
         if (state.state === 'active') {
@@ -49,6 +54,12 @@ export class WalletContractV4 implements Contract {
             return 0;
         }
     }
+
+    // async awaitSeqno(seqno: number) {
+    //     while(true) {
+
+    //     }    
+    // }
 
     async send(executor: ContractProvider, message: Cell) {
         await executor.send(new CellMessage(message));

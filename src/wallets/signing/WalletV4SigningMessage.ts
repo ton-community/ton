@@ -1,5 +1,5 @@
 import { Maybe } from "../../utils/maybe";
-import { Builder, Message } from "ton-core";
+import { beginCell, Builder, Message } from "ton-core";
 
 export class WalletV4SigningMessage implements Message {
 
@@ -44,7 +44,9 @@ export class WalletV4SigningMessage implements Message {
         // Write order
         if (this.order) {
             builder.storeUint(this.sendMode, 8);
-            this.order.writeTo(builder);
+            builder.storeRef(beginCell()
+                .storeWritable(this.order)
+            );
         }
     }
 }

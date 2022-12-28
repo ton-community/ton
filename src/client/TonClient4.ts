@@ -1,7 +1,9 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
-import { Address, Cell, parseTuple, serializeTuple, TupleItem } from "ton-core";
+import { Address, beginCell, Cell, CommonMessageInfo, ExternalMessage, parseTuple, serializeTuple, StateInit, TupleItem, TupleReader } from "ton-core";
 import { Contract } from "../contracts/Contract";
+import { ContractProvider } from "../contracts/ContractProvider";
+import { open } from "../contracts/open";
 import { toUrlSafe } from "../utils/toUrlSafe";
 
 export type TonClient4Parameters = {
@@ -172,6 +174,14 @@ export class TonClient4 {
         return res.data;
     }
 
+    /**
+     * Execute run method
+     * @param seqno block sequence number
+     * @param address account address
+     * @param name method name
+     * @param args method arguments
+     * @returns method result
+     */
     async runMethod(seqno: number, address: Address, name: string, args?: TupleItem[]) {
         let tail = args && args.length > 0 ? '/' + toUrlSafe(serializeTuple(args).toBoc({ idx: false, crc32: false }).toString('base64')) : '';
         let url = this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }) + '/run/' + name + tail;
@@ -188,6 +198,11 @@ export class TonClient4 {
         };
     }
 
+    /**
+     * Send external message
+     * @param message message boc
+     * @returns message status
+     */
     async sendMessage(message: Buffer) {
         let res = await axios.post(this.#endpoint + '/send', { boc: message.toString('base64') }, { adapter: this.#adapter, timeout: this.#timeout });
         if (!sendCodec.is(res.data)) {
@@ -196,8 +211,108 @@ export class TonClient4 {
         return { status: res.data.status };
     }
 
-    open(block: number, contract: Contract) {
+    /**
+     * Open smart contract
+     * @param contract contract
+     * @returns opened contract
+     */
+    open<T extends Contract>(contract: T) {
+        return open<T>(contract, (args) => createProvider(this, null, args.address, args.init));
+    }
 
+    /**
+     * Open smart contract
+     * @param block block number
+     * @param contract contract
+     * @returns opened contract
+     */
+    openAt<T extends Contract>(block: number, contract: T) {
+        return open<T>(contract, (args) => createProvider(this, block, args.address, args.init));
+    }
+}
+
+function createProvider(client: TonClient4, block: number | null, address: Address, init: { code: Cell, data: Cell } | null): ContractProvider {
+    return {
+        async getState(): Promise<{ balance: bigint, data: Buffer | null, code: Buffer | null, state: 'unint' | 'active' | 'frozen' }> {
+            let sq = block;
+            if (sq === null) {
+                let res = await client.getLastBlock();
+                sq = res.last.seqno;
+            }
+            let state = await client.getAccount(sq, address);
+            let data = state.account.state.type === 'active' ? state.account.state.data ? Buffer.from(state.account.state.data, 'base64') : null : null;
+            let code = state.account.state.type === 'active' ? state.account.state.code ? Buffer.from(state.account.state.code, 'base64') : null : null;
+            return {
+                balance: BigInt(state.account.balance.coins),
+                data,
+                code,
+                state: state.account.state.type === 'active' ? 'active' : (state.account.state.type === 'frozen' ? 'frozen' : 'unint'),
+            };
+        },
+        async callGetMethod(name, args) {
+            let sq = block;
+            if (sq === null) {
+                let res = await client.getLastBlock();
+                sq = res.last.seqno;
+            }
+            let method = await client.runMethod(sq, address, name, args);
+            if (method.exitCode !== 0 && method.exitCode !== 1) {
+                throw Error('Exit code: ' + method.exitCode);
+            }
+            return {
+                stack: new TupleReader(method.result),
+            };
+        },
+        async send(message) {
+
+            // No init known
+            if (!init) {
+                const ext = new ExternalMessage({
+                    to: address,
+                    body: new CommonMessageInfo({
+                        body: message
+                    })
+                });
+                let pkg = beginCell()
+                    .storeWritable(ext)
+                    .endCell()
+                    .toBoc();
+                await client.sendMessage(pkg);
+                return;
+            }
+
+            // Check if contract deployed
+            let last = await client.getLastBlock();
+            let deployed = (await client.getAccountLite(last.last.seqno, address)).account.state.type === 'active';
+            if (deployed) {
+                const ext = new ExternalMessage({
+                    to: address,
+                    body: new CommonMessageInfo({
+                        body: message
+                    })
+                });
+                let pkg = beginCell()
+                    .storeWritable(ext)
+                    .endCell()
+                    .toBoc();
+                await client.sendMessage(pkg);
+                return;
+            }
+
+            // Send with state init
+            const ext = new ExternalMessage({
+                to: address,
+                body: new CommonMessageInfo({
+                    stateInit: new StateInit({ code: init.code, data: init.data }),
+                    body: message
+                })
+            });
+            let pkg = beginCell()
+                .storeWritable(ext)
+                .endCell()
+                .toBoc();
+            await client.sendMessage(pkg);
+        },
     }
 }
 

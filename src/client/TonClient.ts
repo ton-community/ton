@@ -6,54 +6,6 @@ import { Contract } from "../contracts/Contract";
 import { ContractProvider } from "../contracts/ContractProvider";
 import { open } from "../contracts/open";
 
-function parseStack(src: any[]) {
-    let stack: TupleItem[] = [];
-    for (let s of src) {
-        if (s[0] === 'num') {
-            stack.push({ type: 'int', value: BigInt(s[1]) });
-        } else {
-            throw Error('Unsupported stack item type: ' + s[0])
-        }
-    }
-    return new TupleReader(stack);
-}
-
-function serializeStack(src: TupleItem[]) {
-    let stack: any[] = [];
-    for (let s of src) {
-        if (s.type === 'int') {
-            stack.push(['num', s.value.toString()]);
-        } else {
-            throw Error('Unsupported stack item type: ' + s.type)
-        }
-    }
-    return stack;
-}
-
-function createExecutor(client: TonClient, address: Address, init: { code: Cell, data: Cell } | null): ContractProvider {
-    return {
-        async getState(): Promise<{ balance: bigint, data: Buffer | null, code: Buffer | null, state: 'unint' | 'active' | 'frozen' }> {
-            let state = await client.getContractState(address);
-            return {
-                balance: state.balance,
-                data: state.data,
-                code: state.code,
-                state: state.state === 'active' ? 'active' : (state.state === 'frozen' ? 'frozen' : 'unint'),
-            };
-        },
-        async callGetMethod(name, args) {
-            let method = await client.callGetMethod(address, name, serializeStack(args));
-            return {
-                gas: method.gas_used,
-                stack: method.stack,
-            };
-        },
-        async send(message) {
-            // 
-        },
-    }
-}
-
 export type TonClientParameters = {
     /**
      * API Endpoint
@@ -338,6 +290,88 @@ export class TonClient {
      * @returns contract
      */
     open<T extends Contract>(src: T) {
-        return open<T>(src, (args) => createExecutor(this, args.address, args.init));
+        return open<T>(src, (args) => createProvider(this, args.address, args.init));
+    }
+}
+
+function parseStack(src: any[]) {
+    let stack: TupleItem[] = [];
+    for (let s of src) {
+        if (s[0] === 'num') {
+            stack.push({ type: 'int', value: BigInt(s[1]) });
+        } else {
+            throw Error('Unsupported stack item type: ' + s[0])
+        }
+    }
+    return new TupleReader(stack);
+}
+
+function serializeStack(src: TupleItem[]) {
+    let stack: any[] = [];
+    for (let s of src) {
+        if (s.type === 'int') {
+            stack.push(['num', s.value.toString()]);
+        } else {
+            throw Error('Unsupported stack item type: ' + s.type)
+        }
+    }
+    return stack;
+}
+
+function createProvider(client: TonClient, address: Address, init: { code: Cell, data: Cell } | null): ContractProvider {
+    return {
+        async getState(): Promise<{ balance: bigint, data: Buffer | null, code: Buffer | null, state: 'unint' | 'active' | 'frozen' }> {
+            let state = await client.getContractState(address);
+            return {
+                balance: state.balance,
+                data: state.data,
+                code: state.code,
+                state: state.state === 'active' ? 'active' : (state.state === 'frozen' ? 'frozen' : 'unint'),
+            };
+        },
+        async callGetMethod(name, args) {
+            let method = await client.callGetMethod(address, name, serializeStack(args));
+            return {
+                gas: method.gas_used,
+                stack: method.stack,
+            };
+        },
+        async send(message) {
+
+            // No init known
+            if (!init) {
+                const ext = new ExternalMessage({
+                    to: address,
+                    body: new CommonMessageInfo({
+                        body: message
+                    })
+                });
+                await client.sendMessage(ext);
+                return;
+            }
+
+            // Check if contract deployed
+            let deployed = await client.isContractDeployed(address);
+            if (deployed) {
+                const ext = new ExternalMessage({
+                    to: address,
+                    body: new CommonMessageInfo({
+                        body: message
+                    })
+                });
+                await client.sendMessage(ext);
+                return;
+            }
+
+            // Send with state init
+            const ext = new ExternalMessage({
+                to: address,
+                body: new CommonMessageInfo({
+                    stateInit: new StateInit({ code: init.code, data: init.data }),
+                    body: message
+                })
+            });
+            await client.sendMessage(ext);
+        },
     }
 }
