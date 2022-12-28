@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## Changed
+- Large refactoring, removing a lot of obsolete features and replacing low level classes like `Cell` with `ton-core` implementation
+- New way to work with contracts
+- Explicit work with wallet contracts
+- Unify stack operations in `TonClient` and `TonClient4`
+- Merged `TupleSlice` and `TupleSlice4` into `TupleReader` from `ton-core`
+
+## Removed
+- Removed magical `Wallet` operations
+
 ## [12.3.3] - 2022-12-22
 # Changed
 - Improved BOC serialization

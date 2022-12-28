@@ -1,30 +1,38 @@
 import { Address, beginCell, Cell } from "ton-core";
-import { Contract} from "..";
+import { Contract } from "..";
 import { parseDictRefs } from "../boc/dict/parseDict";
 import { parseFullConfig } from "./configs/configParsing";
-import { ContractExecutor } from "./ContractExecutor";
-
+import { ContractProvider } from "./ContractProvider";
 
 export class ConfigContract implements Contract {
+
+    static create() {
+        return new ConfigContract();
+    }
+
     readonly address: Address = Address.parseRaw('-1:5555555555555555555555555555555555555555555555555555555555555555');
 
-    async getSeqno(executor: ContractExecutor) {
-        let res = await executor.callGetMethod('seqno');
+    private constructor() {
+
+    }
+
+    async getSeqno(executor: ContractProvider) {
+        let res = await executor.callGetMethod('seqno', []);
         return res.stack.readNumber();
     }
 
-    async getConfigsRaw(executor: ContractExecutor) {
+    async getConfigsRaw(executor: ContractProvider) {
         let state = (await executor.getState());
-        if (state.state.kind !== 'active') {
+        if (state.state !== 'active') {
             throw new Error('Contract is not active');
         }
-        let slice = Cell.fromBoc(state.state.state.data)[0].beginParse();
+        let slice = Cell.fromBoc(state.data!)[0].beginParse();
         let dict = slice.loadRef();
         let res = parseDictRefs(dict, 32);
         return res;
     }
 
-    async getConfigs(executor: ContractExecutor) {
+    async getConfigs(executor: ContractProvider) {
         let configs = await this.getConfigsRaw(executor);
         return parseFullConfig(configs);
     }

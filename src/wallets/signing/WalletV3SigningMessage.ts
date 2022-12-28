@@ -1,6 +1,5 @@
-import { Maybe } from "../../types";
-import { Message } from "../../messages/Message";
-import { Builder } from "ton-core";
+import { Maybe } from "../../utils/maybe";
+import { Builder, Message } from "ton-core";
 
 export class WalletV3SigningMessage implements Message {
 

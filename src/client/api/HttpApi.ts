@@ -1,7 +1,7 @@
 import * as t from 'io-ts';
 import { isRight } from 'fp-ts/lib/Either';
 import reporter from 'io-ts-reporters';
-import { TonCache } from '../TonCache';
+import { InMemoryCache, TonCache } from './TonCache';
 import DataLoader from 'dataloader';
 import axios, { AxiosAdapter } from 'axios';
 import { Address, Cell } from 'ton-core';
@@ -191,9 +191,9 @@ export class HttpApi {
     private shardTransactionsCache: TypedCache<{ workchain: number, shard: string, seqno: number }, t.TypeOf<typeof getBlockTransactions>>;
     private shardTransactionsLoader: DataLoader<{ workchain: number, shard: string, seqno: number }, t.TypeOf<typeof getBlockTransactions>, string>;
 
-    constructor(endpoint: string, cache: TonCache, parameters?: HttpApiParameters) {
+    constructor(endpoint: string, parameters?: HttpApiParameters) {
         this.endpoint = endpoint;
-        this.cache = cache;
+        this.cache = new InMemoryCache();
 
         this.parameters = {
             timeout: parameters?.timeout || 30000, // 30 seconds by default
@@ -201,7 +201,7 @@ export class HttpApi {
         }
 
         // Shard
-        this.shardCache = new TypedCache('ton-shard', cache, t.array(blockIdExt), (src) => src + '');
+        this.shardCache = new TypedCache('ton-shard', this.cache, t.array(blockIdExt), (src) => src + '');
         this.shardLoader = new DataLoader(async (src) => {
             return await Promise.all(src.map(async (v) => {
                 const cached = await this.shardCache.get(v);
@@ -215,7 +215,7 @@ export class HttpApi {
         });
 
         // Shard Transactions
-        this.shardTransactionsCache = new TypedCache('ton-shard-tx', cache, getBlockTransactions, (src) => src.workchain + ':' + src.shard + ':' + src.seqno);
+        this.shardTransactionsCache = new TypedCache('ton-shard-tx', this.cache, getBlockTransactions, (src) => src.workchain + ':' + src.shard + ':' + src.seqno);
         this.shardTransactionsLoader = new DataLoader(async (src) => {
             return await Promise.all(src.map(async (v) => {
                 const cached = await this.shardTransactionsCache.get(v);

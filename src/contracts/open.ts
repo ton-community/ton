@@ -1,24 +1,41 @@
-import { Address } from "ton-core";
+import { Address, Cell } from "ton-core";
 import { Contract } from "./Contract";
-import { ContractExecutor } from "./ContractExecutor";
+import { ContractProvider } from "./ContractProvider";
 
 type MappedType<F> = {
-    [P in keyof F]: P extends `get${string}`
-    ? (F[P] extends (x: ContractExecutor, ...args: infer P) => infer R ? (...args: P) => R : never)
+    [P in keyof F]: P extends `${'get' | 'send'}${string}`
+    ? (F[P] extends (x: ContractProvider, ...args: infer P) => infer R ? (...args: P) => R : never)
     : F[P];
 }
 
-export function open<T extends Contract>(src: T, executor: ContractExecutor): MappedType<T> {
+export function open<T extends Contract>(src: T, factory: (params: { address: Address, init: { code: Cell, data: Cell } | null }) => ContractProvider): MappedType<T> {
 
-    // Check parameters
+    // Resolve parameters
+    let address: Address;
+    let init: { code: Cell, data: Cell } | null = null;
+
     if (!Address.isAddress(src.address)) {
         throw Error('Invalid address');
     }
+    address = src.address;
+    if (src.init) {
+        if (!(src.init.code instanceof Cell)) {
+            throw Error('Invalid init.code');
+        }
+        if (!(src.init.data instanceof Cell)) {
+            throw Error('Invalid init.data');
+        }
+        init = src.init;
+    }
 
+    // Create executor
+    let executor = factory({ address, init });
+
+    // Create proxy
     return new Proxy<any>(src as any, {
         get(target, prop) {
             const value = target[prop];
-            if (typeof prop === 'string' && prop.startsWith('get')) {
+            if (typeof prop === 'string' && (prop.startsWith('get') || prop.startsWith('send'))) {
                 if (typeof value === 'function') {
                     return (...args: any[]) => value.apply(target, [executor, ...args]);
                 }
@@ -26,13 +43,4 @@ export function open<T extends Contract>(src: T, executor: ContractExecutor): Ma
             return value;
         }
     }) as MappedType<T>;
-    // return new Proxy(src, {
-    //     get(target, prop) {
-    //         const value = target[prop];
-    //         if (typeof value === 'function') {
-    //             return (...args: any[]) => value.apply(target, args);
-    //         }
-    //         return value;
-    //     },
-    // });
 }

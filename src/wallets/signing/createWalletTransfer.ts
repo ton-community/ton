@@ -1,7 +1,6 @@
-import { beginCell } from "ton-core";
+import { beginCell, InternalMessage } from "ton-core";
 import { sign } from "ton-crypto";
-import { InternalMessage } from "../../messages/InternalMessage";
-import { Maybe } from "../../types";
+import { Maybe } from "../../utils/maybe";
 import { WalletV1SigningMessage } from "./WalletV1SigningMessage";
 import { WalletV2SigningMessage } from "./WalletV2SigningMessage";
 import { WalletV3SigningMessage } from "./WalletV3SigningMessage";
@@ -91,7 +90,7 @@ export function createWalletTransferV4(args: {
     sendMode: number,
     walletId: number,
     order: InternalMessage | null,
-    secretKey?: Maybe<Buffer>,
+    secretKey: Buffer,
     timeout?: Maybe<number>
 }) {
 
@@ -106,12 +105,7 @@ export function createWalletTransferV4(args: {
     // Sign message
     const cell = beginCell()
         .storeWritable(signingMessage);
-    let signature: Buffer;
-    if (args.secretKey) {
-        signature = sign(cell.endCell().hash(), args.secretKey);
-    } else {
-        signature = Buffer.alloc(64);
-    }
+    let signature: Buffer = sign(cell.endCell().hash(), args.secretKey);
 
     // Body
     const body = beginCell()

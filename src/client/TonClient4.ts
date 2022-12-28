@@ -1,6 +1,7 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
 import { Address, Cell, parseTuple, serializeTuple, TupleItem } from "ton-core";
+import { Contract } from "../contracts/Contract";
 import { toUrlSafe } from "../utils/toUrlSafe";
 
 export type TonClient4Parameters = {
@@ -33,6 +34,10 @@ export class TonClient4 {
         this.#adapter = args.httpAdapter;
     }
 
+    /**
+     * Get Last Block
+     * @returns last block info
+     */
     async getLastBlock() {
         let res = await axios.get(this.#endpoint + '/block/latest', { adapter: this.#adapter, timeout: this.#timeout });
         if (!lastBlockCodec.is(res.data)) {
@@ -41,6 +46,11 @@ export class TonClient4 {
         return res.data;
     }
 
+    /**
+     * Get block info
+     * @param seqno block sequence number
+     * @returns block info
+     */
     async getBlock(seqno: number) {
         let res = await axios.get(this.#endpoint + '/block/' + seqno, { adapter: this.#adapter, timeout: this.#timeout });
         if (!blockCodec.is(res.data)) {
@@ -52,6 +62,11 @@ export class TonClient4 {
         return res.data.block;
     }
 
+    /**
+     * Get block info by unix timestamp
+     * @param ts unix timestamp
+     * @returns block info
+     */
     async getBlockByUtime(ts: number) {
         let res = await axios.get(this.#endpoint + '/block/utime/' + ts, { adapter: this.#adapter, timeout: this.#timeout });
         if (!blockCodec.is(res.data)) {
@@ -63,6 +78,12 @@ export class TonClient4 {
         return res.data.block;
     }
 
+    /**
+     * Get block info by unix timestamp
+     * @param seqno block sequence number
+     * @param address account address
+     * @returns account info
+     */
     async getAccount(seqno: number, address: Address) {
         let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }), { adapter: this.#adapter, timeout: this.#timeout });
         if (!accountCodec.is(res.data)) {
@@ -71,6 +92,12 @@ export class TonClient4 {
         return res.data;
     }
 
+    /**
+     * Get account lite info (without code and data)
+     * @param seqno block sequence number
+     * @param address account address
+     * @returns account lite info
+     */
     async getAccountLite(seqno: number, address: Address) {
         let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }) + '/lite', { adapter: this.#adapter, timeout: this.#timeout });
         if (!accountLiteCodec.is(res.data)) {
@@ -79,6 +106,13 @@ export class TonClient4 {
         return res.data;
     }
 
+    /**
+     * Check if account was updated since
+     * @param seqno block sequence number
+     * @param address account address
+     * @param lt account last transaction lt
+     * @returns account change info
+     */
     async isAccountChanged(seqno: number, address: Address, lt: bigint) {
         let res = await axios.get(this.#endpoint + '/block/' + seqno + '/' + address.toString({ urlSafe: true }) + '/changed/' + lt.toString(10), { adapter: this.#adapter, timeout: this.#timeout });
         if (!changedCodec.is(res.data)) {
@@ -87,6 +121,13 @@ export class TonClient4 {
         return res.data;
     }
 
+    /**
+     * Load unparsed account transactions
+     * @param address address
+     * @param lt last transaction lt
+     * @param hash last transaction hash
+     * @returns unparsed transactions
+     */
     async getAccountTransactions(address: Address, lt: bigint, hash: Buffer) {
         let res = await axios.get(this.#endpoint + '/account/' + address.toString({ urlSafe: true }) + '/tx/' + lt.toString(10) + '/' + toUrlSafe(hash.toString('base64')), { adapter: this.#adapter, timeout: this.#timeout });
         if (!transactionsCodec.is(res.data)) {
@@ -113,6 +154,12 @@ export class TonClient4 {
         return tx;
     }
 
+    /**
+     * Get network config
+     * @param seqno block sequence number
+     * @param ids optional config ids
+     * @returns network config
+     */
     async getConfig(seqno: number, ids?: number[]) {
         let tail = '';
         if (ids && ids.length > 0) {
@@ -147,6 +194,10 @@ export class TonClient4 {
             throw Error('Mailformed response');
         }
         return { status: res.data.status };
+    }
+
+    open(block: number, contract: Contract) {
+
     }
 }
 

@@ -1,8 +1,7 @@
-import { Address, Cell } from 'ton-core';
+import { Address, Cell, fromNano, toNano } from 'ton-core';
 import { parseDictRefs } from '../boc/dict/parseDict';
 import { TonClient4 } from '../client/TonClient4';
 import { configParse18, configParseGasLimitsPrices, configParseMsgPrices } from '../contracts/configs/configParsing';
-import { fromNano, toNano } from '../utils/convert';
 import { computeExternalMessageFees, computeGasPrices, computeMessageForwardFees, computeStorageFees } from './fees'
 import { parseTransaction } from './parse';
 

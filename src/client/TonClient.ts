@@ -1,15 +1,10 @@
-import { Message } from "../messages/Message";
 import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
-import { ExternalMessage } from "../messages/ExternalMessage";
-import { CommonMessageInfo } from "../messages/CommonMessageInfo";
-import { StateInit } from "../messages/StateInit";
-import { ContractWithSource } from "../contracts/Contract";
-import { Maybe } from '../types';
 import { TonTransaction, TonMessage } from './TonTransaction';
-import { InMemoryCache, TonCache } from './TonCache';
 import { AxiosAdapter } from 'axios';
-import { Address, beginCell, Cell, TupleItem, TupleReader } from 'ton-core';
-import { CellMessage } from "../messages/CellMessage";
+import { Address, beginCell, Cell, CellMessage, CommonMessageInfo, ExternalMessage, Message, StateInit, TupleItem, TupleReader } from 'ton-core';
+import { Contract } from "../contracts/Contract";
+import { ContractProvider } from "../contracts/ContractProvider";
+import { open } from "../contracts/open";
 
 function parseStack(src: any[]) {
     let stack: TupleItem[] = [];
@@ -23,9 +18,47 @@ function parseStack(src: any[]) {
     return new TupleReader(stack);
 }
 
+function serializeStack(src: TupleItem[]) {
+    let stack: any[] = [];
+    for (let s of src) {
+        if (s.type === 'int') {
+            stack.push(['num', s.value.toString()]);
+        } else {
+            throw Error('Unsupported stack item type: ' + s.type)
+        }
+    }
+    return stack;
+}
+
+function createExecutor(client: TonClient, address: Address, init: { code: Cell, data: Cell } | null): ContractProvider {
+    return {
+        async getState(): Promise<{ balance: bigint, data: Buffer | null, code: Buffer | null, state: 'unint' | 'active' | 'frozen' }> {
+            let state = await client.getContractState(address);
+            return {
+                balance: state.balance,
+                data: state.data,
+                code: state.code,
+                state: state.state === 'active' ? 'active' : (state.state === 'frozen' ? 'frozen' : 'unint'),
+            };
+        },
+        async callGetMethod(name, args) {
+            let method = await client.callGetMethod(address, name, serializeStack(args));
+            return {
+                gas: method.gas_used,
+                stack: method.stack,
+            };
+        },
+        async send(message) {
+            // 
+        },
+    }
+}
+
 export type TonClientParameters = {
+    /**
+     * API Endpoint
+     */
     endpoint: string;
-    cache?: Maybe<TonCache>;
 
     /**
      * HTTP request timeout in milliseconds.
@@ -45,7 +78,6 @@ export type TonClientParameters = {
 
 export type TonClientResolvedParameters = {
     endpoint: string;
-    cache: TonCache;
 }
 
 function convertMessage(t: HTTPMessage): TonMessage {
@@ -85,10 +117,9 @@ export class TonClient {
 
     constructor(parameters: TonClientParameters) {
         this.parameters = {
-            endpoint: parameters.endpoint,
-            cache: parameters.cache ? parameters.cache : new InMemoryCache()
+            endpoint: parameters.endpoint
         };
-        this.#api = new HttpApi(this.parameters.endpoint, this.parameters.cache, {
+        this.#api = new HttpApi(this.parameters.endpoint, {
             timeout: parameters.timeout,
             apiKey: parameters.apiKey,
             adapter: parameters.httpAdapter
@@ -245,8 +276,8 @@ export class TonClient {
      * @param contract contract to send message
      * @param src message body
      */
-    async sendExternalMessage(contract: ContractWithSource, src: Cell) {
-        if (await this.isContractDeployed(contract.address)) {
+    async sendExternalMessage(contract: Contract, src: Cell) {
+        if (await this.isContractDeployed(contract.address) || !contract.init) {
             const message = new ExternalMessage({
                 to: contract.address,
                 body: new CommonMessageInfo({
@@ -258,7 +289,7 @@ export class TonClient {
             const message = new ExternalMessage({
                 to: contract.address,
                 body: new CommonMessageInfo({
-                    stateInit: new StateInit({ code: contract.source.initialCode, data: contract.source.initialData }),
+                    stateInit: new StateInit({ code: contract.init.code, data: contract.init.data }),
                     body: new CellMessage(src)
                 })
             });
@@ -299,5 +330,14 @@ export class TonClient {
             },
             timestampt: info.sync_utime
         };
+    }
+
+    /**
+     * Open contract
+     * @param src source contract
+     * @returns contract
+     */
+    open<T extends Contract>(src: T) {
+        return open<T>(src, (args) => createExecutor(this, args.address, args.init));
     }
 }

@@ -1,10 +1,6 @@
-import { Address } from "ton-core";
-import { ContractSource } from "./sources/ContractSource";
+import { Address, Cell } from "ton-core";
 
 export interface Contract {
     readonly address: Address;
-}
-
-export interface ContractWithSource extends Contract {
-    readonly source: ContractSource;
+    readonly init?: { code: Cell, data: Cell } | null | undefined;
 }
