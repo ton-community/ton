@@ -4,6 +4,7 @@ import { Address, internal } from "ton-core";
 import { WalletContractV1R1 } from "./WalletContractV1R1";
 
 describe('WalletContractV1R1', () => {
+    
     it('should has balance and correct address', async () => {
 
         // Create contract
@@ -16,6 +17,7 @@ describe('WalletContractV1R1', () => {
         expect(contract.address.equals(Address.parse('EQCtW_zzk6n82ebaVQFq8P_04wOemYhtwqMd3NuArmPODRvD'))).toBe(true);
         expect(balance > 0n).toBe(true);
     });
+
     it('should perform transfer', async () => {
         // Create contract
         let client = createTestClient4();
@@ -27,11 +29,11 @@ describe('WalletContractV1R1', () => {
         let transfer = contract.createTransfer({
             seqno,
             secretKey: key.secretKey,
-            messages: [internal({
+            message: internal({
                 to: 'kQD6oPnzaaAMRW24R8F0_nlSsJQni0cGHntR027eT9_sgtwt',
                 value: '0.1',
                 body: 'Hello, world!'
-            })]
+            })
         });
 
         // Perform transfer

@@ -1,4 +1,4 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, InternalMessage, Sender, SendMode } from "ton-core";
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, internal, InternalMessage, Sender, SendMode } from "ton-core";
 import { Maybe } from "../utils/maybe";
 import { createWalletTransferV3 } from "./signing/createWalletTransfer";
 
@@ -36,30 +36,51 @@ export class WalletContractV3R2 implements Contract {
         this.address = contractAddress(workchain, { code, data });
     }
 
-    async getSeqno(executor: ContractProvider) {
-        let state = await executor.getState();
+    /**
+     * Get wallet balance
+     */
+    async getBalance(provider: ContractProvider) {
+        let state = await provider.getState();
+        return state.balance;
+    }
+
+    /**
+     * Get Wallet Seqno
+     */
+    async getSeqno(provider: ContractProvider) {
+        let state = await provider.getState();
         if (state.state.type === 'active') {
-            let res = await executor.callGetMethod('seqno', []);
+            let res = await provider.get('seqno', []);
             return res.stack.readNumber();
         } else {
             return 0;
         }
     }
 
-    async getBalance(executor: ContractProvider) {
-        let state = await executor.getState();
-        return state.balance;
+    /**
+     * Send signed transfer
+     */
+    async send(provider: ContractProvider, message: Cell) {
+        await provider.external(message);
     }
 
-    async send(executor: ContractProvider, message: Cell) {
-        await executor.send(message);
-    }
-
-    async sendTransfer(executor: ContractProvider, args: { seqno: number, sendMode?: Maybe<SendMode>, secretKey: Buffer, messages: InternalMessage[], timeout?: Maybe<number> }) {
+    /**
+     * Sign and send transfer
+     */
+    async sendTransfer(provider: ContractProvider, args: {
+        seqno: number,
+        secretKey: Buffer,
+        messages: InternalMessage[],
+        sendMode?: Maybe<SendMode>,
+        timeout?: Maybe<number>
+    }) {
         let transfer = this.createTransfer(args);
-        await executor.send(transfer);
+        await this.send(provider, transfer);
     }
 
+    /**
+     * Create transfer
+     */
     createTransfer(args: { seqno: number, sendMode?: Maybe<SendMode>, secretKey: Buffer, messages: InternalMessage[], timeout?: Maybe<number> }) {
         let sendMode = SendMode.PAY_GAS_SEPARATLY;
         if (args.sendMode !== null && args.sendMode !== undefined) {
@@ -73,5 +94,29 @@ export class WalletContractV3R2 implements Contract {
             timeout: args.timeout,
             walletId: this.walletId
         });
+    }
+
+    /**
+     * Create sender
+     */
+    sender(provider: ContractProvider, secretKey: Buffer): Sender {
+        return {
+            send: async (args) => {
+                let seqno = await this.getSeqno(provider);
+                let transfer = this.createTransfer({
+                    seqno,
+                    secretKey,
+                    sendMode: args.sendMode,
+                    messages: [internal({
+                        to: args.to,
+                        value: args.amount,
+                        init: args.init,
+                        body: args.body,
+                        bounce: args.bounce
+                    })]
+                });
+                await this.send(provider, transfer);
+            }
+        };
     }
 }

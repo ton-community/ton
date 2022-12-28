@@ -6,18 +6,13 @@ import { WalletV2SigningMessage } from "./WalletV2SigningMessage";
 import { WalletV3SigningMessage } from "./WalletV3SigningMessage";
 import { WalletV4SigningMessage } from "./WalletV4SigningMessage";
 
-export function createWalletTransferV1(args: { seqno: number, sendMode: number, messages: InternalMessage[], secretKey: Buffer }) {
-
-    // Check number of messages
-    if (args.messages.length > 4) {
-        throw new Error("Maximum number of messages in a single transfer is 4");
-    }
+export function createWalletTransferV1(args: { seqno: number, sendMode: number, message: Maybe<InternalMessage>, secretKey: Buffer }) {
 
     // Create message
     let signingMessage = new WalletV1SigningMessage({
         seqno: args.seqno,
         sendMode: args.sendMode,
-        messages: args.messages
+        message: args.message
     });
 
     // Sign message

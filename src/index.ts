@@ -30,6 +30,6 @@ export { WalletContractV1R2 } from './wallets/WalletContractV1R2';
 export { WalletContractV1R3 } from './wallets/WalletContractV1R3';
 export { WalletContractV2R1 } from './wallets/WalletContractV2R1';
 export { WalletContractV2R2 } from './wallets/WalletContractV2R2';
-export { WalletContractV3R1 } from './wallets/WalletContractV3R1';
+export { WalletContractV3R1 } from './wallets/WalletContractV3';
 export { WalletContractV3R2 } from './wallets/WalletContractV3R2';
 export { WalletContractV4 } from './wallets/WalletContractV4';

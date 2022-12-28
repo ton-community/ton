@@ -302,7 +302,7 @@ function createProvider(client: TonClient4, block: number | null, address: Addre
                 state: storage
             };
         },
-        async callGetMethod(name, args) {
+        async get(name, args) {
             let sq = block;
             if (sq === null) {
                 let res = await client.getLastBlock();
@@ -316,7 +316,7 @@ function createProvider(client: TonClient4, block: number | null, address: Addre
                 stack: new TupleReader(method.result),
             };
         },
-        async send(message) {
+        async external(message) {
 
             // Resolve last
             let last = await client.getLastBlock();
@@ -341,6 +341,9 @@ function createProvider(client: TonClient4, block: number | null, address: Addre
                 .toBoc();
             await client.sendMessage(pkg);
         },
+        async internal(via, message) {
+            
+        }
     }
 }
 

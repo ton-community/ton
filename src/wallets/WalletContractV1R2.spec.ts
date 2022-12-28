@@ -27,11 +27,11 @@ describe('WalletContractV1R2', () => {
         let transfer = contract.createTransfer({
             seqno,
             secretKey: key.secretKey,
-            messages: [internal({
+            message: internal({
                 to: 'kQD6oPnzaaAMRW24R8F0_nlSsJQni0cGHntR027eT9_sgtwt',
                 value: '0.1',
                 body: 'Hello, world!'
-            })]
+            })
         });
 
         // Perform transfer

@@ -363,19 +363,25 @@ function createProvider(client: TonClient, address: Address, init: { code: Cell 
                 state: storage,
             };
         },
-        async callGetMethod(name, args) {
+        async get(name, args) {
             let method = await client.callGetMethod(address, name, serializeStack(args));
             return { stack: method.stack };
         },
-        async send(message) {
+        async external(message) {
 
+            //
             // Resolve init
+            //
+            
             let neededInit: { code: Cell | null, data: Cell | null } | null = null;
             if (init && !await client.isContractDeployed(address)) {
                 neededInit = init;
             }
 
-            // Send with state init
+            //
+            // Send package
+            //
+
             const ext = new ExternalMessage({
                 to: address,
                 body: new CommonMessageInfo({
@@ -389,5 +395,8 @@ function createProvider(client: TonClient, address: Address, init: { code: Cell 
                 .toBoc();
             await client.sendFile(boc);
         },
+        async internal(via, msg) {
+
+        }
     }
 }

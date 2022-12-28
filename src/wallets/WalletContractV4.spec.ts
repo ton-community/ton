@@ -4,6 +4,7 @@ import { createTestClient4 } from "../utils/createTestClient4";
 import { Address, internal } from "ton-core";
 
 describe('WalletContractV4', () => {
+    
     it('should has balance and correct address', async () => {
 
         // Create contract
@@ -16,6 +17,7 @@ describe('WalletContractV4', () => {
         expect(contract.address.equals(Address.parse('EQDnBF4JTFKHTYjulEJyNd4dstLGH1m51UrLdu01_tw4z2Au'))).toBe(true);
         expect(balance > 0n).toBe(true);
     });
+
     it('should perform transfer', async () => {
         // Create contract
         let client = createTestClient4();
