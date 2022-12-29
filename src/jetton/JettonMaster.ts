@@ -1,0 +1,19 @@
+import { Address, beginCell, Contract, ContractProvider } from "ton-core";
+
+export class JettonMaster implements Contract {
+
+    static open(address: Address) {
+        return new JettonMaster(address);
+    }
+
+    readonly address: Address;
+
+    constructor(address: Address) {
+        this.address = address;
+    }
+
+    async getWalletAddress(provider: ContractProvider, owner: Address) {
+        let res = await provider.get('get_wallet_address', [{ type: 'slice', cell: beginCell().storeAddress(owner).endCell() }]);
+        return res.stack.readAddress();
+    }
+}

@@ -1,6 +1,6 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
-import { AccountState, Address, beginCell, Cell, CellMessage, CommonMessageInfo, Contract, ContractProvider, ExternalMessage, parseTuple, serializeTuple, StateInit, TupleItem, TupleReader } from "ton-core";
+import { AccountState, Address, beginCell, Cell, CellMessage, comment, CommonMessageInfo, Contract, ContractProvider, EmptyMessage, ExternalMessage, Message, parseTuple, serializeTuple, StateInit, toNano, TupleItem, TupleReader } from "ton-core";
 import { Maybe } from "../utils/maybe";
 import { toUrlSafe } from "../utils/toUrlSafe";
 import { doOpen } from "./doOpen";
@@ -342,7 +342,47 @@ function createProvider(client: TonClient4, block: number | null, address: Addre
             await client.sendMessage(pkg);
         },
         async internal(via, message) {
-            
+
+            // Resolve last
+            let last = await client.getLastBlock();
+
+            // Resolve init
+            let neededInit: { code: Cell | null, data: Cell | null } | null = null;
+            if (init && (await client.getAccountLite(last.last.seqno, address)).account.state.type !== 'active') {
+                neededInit = init;
+            }
+
+            // Resolve bounce
+            let bounce = true;
+            if (message.bounce !== null && message.bounce !== undefined) {
+                bounce = message.bounce;
+            }
+
+            // Resolve value
+            let value: bigint;
+            if (typeof message.value === 'string') {
+                value = toNano(message.value);
+            } else {
+                value = message.value;
+            }
+
+            // Resolve body
+            let body: Cell | null = null;
+            if (typeof message.body === 'string') {
+                body = comment(message.body);
+            } else if (message.body) {
+                body = message.body;
+            }
+
+            // Send internal message
+            await via.send({
+                to: address,
+                value,
+                bounce,
+                sendMode: message.sendMode,
+                init: neededInit,
+                body
+            });
         }
     }
 }

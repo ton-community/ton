@@ -1,7 +1,7 @@
 import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
 import { TonClientTransaction, TonClientMessage } from './api/TonClientTransaction';
 import { AxiosAdapter } from 'axios';
-import { AccountState, Address, beginCell, Cell, CellMessage, CommonMessageInfo, Contract, ContractProvider, ExternalMessage, Message, StateInit, TupleItem, TupleReader } from 'ton-core';
+import { AccountState, Address, beginCell, Cell, CellMessage, comment, CommonMessageInfo, Contract, ContractProvider, ExternalMessage, Message, StateInit, toNano, TupleItem, TupleReader } from 'ton-core';
 import { doOpen } from "./doOpen";
 import { Maybe } from "../utils/maybe";
 
@@ -372,7 +372,7 @@ function createProvider(client: TonClient, address: Address, init: { code: Cell 
             //
             // Resolve init
             //
-            
+
             let neededInit: { code: Cell | null, data: Cell | null } | null = null;
             if (init && !await client.isContractDeployed(address)) {
                 neededInit = init;
@@ -395,8 +395,45 @@ function createProvider(client: TonClient, address: Address, init: { code: Cell 
                 .toBoc();
             await client.sendFile(boc);
         },
-        async internal(via, msg) {
+        async internal(via, message) {
 
+            // Resolve init
+            let neededInit: { code: Cell | null, data: Cell | null } | null = null;
+            if (init && (!await client.isContractDeployed(address))) {
+                neededInit = init;
+            }
+
+            // Resolve bounce
+            let bounce = true;
+            if (message.bounce !== null && message.bounce !== undefined) {
+                bounce = message.bounce;
+            }
+
+            // Resolve value
+            let value: bigint;
+            if (typeof message.value === 'string') {
+                value = toNano(message.value);
+            } else {
+                value = message.value;
+            }
+
+            // Resolve body
+            let body: Cell | null = null;
+            if (typeof message.body === 'string') {
+                body = comment(message.body);
+            } else if (message.body) {
+                body = message.body;
+            }
+
+            // Send internal message
+            await via.send({
+                to: address,
+                value,
+                bounce,
+                sendMode: message.sendMode,
+                init: neededInit,
+                body
+            });
         }
     }
 }
