@@ -303,7 +303,12 @@ function parseStack(src: any[]) {
     let stack: TupleItem[] = [];
     for (let s of src) {
         if (s[0] === 'num') {
-            stack.push({ type: 'int', value: BigInt(s[1]) });
+            let val = s[1] as string;
+            if (val.startsWith('-')) {
+                stack.push({ type: 'int', value: -BigInt(val.slice(1)) });
+            } else {
+                stack.push({ type: 'int', value: BigInt(val) });
+            }
         } else if (s[0] === 'null') {
             stack.push({ type: 'null' });
         } else if (s[0] === 'cell') {
