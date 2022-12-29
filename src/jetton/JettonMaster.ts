@@ -2,7 +2,7 @@ import { Address, beginCell, Contract, ContractProvider } from "ton-core";
 
 export class JettonMaster implements Contract {
 
-    static open(address: Address) {
+    static create(address: Address) {
         return new JettonMaster(address);
     }
 

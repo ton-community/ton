@@ -2,7 +2,7 @@ import { Address, Contract, ContractProvider } from "ton-core";
 
 export class JettonWallet implements Contract {
 
-    static open(address: Address) {
+    static create(address: Address) {
         return new JettonWallet(address);
     }
 

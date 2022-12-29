@@ -116,7 +116,7 @@ export class WalletContractV4 implements Contract {
                     sendMode: args.sendMode,
                     messages: [internal({
                         to: args.to,
-                        value: args.amount,
+                        value: args.value,
                         init: args.init,
                         body: args.body,
                         bounce: args.bounce
