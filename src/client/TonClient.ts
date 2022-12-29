@@ -89,8 +89,8 @@ export class TonClient {
      * @param params optional parameters
      * @returns stack and gas_used field
      */
-    async callGetMethod(address: Address, name: string, params: any[] = []): Promise<{ gas_used: number, stack: TupleReader }> {
-        let res = await this.#api.callGetMethod(address, name, params);
+    async callGetMethod(address: Address, name: string, stack: TupleItem[] = []): Promise<{ gas_used: number, stack: TupleReader }> {
+        let res = await this.#api.callGetMethod(address, name, stack);
         if (res.exit_code !== 0) {
             throw Error('Unable to execute get method. Got exit_code: ' + res.exit_code);
         }
@@ -304,23 +304,19 @@ function parseStack(src: any[]) {
     for (let s of src) {
         if (s[0] === 'num') {
             stack.push({ type: 'int', value: BigInt(s[1]) });
+        } else if (s[0] === 'null') {
+            stack.push({ type: 'null' });
+        } else if (s[0] === 'cell') {
+            stack.push({ type: 'cell', cell: Cell.fromBoc(Buffer.from(s[1].bytes, 'base64'))[0] });
+        } else if (s[0] === 'slice') {
+            stack.push({ type: 'slice', cell: Cell.fromBoc(Buffer.from(s[1].bytes, 'base64'))[0] });
+        } else if (s[0] === 'builder') {
+            stack.push({ type: 'builder', cell: Cell.fromBoc(Buffer.from(s[1].bytes, 'base64'))[0] });
         } else {
             throw Error('Unsupported stack item type: ' + s[0])
         }
     }
     return new TupleReader(stack);
-}
-
-function serializeStack(src: TupleItem[]) {
-    let stack: any[] = [];
-    for (let s of src) {
-        if (s.type === 'int') {
-            stack.push(['num', s.value.toString()]);
-        } else {
-            throw Error('Unsupported stack item type: ' + s.type)
-        }
-    }
-    return stack;
 }
 
 function createProvider(client: TonClient, address: Address, init: { code: Cell | null, data: Cell | null } | null): ContractProvider {
@@ -364,7 +360,7 @@ function createProvider(client: TonClient, address: Address, init: { code: Cell 
             };
         },
         async get(name, args) {
-            let method = await client.callGetMethod(address, name, serializeStack(args));
+            let method = await client.callGetMethod(address, name, args);
             return { stack: method.stack };
         },
         async external(message) {

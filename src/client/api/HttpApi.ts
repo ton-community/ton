@@ -4,7 +4,7 @@ import reporter from 'io-ts-reporters';
 import { InMemoryCache, TonCache } from './TonCache';
 import DataLoader from 'dataloader';
 import axios, { AxiosAdapter } from 'axios';
-import { Address, Cell } from 'ton-core';
+import { Address, Cell, TupleItem } from 'ton-core';
 
 const version = require('../../../package.json').version as string;
 
@@ -287,8 +287,8 @@ export class HttpApi {
         }
     }
 
-    async callGetMethod(address: Address, method: string, params: any[]) {
-        return await this.doCall('runGetMethod', { address: address.toString(), method, stack: params }, callGetMethod);
+    async callGetMethod(address: Address, method: string, stack: TupleItem[]) {
+        return await this.doCall('runGetMethod', { address: address.toString(), method, stack: serializeStack(stack) }, callGetMethod);
     }
 
     async sendBoc(body: Buffer) {
@@ -337,4 +337,22 @@ export class HttpApi {
             throw Error('Malformed response: ' + reporter.report(decoded).join(', '));
         }
     }
+}
+
+function serializeStack(src: TupleItem[]) {
+    let stack: any[] = [];
+    for (let s of src) {
+        if (s.type === 'int') {
+            stack.push(['num', s.value.toString()]);
+        } else if (s.type === 'cell') {
+            stack.push(['tvm.Cell', s.cell.toBoc().toString('base64')]);
+        } else if (s.type === 'slice') {
+            stack.push(['tvm.Slice', s.cell.toBoc().toString('base64')]);
+        } else if (s.type === 'builder') {
+            stack.push(['tvm.Builder', s.cell.toBoc().toString('base64')]);
+        } else {
+            throw Error('Unsupported stack item type: ' + s.type)
+        }
+    }
+    return stack;
 }
