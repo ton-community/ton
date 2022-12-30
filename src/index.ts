@@ -6,11 +6,6 @@ export * from 'ton-core';
 
 export { HttpApi } from './client/api/HttpApi';
 export { TonClient } from './client/TonClient';
-export {
-    TonClientTransaction,
-    TonClientMessage,
-    TonClientMessageData
-} from './client/api/TonClientTransaction';
 
 //
 // API V4 Client

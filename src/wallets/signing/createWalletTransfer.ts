@@ -1,36 +1,30 @@
-import { beginCell, InternalMessage } from "ton-core";
+import { beginCell, MessageRelaxed, storeMessageRelaxed } from "ton-core";
 import { sign } from "ton-crypto";
 import { Maybe } from "../../utils/maybe";
-import { WalletV1SigningMessage } from "./WalletV1SigningMessage";
-import { WalletV2SigningMessage } from "./WalletV2SigningMessage";
-import { WalletV3SigningMessage } from "./WalletV3SigningMessage";
-import { WalletV4SigningMessage } from "./WalletV4SigningMessage";
 
-export function createWalletTransferV1(args: { seqno: number, sendMode: number, message: Maybe<InternalMessage>, secretKey: Buffer }) {
+export function createWalletTransferV1(args: { seqno: number, sendMode: number, message: Maybe<MessageRelaxed>, secretKey: Buffer }) {
 
     // Create message
-    let signingMessage = new WalletV1SigningMessage({
-        seqno: args.seqno,
-        sendMode: args.sendMode,
-        message: args.message
-    });
+    let signingMessage = beginCell()
+        .storeUint(args.seqno, 32);
+    if (args.message) {
+        signingMessage.storeUint(args.sendMode, 8);
+        signingMessage.storeRef(beginCell().store(storeMessageRelaxed(args.message)));
+    }
 
     // Sign message
-    const cell = beginCell()
-        .storeWritable(signingMessage)
-        .endCell();
-    let signature = sign(cell.hash(), args.secretKey);
+    let signature = sign(signingMessage.endCell().hash(), args.secretKey);
 
     // Body
     const body = beginCell()
         .storeBuffer(signature)
-        .storeWritable(signingMessage)
+        .storeBuilder(signingMessage)
         .endCell();
 
     return body;
 }
 
-export function createWalletTransferV2(args: { seqno: number, sendMode: number, messages: InternalMessage[], secretKey: Buffer, timeout?: Maybe<number> }) {
+export function createWalletTransferV2(args: { seqno: number, sendMode: number, messages: MessageRelaxed[], secretKey: Buffer, timeout?: Maybe<number> }) {
 
     // Check number of messages
     if (args.messages.length > 4) {
@@ -38,23 +32,27 @@ export function createWalletTransferV2(args: { seqno: number, sendMode: number, 
     }
 
     // Create message
-    let signingMessage = new WalletV2SigningMessage({
-        seqno: args.seqno,
-        sendMode: args.sendMode,
-        messages: args.messages,
-        timeout: args.timeout
-    });
+    let signingMessage = beginCell()
+        .storeUint(args.seqno, 32);
+    if (args.seqno === 0) {
+        for (let i = 0; i < 32; i++) {
+            signingMessage.storeBit(1);
+        }
+    } else {
+        signingMessage.storeUint(args.timeout || Math.floor(Date.now() / 1e3) + 60, 32); // Default timeout: 60 seconds
+    }
+    for (let m of args.messages) {
+        signingMessage.storeUint(args.sendMode, 8);
+        signingMessage.storeRef(beginCell().store(storeMessageRelaxed(m)));
+    }
 
     // Sign message
-    const cell = beginCell()
-        .storeWritable(signingMessage)
-        .endCell();
-    let signature = sign(cell.hash(), args.secretKey);
+    let signature = sign(signingMessage.endCell().hash(), args.secretKey);
 
     // Body
     const body = beginCell()
         .storeBuffer(signature)
-        .storeWritable(signingMessage)
+        .storeBuilder(signingMessage)
         .endCell();
 
     return body;
@@ -64,7 +62,7 @@ export function createWalletTransferV3(args: {
     seqno: number,
     sendMode: number,
     walletId: number,
-    messages: InternalMessage[],
+    messages: MessageRelaxed[],
     secretKey: Buffer,
     timeout?: Maybe<number>
 }) {
@@ -75,24 +73,28 @@ export function createWalletTransferV3(args: {
     }
 
     // Create message to sign
-    let signingMessage = new WalletV3SigningMessage({
-        timeout: args.timeout,
-        walletId: args.walletId,
-        seqno: args.seqno,
-        sendMode: args.sendMode,
-        messages: args.messages
-    });
+    let signingMessage = beginCell()
+        .storeUint(args.walletId, 32);
+    if (args.seqno === 0) {
+        for (let i = 0; i < 32; i++) {
+            signingMessage.storeBit(1);
+        }
+    } else {
+        signingMessage.storeUint(args.timeout || Math.floor(Date.now() / 1e3) + 60, 32); // Default timeout: 60 seconds
+    }
+    signingMessage.storeUint(args.seqno, 32);
+    for (let m of args.messages) {
+        signingMessage.storeUint(args.sendMode, 8);
+        signingMessage.storeRef(beginCell().store(storeMessageRelaxed(m)));
+    }
 
     // Sign message
-    const cell = beginCell()
-        .storeWritable(signingMessage)
-        .endCell();
-    let signature = sign(cell.hash(), args.secretKey);
+    let signature = sign(signingMessage.endCell().hash(), args.secretKey);
 
     // Body
     const body = beginCell()
         .storeBuffer(signature)
-        .storeWritable(signingMessage)
+        .storeBuilder(signingMessage)
         .endCell();
 
     return body;
@@ -102,7 +104,7 @@ export function createWalletTransferV4(args: {
     seqno: number,
     sendMode: number,
     walletId: number,
-    messages: InternalMessage[],
+    messages: MessageRelaxed[],
     secretKey: Buffer,
     timeout?: Maybe<number>
 }) {
@@ -112,23 +114,29 @@ export function createWalletTransferV4(args: {
         throw new Error("Maximum number of messages in a single transfer is 4");
     }
 
-    let signingMessage = new WalletV4SigningMessage({
-        timeout: args.timeout,
-        walletId: args.walletId,
-        seqno: args.seqno,
-        sendMode: args.sendMode,
-        messages: args.messages
-    });
+    let signingMessage = beginCell()
+        .storeUint(args.walletId, 32);
+    if (args.seqno === 0) {
+        for (let i = 0; i < 32; i++) {
+            signingMessage.storeBit(1);
+        }
+    } else {
+        signingMessage.storeUint(args.timeout || Math.floor(Date.now() / 1e3) + 60, 32); // Default timeout: 60 seconds
+    }
+    signingMessage.storeUint(args.seqno, 32);
+    signingMessage.storeUint(0, 8); // Simple order
+    for (let m of args.messages) {
+        signingMessage.storeUint(args.sendMode, 8);
+        signingMessage.storeRef(beginCell().store(storeMessageRelaxed(m)));
+    }
 
     // Sign message
-    const cell = beginCell()
-        .storeWritable(signingMessage);
-    let signature: Buffer = sign(cell.endCell().hash(), args.secretKey);
+    let signature: Buffer = sign(signingMessage.endCell().hash(), args.secretKey);
 
     // Body
     const body = beginCell()
         .storeBuffer(signature)
-        .storeWritable(signingMessage)
+        .storeBuilder(signingMessage)
         .endCell();
 
     return body;

@@ -1,7 +1,6 @@
-import { HttpApi, HTTPMessage, HTTPTransaction } from "./api/HttpApi";
-import { TonClientTransaction, TonClientMessage } from './api/TonClientTransaction';
+import { HttpApi } from "./api/HttpApi";
 import { AxiosAdapter } from 'axios';
-import { AccountState, Address, beginCell, Cell, CellMessage, comment, CommonMessageInfo, Contract, ContractProvider, ExternalMessage, Message, StateInit, toNano, TupleItem, TupleReader } from 'ton-core';
+import { AccountState, Address, beginCell, Cell, comment, Contract, ContractProvider, external, loadTransaction, Message, StateInit, storeMessage, toNano, Transaction, TupleItem, TupleReader } from 'ton-core';
 import { doOpen } from "./doOpen";
 import { Maybe } from "../utils/maybe";
 
@@ -25,36 +24,6 @@ export type TonClientParameters = {
      * HTTP Adapter for axios
      */
     httpAdapter?: AxiosAdapter;
-}
-
-function convertMessage(t: HTTPMessage): TonClientMessage {
-    return {
-        source: t.source !== '' ? Address.parseFriendly(t.source).address : null,
-        destination: t.destination !== '' ? Address.parseFriendly(t.destination).address : null,
-        forwardFee: BigInt(t.fwd_fee),
-        ihrFee: BigInt(t.ihr_fee),
-        value: BigInt(t.value),
-        createdLt: t.created_lt,
-        body: (
-            t.msg_data['@type'] === 'msg.dataRaw'
-                ? { type: 'data', data: Buffer.from(t.msg_data.body, 'base64') }
-                : (t.msg_data['@type'] === 'msg.dataText'
-                    ? { type: 'text', text: Buffer.from(t.msg_data.text, 'base64').toString('utf-8') }
-                    : null))
-    };
-}
-
-function convertTransaction(r: HTTPTransaction): TonClientTransaction {
-    return {
-        id: { lt: r.transaction_id.lt, hash: r.transaction_id.hash },
-        time: r.utime,
-        data: r.data,
-        storageFee: BigInt(r.storage_fee),
-        otherFee: BigInt(r.other_fee),
-        fee: BigInt(r.fee),
-        inMessage: r.in_msg ? convertMessage(r.in_msg) : null,
-        outMessages: r.out_msgs.map(convertMessage)
-    }
 }
 
 export class TonClient {
@@ -116,9 +85,9 @@ export class TonClient {
     async getTransactions(address: Address, opts: { limit: number, lt?: string, hash?: string, to_lt?: string, inclusive?: boolean }) {
         // Fetch transactions
         let tx = await this.#api.getTransactions(address, opts);
-        let res: TonClientTransaction[] = [];
+        let res: Transaction[] = [];
         for (let r of tx) {
-            res.push(convertTransaction(r))
+            res.push(loadTransaction(Cell.fromBoc(Buffer.from(r.data, 'base64'))[0].beginParse()));
         }
         return res;
     }
@@ -133,7 +102,7 @@ export class TonClient {
     async getTransaction(address: Address, lt: string, hash: string) {
         let res = await this.#api.getTransaction(address, lt, hash);
         if (res) {
-            return convertTransaction(res);
+            return loadTransaction(Cell.fromBoc(Buffer.from(res.data, 'base64'))[0].beginParse());
         } else {
             return null;
         }
@@ -190,7 +159,7 @@ export class TonClient {
      */
     async sendMessage(src: Message) {
         const boc = beginCell()
-            .storeWritable(src)
+            .store(storeMessage(src))
             .endCell()
             .toBoc();
         await this.#api.sendBoc(boc);
@@ -225,20 +194,16 @@ export class TonClient {
      */
     async sendExternalMessage(contract: Contract, src: Cell) {
         if (await this.isContractDeployed(contract.address) || !contract.init) {
-            const message = new ExternalMessage({
+            const message = external({
                 to: contract.address,
-                body: new CommonMessageInfo({
-                    body: new CellMessage(src)
-                })
+                body: src
             });
             await this.sendMessage(message);
         } else {
-            const message = new ExternalMessage({
+            const message = external({
                 to: contract.address,
-                body: new CommonMessageInfo({
-                    stateInit: new StateInit({ code: contract.init.code, data: contract.init.data }),
-                    body: new CellMessage(src)
-                })
+                init: { code: contract.init.code, data: contract.init.data },
+                body: src
             });
             await this.sendMessage(message);
         }
@@ -383,15 +348,13 @@ function createProvider(client: TonClient, address: Address, init: { code: Cell 
             // Send package
             //
 
-            const ext = new ExternalMessage({
+            const ext = external({
                 to: address,
-                body: new CommonMessageInfo({
-                    stateInit: neededInit ? new StateInit({ code: neededInit.code, data: neededInit.data }) : null,
-                    body: new CellMessage(message)
-                })
-            });
+                init: neededInit ? { code: neededInit.code, data: neededInit.data } : null,
+                body: message
+            })
             let boc = beginCell()
-                .storeWritable(ext)
+                .store(storeMessage(ext))
                 .endCell()
                 .toBoc();
             await client.sendFile(boc);

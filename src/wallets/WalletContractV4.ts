@@ -1,4 +1,4 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, internal, InternalMessage, Sender, SendMode } from "ton-core";
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, internal, MessageRelaxed, Sender, SendMode } from "ton-core";
 import { Maybe } from "../utils/maybe";
 import { createWalletTransferV4 } from "./signing/createWalletTransfer";
 
@@ -71,7 +71,7 @@ export class WalletContractV4 implements Contract {
     async sendTransfer(provider: ContractProvider, args: {
         seqno: number,
         secretKey: Buffer,
-        messages: InternalMessage[]
+        messages: MessageRelaxed[]
         sendMode?: Maybe<SendMode>,
         timeout?: Maybe<number>,
     }) {
@@ -85,7 +85,7 @@ export class WalletContractV4 implements Contract {
     createTransfer(args: {
         seqno: number,
         secretKey: Buffer,
-        messages: InternalMessage[]
+        messages: MessageRelaxed[]
         sendMode?: Maybe<SendMode>,
         timeout?: Maybe<number>,
     }) {

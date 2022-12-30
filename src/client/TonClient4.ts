@@ -1,6 +1,6 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
-import { AccountState, Address, beginCell, Cell, CellMessage, comment, CommonMessageInfo, Contract, ContractProvider, EmptyMessage, ExternalMessage, Message, parseTuple, serializeTuple, StateInit, toNano, TupleItem, TupleReader } from "ton-core";
+import { AccountState, Address, beginCell, Cell, comment, Contract, ContractProvider, external, loadTransaction, parseTuple, serializeTuple, StateInit, storeMessage, toNano, Transaction, TupleItem, TupleReader } from "ton-core";
 import { Maybe } from "../utils/maybe";
 import { toUrlSafe } from "../utils/toUrlSafe";
 import { doOpen } from "./doOpen";
@@ -143,13 +143,13 @@ export class TonClient4 {
                 rootHash: string;
                 fileHash: string;
             },
-            tx: Cell
+            tx: Transaction
         }[] = [];
         let cells = Cell.fromBoc(Buffer.from(data.boc, 'base64'));
         for (let i = 0; i < data.blocks.length; i++) {
             tx.push({
                 block: data.blocks[i],
-                tx: cells[i]
+                tx: loadTransaction(cells[i].beginParse())
             });
         }
         return tx;
@@ -328,15 +328,13 @@ function createProvider(client: TonClient4, block: number | null, address: Addre
             }
 
             // Send with state init
-            const ext = new ExternalMessage({
+            const ext = external({
                 to: address,
-                body: new CommonMessageInfo({
-                    stateInit: neededInit ? new StateInit({ code: neededInit.code, data: neededInit.data }) : null,
-                    body: new CellMessage(message)
-                })
+                init: neededInit ? { code: neededInit.code, data: neededInit.data } : null,
+                body: message
             });
             let pkg = beginCell()
-                .storeWritable(ext)
+                .store(storeMessage(ext))
                 .endCell()
                 .toBoc();
             await client.sendMessage(pkg);
