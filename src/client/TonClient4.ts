@@ -1,9 +1,8 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
-import { AccountState, Address, beginCell, Cell, comment, Contract, ContractProvider, external, loadTransaction, parseTuple, serializeTuple, StateInit, storeMessage, toNano, Transaction, TupleItem, TupleReader } from "ton-core";
+import { Address, beginCell, Cell, comment, Contract, ContractProvider, ContractState, external, loadTransaction, openContract, parseTuple, serializeTuple, StateInit, storeMessage, toNano, Transaction, TupleItem, TupleReader } from "ton-core";
 import { Maybe } from "../utils/maybe";
 import { toUrlSafe } from "../utils/toUrlSafe";
-import { doOpen } from "./doOpen";
 
 export type TonClient4Parameters = {
 
@@ -216,7 +215,7 @@ export class TonClient4 {
      * @returns opened contract
      */
     open<T extends Contract>(contract: T) {
-        return doOpen<T>(contract, (args) => createProvider(this, null, args.address, args.init));
+        return openContract<T>(contract, (args) => createProvider(this, null, args.address, args.init));
     }
 
     /**
@@ -226,7 +225,7 @@ export class TonClient4 {
      * @returns opened contract
      */
     openAt<T extends Contract>(block: number, contract: T) {
-        return doOpen<T>(contract, (args) => createProvider(this, block, args.address, args.init));
+        return openContract<T>(contract, (args) => createProvider(this, block, args.address, args.init));
     }
 
     /**
@@ -253,7 +252,7 @@ export class TonClient4 {
 
 function createProvider(client: TonClient4, block: number | null, address: Address, init: { code: Cell, data: Cell } | null): ContractProvider {
     return {
-        async getState(): Promise<AccountState> {
+        async getState(): Promise<ContractState> {
 
             // Resolve block
             let sq = block;

@@ -1,7 +1,6 @@
 import { HttpApi } from "./api/HttpApi";
 import { AxiosAdapter } from 'axios';
-import { AccountState, Address, beginCell, Cell, comment, Contract, ContractProvider, external, loadTransaction, Message, StateInit, storeMessage, toNano, Transaction, TupleItem, TupleReader } from 'ton-core';
-import { doOpen } from "./doOpen";
+import { Address, beginCell, Cell, comment, Contract, ContractProvider, ContractState, external, loadTransaction, Message, openContract, storeMessage, toNano, Transaction, TupleItem, TupleReader } from 'ton-core';
 import { Maybe } from "../utils/maybe";
 
 export type TonClientParameters = {
@@ -250,7 +249,7 @@ export class TonClient {
      * @returns contract
      */
     open<T extends Contract>(src: T) {
-        return doOpen<T>(src, (args) => createProvider(this, args.address, args.init));
+        return openContract<T>(src, (args) => createProvider(this, args.address, args.init));
     }
 
     /**
@@ -291,7 +290,7 @@ function parseStack(src: any[]) {
 
 function createProvider(client: TonClient, address: Address, init: { code: Cell | null, data: Cell | null } | null): ContractProvider {
     return {
-        async getState(): Promise<AccountState> {
+        async getState(): Promise<ContractState> {
             let state = await client.getContractState(address);
             let balance = state.balance;
             let last = state.lastTransaction ? { lt: BigInt(state.lastTransaction.lt), hash: Buffer.from(state.lastTransaction.hash, 'base64') } : null;
