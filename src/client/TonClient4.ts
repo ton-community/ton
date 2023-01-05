@@ -140,8 +140,11 @@ export class TonClient4 {
         if (!transactionCodec.is(res.data))
             throw Error('Mailformed response');
 
-        const txcell = Cell.fromBoc(Buffer.from(res.data.boc, 'base64'))[0];
-        return { tx:  loadTransaction(txcell.beginParse()), ...res.data }
+        const tx = res.data.boc !== ''
+            ? loadTransaction(Cell.fromBoc(Buffer.from(res.data.boc, 'base64'))[0].beginParse())
+            : undefined
+
+        return { tx, ...res.data }
     }
 
     /**
