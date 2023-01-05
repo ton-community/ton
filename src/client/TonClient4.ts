@@ -122,6 +122,29 @@ export class TonClient4 {
     }
 
     /**
+     * Load one unparsed account transaction
+     * @param seqno block sequence number
+     * @param address account address
+     * @param lt account last transaction lt
+     * @returns one unparsed transaction
+     */
+    async getTransaction(seqno: number, address: Address, lt: bigint) {
+        const urladdr = address.toString({ urlSafe: true });
+        const urlpath = `/block/${seqno}/${urladdr}/tx/${lt.toString(10)}`;
+
+        const res = await axios.get(
+            new URL(urlpath, this.#endpoint).href,
+            { adapter: this.#adapter, timeout: this.#timeout }
+        );
+
+        if (!transactionCodec.is(res.data))
+            throw Error('Mailformed response');
+
+        const txcell = Cell.fromBoc(Buffer.from(res.data.boc, 'base64'))[0];
+        return { tx:  loadTransaction(txcell.beginParse()), ...res.data }
+    }
+
+    /**
      * Load unparsed account transactions
      * @param address address
      * @param lt last transaction lt
@@ -539,3 +562,14 @@ const transactionsCodec = t.type({
     })),
     boc: t.string
 });
+
+const transactionCodec = t.type({
+    block: t.type({
+        workchain: t.number,
+        seqno: t.number,
+        shard: t.string,
+        rootHash: t.string,
+    }),
+    boc: t.string,
+    proof: t.string
+})
