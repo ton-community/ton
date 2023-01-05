@@ -128,7 +128,7 @@ export class TonClient4 {
      * @param lt account last transaction lt
      * @returns one unparsed transaction
      */
-    async getOneTransaction(seqno: number, address: Address, lt: bigint) {
+    async getTransaction(seqno: number, address: Address, lt: bigint) {
         const urladdr = address.toString({ urlSafe: true });
         const urlpath = `/block/${seqno}/${urladdr}/tx/${lt.toString(10)}`;
 
@@ -140,7 +140,8 @@ export class TonClient4 {
         if (!transactionCodec.is(res.data))
             throw Error('Mailformed response');
 
-        return res.data
+        const txcell = Cell.fromBoc(Buffer.from(res.data.boc, 'base64'))[0];
+        return { tx:  loadTransaction(txcell.beginParse()), ...res.data }
     }
 
     /**
