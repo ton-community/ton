@@ -1,6 +1,5 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
-import path from "path";
 import { Address, beginCell, Cell, comment, Contract, ContractProvider, ContractState, external, loadTransaction, openContract, parseTuple, serializeTuple, StateInit, storeMessage, toNano, Transaction, TupleItem, TupleReader } from "ton-core";
 import { Maybe } from "../utils/maybe";
 import { toUrlSafe } from "../utils/toUrlSafe";
@@ -134,7 +133,7 @@ export class TonClient4 {
         const urlpath = `/block/${seqno}/${urladdr}/tx/${lt.toString(10)}`;
 
         const res = await axios.get(
-            path.join(this.#endpoint, urlpath),
+            new URL(urlpath, this.#endpoint).href,
             { adapter: this.#adapter, timeout: this.#timeout }
         );
 
