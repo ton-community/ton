@@ -1,5 +1,6 @@
 import axios, { AxiosAdapter } from "axios";
 import * as t from 'io-ts';
+import path from "path";
 import { Address, beginCell, Cell, comment, Contract, ContractProvider, ContractState, external, loadTransaction, openContract, parseTuple, serializeTuple, StateInit, storeMessage, toNano, Transaction, TupleItem, TupleReader } from "ton-core";
 import { Maybe } from "../utils/maybe";
 import { toUrlSafe } from "../utils/toUrlSafe";
@@ -119,6 +120,28 @@ export class TonClient4 {
             throw Error('Mailformed response');
         }
         return res.data;
+    }
+
+    /**
+     * Load one unparsed account transaction
+     * @param seqno block sequence number
+     * @param address account address
+     * @param lt account last transaction lt
+     * @returns one unparsed transaction
+     */
+    async getOneTransaction(seqno: number, address: Address, lt: bigint) {
+        const urladdr = address.toString({ urlSafe: true });
+        const urlpath = `/block/${seqno}/${urladdr}/tx/${lt.toString(10)}`;
+
+        const res = await axios.get(
+            path.join(this.#endpoint, urlpath),
+            { adapter: this.#adapter, timeout: this.#timeout }
+        );
+
+        if (!transactionCodec.is(res.data))
+            throw Error('Mailformed response');
+
+        return res.data
     }
 
     /**
@@ -539,3 +562,14 @@ const transactionsCodec = t.type({
     })),
     boc: t.string
 });
+
+const transactionCodec = t.type({
+    block: t.type({
+        workchain: t.number,
+        seqno: t.number,
+        shard: t.string,
+        rootHash: t.string,
+    }),
+    boc: t.string,
+    proof: t.string
+})
