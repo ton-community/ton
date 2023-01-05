@@ -128,9 +128,9 @@ export class TonClient4 {
      * @param lt account last transaction lt
      * @returns one unparsed transaction
      */
-    async getTransaction(seqno: number, address: Address, lt: bigint) {
+    async getTransaction(wc: number, shard: string, seqno: number, address: Address, lt: bigint) {
         const urladdr = address.toString({ urlSafe: true });
-        const urlpath = `/block/${seqno}/${urladdr}/tx/${lt.toString(10)}`;
+        const urlpath = `/block/${wc}/${shard}/${seqno}/${urladdr}/tx/${lt.toString(10)}`;
 
         const res = await axios.get(
             new URL(urlpath, this.#endpoint).href,
