@@ -49,7 +49,7 @@ let wallet = WalletContractV4.create({ workchain, publicKey: keypair.publicKey }
 let contract = client.open(wallet);
 
 // Get balance
-let balance: biging = await contract.getBalance();
+let balance: bigint = await contract.getBalance();
 
 // Create a transfer
 let seqno: number = await contract.getSeqno();
