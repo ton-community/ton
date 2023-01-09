@@ -45,7 +45,7 @@ let keyPair = await mnemonicToPrivateKey(mnemonics);
 
 // Create wallet contract
 let workchain = 0; // Usually you need a workchain 0
-let wallet = WalletContractV4.create({ workchain, publicKey: keypair.publicKey });
+let wallet = WalletContractV4.create({ workchain, publicKey: keyPair.publicKey });
 let contract = client.open(wallet);
 
 // Get balance
@@ -56,7 +56,7 @@ let seqno: number = await contract.getSeqno();
 let transfer = await contract.createTransfer({
   seqno,
   messages: [internal({
-    value: '1.5'
+    value: '1.5',
     dest: 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N',
     body: 'Hello world'
   })]
