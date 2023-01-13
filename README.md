@@ -64,6 +64,10 @@ let transfer = await contract.createTransfer({
 
 ```
 
-# License
+## Docs
+
+[Documentation](https://ton-community.github.io/ton/)
+
+## License
 
 MIT
